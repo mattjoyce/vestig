@@ -1,0 +1,15 @@
+# Vestig M1 Configuration
+
+# Embedding configuration
+embedding:
+  model: "BAAI/bge-m3"
+  dimension: 1024
+  normalize: true
+
+# Storage
+storage:
+  db_path: ./data/memory.db
+
+# Retrieval
+retrieval:
+  default_limit: 5
