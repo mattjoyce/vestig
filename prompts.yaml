@@ -30,3 +30,31 @@ extract_entities: |
   }
 
   If no entities found, return: {"entities": []}
+
+# Session Ingestion: Extract memories from conversation transcripts
+extract_memories_from_session: |
+  Extract discrete, factual memories from this conversation transcript.
+
+  Guidelines:
+  1. Extract ONE clear fact, decision, insight, or piece of knowledge per memory
+  2. Each memory should be self-contained with enough context to understand it independently
+  3. Focus on substantive content (technical details, decisions, learnings, etc.)
+  4. Skip greetings, small talk, and purely procedural exchanges
+  5. Preserve important context (who said/did what, when applicable)
+  6. Assign confidence based on how clear and factual the information is
+
+  Conversation chunk:
+  {{content}}
+
+  Output ONLY valid JSON in this exact format:
+  {
+    "memories": [
+      {
+        "content": "The full memory text with enough context to be self-contained",
+        "confidence": 0.0-1.0,
+        "rationale": "Brief explanation of why this is worth remembering"
+      }
+    ]
+  }
+
+  If no substantive memories found, return: {"memories": []}

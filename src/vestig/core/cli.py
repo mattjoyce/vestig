@@ -232,6 +232,58 @@ def cmd_memory(args):
     sys.exit(1)
 
 
+def cmd_ingest(args):
+    """Handle 'vestig ingest' command"""
+    from vestig.core.ingestion import ingest_document
+
+    config = args.config_dict
+    storage, embedding_engine, event_storage, _ = build_runtime(config)
+
+    # Get M4 config for entity extraction
+    m4_config = config.get("m4", {})
+
+    try:
+        result = ingest_document(
+            document_path=args.document,
+            storage=storage,
+            embedding_engine=embedding_engine,
+            event_storage=event_storage,
+            m4_config=m4_config,
+            chunk_size=args.chunk_size,
+            chunk_overlap=args.chunk_overlap,
+            extraction_model=args.model,
+            min_confidence=args.min_confidence,
+            source="document_ingest",
+        )
+
+        # Print summary
+        print("\n" + "=" * 70)
+        print("INGESTION COMPLETE")
+        print("=" * 70)
+        print(f"Document: {result.document_path}")
+        print(f"Chunks processed: {result.chunks_processed}")
+        print(f"Memories extracted: {result.memories_extracted}")
+        print(f"Memories committed: {result.memories_committed}")
+        print(f"Duplicates skipped: {result.memories_deduplicated}")
+        print(f"Entities created: {result.entities_created}")
+
+        if result.errors:
+            print(f"\nErrors: {len(result.errors)}")
+            for error in result.errors[:5]:  # Show first 5 errors
+                print(f"  - {error}")
+            if len(result.errors) > 5:
+                print(f"  ... and {len(result.errors) - 5} more")
+
+        print("=" * 70)
+
+    except FileNotFoundError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error during ingestion: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
 def main():
     """Main CLI entry point"""
     parser = argparse.ArgumentParser(
@@ -245,6 +297,36 @@ def main():
     )
 
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
+
+    # vestig ingest
+    parser_ingest = subparsers.add_parser(
+        "ingest", help="Ingest document by extracting memories with LLM"
+    )
+    parser_ingest.add_argument("document", help="Path to document file")
+    parser_ingest.add_argument(
+        "--chunk-size",
+        type=int,
+        default=20000,
+        help="Characters per chunk (default: 20000 ≈ 5k tokens)",
+    )
+    parser_ingest.add_argument(
+        "--chunk-overlap",
+        type=int,
+        default=500,
+        help="Character overlap between chunks (default: 500)",
+    )
+    parser_ingest.add_argument(
+        "--model",
+        default="claude-sonnet-4.5",
+        help="LLM model for extraction (default: claude-sonnet-4.5)",
+    )
+    parser_ingest.add_argument(
+        "--min-confidence",
+        type=float,
+        default=0.6,
+        help="Minimum confidence for extracted memories (default: 0.6)",
+    )
+    parser_ingest.set_defaults(func=cmd_ingest)
 
     # vestig memory
     parser_memory = subparsers.add_parser("memory", help="Memory operations")
