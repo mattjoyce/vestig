@@ -11,9 +11,9 @@ This repository is the **front door** for new contributors and new agents joinin
 
 We build Vestig in **progressive maturation** steps. Each maturity level is a *complete, usable slice* with a clear scope boundary.
 
-- **M1 — Core Loop (Now):** add → embed → persist → recall (top‑K). Fail fast. Minimal scaffolding.
-- **M2 — Quality Firewall:** de-duplication, content hygiene, basic ranking improvements, and controlled recall formatting.
-- **M3 — Time & Truth:** temporal awareness, decay/refresh, provenance, and “is this still true?” mechanics.
+- **M1 — Core Loop (Complete):** add → embed → persist → recall (top‑K). Fail fast. Minimal scaffolding. ✓
+- **M2 — Quality Firewall (Complete):** de-duplication, content hygiene, basic ranking improvements, and controlled recall formatting. ✓
+- **M3 — Time & Truth (Next):** temporal awareness, decay/refresh, provenance, and "is this still true?" mechanics.
 - **M4 — Structure:** entities/edges (light graph), relationships, and richer retrieval.
 - **M5 — Operations:** import pipelines, observability, performance, backup/restore, and automation hooks.
 - **M6 — Productisation:** stable interfaces, hardening, packaging, and clean integration patterns for agent ecosystems.
@@ -22,7 +22,7 @@ See:
 - `PLAN.md` — the maturation roadmap (M1→M6) + guiding preamble and principles
 - `SPEC.md` — target design and technical contract (what we are building toward)
 
-**Important:** We are implementing **M1 first**. Anything not required for M1 is intentionally deferred.
+**Current Status:** M1 and M2 are complete. **M3 is next** (awaiting green light). Anything not required for the current milestone is intentionally deferred.
 
 ---
 
@@ -32,17 +32,21 @@ See:
 
 ---
 
-## Non‑Goals (for M1)
+## Non‑Goals (Current Phase)
 
-To prevent scope creep, M1 explicitly does **not** include:
+To prevent scope creep, we maintain clear boundaries for each maturity level.
 
-- LLM-based extraction/summarisation pipelines
-- Graph relationships / entity resolution
-- Complex ranking, reranking, or hybrid retrieval
-- Long-running background jobs
-- “Perfect” unit test suites (we prefer smoke/integration tests in this phase)
+**Completed in M1–M2:**
+- ✓ Basic store and recall (M1)
+- ✓ Content hygiene and deduplication (M2)
 
-We will earn these later in M2–M6.
+**Not Yet Implemented (M3+):**
+- Temporal awareness and decay mechanics (planned for M3)
+- Graph relationships / entity resolution (M4)
+- Complex ranking, reranking, or hybrid retrieval (M4–M5)
+- Long-running background jobs (M5)
+
+We earn complexity progressively. Each feature waits for its maturity level.
 
 ---
 
@@ -173,11 +177,12 @@ These are the rules we use to move quickly without creating chaos:
 
 ## Roadmap Snapshot
 
-- **Sprint 1:** make M1 real, boring, and reliable (CLI + SQLite + embeddings + recall)
-- **Sprint 2:** M2 “Quality Firewall” (dedupe + hygiene + better recall formatting)
-- **Sprint 3+:** M3+ as per `PLAN.md`
+- **Sprint 1 (Complete):** ✓ M1 real, boring, and reliable (CLI + SQLite + embeddings + recall)
+- **Sprint 2 (Complete):** ✓ M2 "Quality Firewall" (dedupe + hygiene + better recall formatting)
+- **Sprint 3 (Next):** M3 "Time & Truth" (temporal awareness, decay/refresh, provenance) — awaiting green light
+- **Sprint 4+:** M4–M6 as per `PLAN.md`
 
-If you’re new: start by running the demo and adding one small improvement that strengthens M1.
+If you're new: start by running the demo and exploring the M2 quality firewall features.
 
 ---
 
