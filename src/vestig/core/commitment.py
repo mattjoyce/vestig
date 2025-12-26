@@ -91,9 +91,10 @@ def commit_memory(
     tags: list[str] = None,
     artifact_ref: Optional[str] = None,
     on_commit: Optional[OnCommitHook] = None,
+    event_storage: Optional['MemoryEventStorage'] = None,  # M3: Event logging
 ) -> CommitOutcome:
     """
-    Commit a memory to storage with M2 quality firewall.
+    Commit a memory to storage with M2 quality firewall and M3 event logging.
 
     Args:
         content: Memory content text
@@ -104,6 +105,7 @@ def commit_memory(
         tags: Optional tags for filtering
         artifact_ref: Optional reference to source artifact (session_id, filename, etc.)
         on_commit: Optional hook called with CommitOutcome (M2→M3 bridge)
+        event_storage: Optional event storage for M3 event logging
 
     Returns:
         CommitOutcome with decision details
@@ -244,4 +246,56 @@ def commit_memory(
     if on_commit:
         on_commit(outcome)
 
+    # M3: Log event if event_storage provided
+    if event_storage:
+        _log_commit_event(outcome, storage, event_storage)
+
     return outcome
+
+
+def _log_commit_event(
+    outcome: CommitOutcome,
+    storage: MemoryStorage,
+    event_storage: 'MemoryEventStorage',
+) -> None:
+    """
+    Convert CommitOutcome to EventNode and persist (M3).
+
+    Args:
+        outcome: The commit outcome to log
+        storage: Storage instance for updating convenience fields
+        event_storage: Event storage instance
+    """
+    from vestig.core.models import EventNode
+
+    if outcome.outcome == "REJECTED_HYGIENE":
+        return  # Don't log hygiene rejections
+
+    # Map outcome to event type
+    event_type_map = {
+        "INSERTED_NEW": "ADD",
+        "EXACT_DUPE": "REINFORCE_EXACT",
+        "NEAR_DUPE": "REINFORCE_NEAR",
+    }
+    event_type = event_type_map[outcome.outcome]
+
+    # Create event
+    event = EventNode.create(
+        memory_id=outcome.memory_id,
+        event_type=event_type,
+        source=outcome.source,
+        artifact_ref=outcome.artifact_ref,
+        payload={
+            "content_hash": outcome.content_hash,
+            "tags": outcome.tags,
+            "artifact_ref": outcome.artifact_ref,
+            "matched_memory_id": outcome.matched_memory_id,
+            "query_score": outcome.query_score,
+        },
+    )
+    event_storage.add_event(event)
+
+    # Update convenience fields for reinforcement
+    if event_type.startswith("REINFORCE"):
+        storage.increment_reinforce_count(outcome.memory_id)
+        storage.update_last_seen(outcome.memory_id, outcome.occurred_at)

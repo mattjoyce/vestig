@@ -23,3 +23,18 @@ hygiene:
   near_duplicate:
     enabled: true
     threshold: 0.92
+
+# M3: Time & Truth (TraceRank, temporal ranking)
+m3:
+  event_logging:
+    enabled: true
+
+  tracerank:
+    enabled: true
+    tau_days: 21          # Recency decay time constant (weeks)
+    cooldown_hours: 24    # Anti-burst window (1 day)
+    burst_discount: 0.2   # Weight for burst events (0-1)
+    k: 0.35               # TraceRank boost strength
+
+  retrieval:
+    include_expired: false  # Show deprecated memories by default?

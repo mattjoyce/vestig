@@ -8,6 +8,8 @@ from vestig.core.commitment import commit_memory
 from vestig.core.config import load_config
 from vestig.core.embeddings import EmbeddingEngine
 from vestig.core.storage import MemoryStorage
+from vestig.core.event_storage import MemoryEventStorage
+from vestig.core.tracerank import TraceRankConfig
 
 
 def validate_config(config: Dict[str, Any]) -> None:
@@ -37,15 +39,15 @@ def validate_config(config: Dict[str, Any]) -> None:
             raise ValueError(f"Missing required config key: {'.'.join(path)}.{key}")
 
 
-def build_runtime(config: Dict[str, Any]) -> Tuple[MemoryStorage, EmbeddingEngine]:
+def build_runtime(config: Dict[str, Any]) -> Tuple[MemoryStorage, EmbeddingEngine, MemoryEventStorage, TraceRankConfig]:
     """
-    Build storage and embedding engine from config.
+    Build storage, embedding engine, event storage, and TraceRank config from config.
 
     Args:
         config: Configuration dictionary
 
     Returns:
-        Tuple of (storage, embedding_engine)
+        Tuple of (storage, embedding_engine, event_storage, tracerank_config)
     """
     embedding_engine = EmbeddingEngine(
         model_name=config["embedding"]["model"],
@@ -53,13 +55,26 @@ def build_runtime(config: Dict[str, Any]) -> Tuple[MemoryStorage, EmbeddingEngin
         normalize=config["embedding"]["normalize"],
     )
     storage = MemoryStorage(config["storage"]["db_path"])
-    return storage, embedding_engine
+    event_storage = MemoryEventStorage(storage.conn)  # M3: Share DB connection
+
+    # M3: Build TraceRank config
+    m3_config = config.get("m3", {})
+    tracerank_cfg = m3_config.get("tracerank", {})
+    tracerank_config = TraceRankConfig(
+        enabled=tracerank_cfg.get("enabled", True),
+        tau_days=tracerank_cfg.get("tau_days", 21.0),
+        cooldown_hours=tracerank_cfg.get("cooldown_hours", 24.0),
+        burst_discount=tracerank_cfg.get("burst_discount", 0.2),
+        k=tracerank_cfg.get("k", 0.35),
+    )
+
+    return storage, embedding_engine, event_storage, tracerank_config
 
 
 def cmd_add(args):
     """Handle 'vestig memory add' command"""
     config = args.config_dict
-    storage, embedding_engine = build_runtime(config)
+    storage, embedding_engine, event_storage, _ = build_runtime(config)
 
     # Parse tags if provided
     tags = None
@@ -74,6 +89,7 @@ def cmd_add(args):
             source=args.source,
             hygiene_config=config.get("hygiene", {}),
             tags=tags,
+            event_storage=event_storage,  # M3: Enable event logging
         )
 
         # Display outcome info
@@ -100,7 +116,7 @@ def cmd_search(args):
     from vestig.core.retrieval import format_search_results, search_memories
 
     config = args.config_dict
-    storage, embedding_engine = build_runtime(config)
+    storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)
 
     try:
         results = search_memories(
@@ -108,6 +124,8 @@ def cmd_search(args):
             storage=storage,
             embedding_engine=embedding_engine,
             limit=args.limit,
+            event_storage=event_storage,
+            tracerank_config=tracerank_config,
         )
         print(format_search_results(results))
     finally:
@@ -119,7 +137,7 @@ def cmd_recall(args):
     from vestig.core.retrieval import format_recall_results, search_memories
 
     config = args.config_dict
-    storage, embedding_engine = build_runtime(config)
+    storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)
 
     try:
         results = search_memories(
@@ -127,6 +145,8 @@ def cmd_recall(args):
             storage=storage,
             embedding_engine=embedding_engine,
             limit=args.limit,
+            event_storage=event_storage,
+            tracerank_config=tracerank_config,
         )
         print(format_recall_results(results))
     finally:

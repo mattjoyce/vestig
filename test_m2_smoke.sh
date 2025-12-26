@@ -102,12 +102,12 @@ echo ""
 echo "Test 8: Recall formatting matches M2 contract"
 vestig memory recall "auth" --limit 1 > /tmp/recall_output.txt
 
-# Check for format: [mem_...] (source=..., created=..., score=...)
-if grep -qE '\[mem_[a-f0-9-]+\] \(source=.*, created=.*, score=[0-9.]+\)' /tmp/recall_output.txt; then
-    echo "✓ Recall format matches contract"
+# Check for format: [mem_...] (source=..., created=..., score=...) - with optional M3 hints
+if grep -qE '\[mem_[a-f0-9-]+\] \(source=.*, created=.*, score=[0-9.]+.*\)' /tmp/recall_output.txt; then
+    echo "✓ Recall format matches contract (M2 fields present, M3 hints allowed)"
 else
     echo "✗ FAIL: Recall format does not match contract"
-    echo "Expected: [mem_...] (source=..., created=..., score=...)"
+    echo "Expected: [mem_...] (source=..., created=..., score=...) with optional M3 fields"
     echo "Got:"
     cat /tmp/recall_output.txt
     exit 1
