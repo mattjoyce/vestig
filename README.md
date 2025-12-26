@@ -71,7 +71,7 @@ vestig memory recall "jwt expiry" --limit 5
 ```bash
 ruff format .
 ruff check .
-./demo_m1.sh
+bash demos/demo_m1.sh
 ```
 
 > Note: we bias toward **rapid iteration**. It is OK to fail hard during development,
@@ -114,13 +114,12 @@ M1 can use brute-force retrieval over a modest corpus. We optimise later.
 Typical structure (may evolve slightly as we implement):
 
 - `src/vestig/` — implementation package
-- `tests/` — smoke / integration tests (keep them pragmatic)
+- `test/` — test configuration files (config.yaml, prompts.yaml)
+- `tests/` — test scripts and smoke tests
+- `demos/` — demo scripts (demo_m1.sh, demo_m4.sh, etc.)
+- `benchmarks/` — performance benchmarking scripts
 - `data/` — local sqlite DB (gitignored)
-- `config/` — config defaults / examples (if used)
-- `demo_m1.sh` — end-to-end demo for M1
-- `PLAN.md` — progressive maturation roadmap
 - `SPEC.md` — technical spec / contract
-- `research/` — preserved research artifacts (historical)
 
 ---
 
