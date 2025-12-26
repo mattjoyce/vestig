@@ -1,0 +1,5 @@
+PostgreSQL queries on the user_events table are taking over 5 seconds due to missing indexes.
+Bob recommended creating a B-tree index on (user_id, event_timestamp) for optimization.
+Redis caching strategy should use 5-minute TTL for event queries to prevent stale reads.
+Alice will configure PgBouncer with a pool size of 20 connections during tonight's maintenance.
+The API timeout was increased from 30 to 60 seconds to handle slower database queries.
