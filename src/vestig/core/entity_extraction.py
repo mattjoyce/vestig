@@ -387,6 +387,9 @@ def extract_and_store_entities(
     template = prompts.get("extract_entities", "")
     prompt_hash = compute_prompt_hash(template)
 
+    # Compute content hash for determinism tracking
+    content_hash = hashlib.sha256(content.encode()).hexdigest()[:16]
+
     # Import here to avoid circular dependency
     from vestig.core.event_storage import MemoryEventStorage
 
@@ -400,6 +403,7 @@ def extract_and_store_entities(
         payload={
             "model_name": model,
             "prompt_hash": prompt_hash,
+            "content_hash": content_hash,
             "entity_count": len(extracted),
             "min_confidence": min_confidence,
         },

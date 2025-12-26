@@ -208,6 +208,14 @@ class MemoryStorage:
             ON edges(t_expired) WHERE t_expired IS NOT NULL
             """
         )
+        # M4: UNIQUE constraint to prevent duplicate edges (belt and braces)
+        self.conn.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_edges_unique
+            ON edges(from_node, to_node, edge_type)
+            WHERE t_expired IS NULL
+            """
+        )
 
         self.conn.commit()
 
