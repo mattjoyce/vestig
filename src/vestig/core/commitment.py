@@ -16,7 +16,11 @@ DEFAULT_HYGIENE = {
     "max_chars": 4000,
     "normalize_whitespace": True,
     "reject_exact_duplicates": True,
-    "near_duplicate": {"enabled": True, "threshold": 0.92},
+    "near_duplicate": {
+        "enabled": True,
+        "threshold": 0.92,
+        "skip_manual_source": True,  # M3 FIX #6: Skip expensive scan for CLI adds
+    },
 }
 
 
@@ -165,7 +169,14 @@ def commit_memory(
     matched_id = None
     matched_score = None
 
-    if near_dup_config.get("enabled", True):
+    # M3 FIX #6: Performance optimization - skip near-dupe for manual adds
+    # Manual CLI adds are intentional, so we trust the user and avoid expensive scan
+    skip_manual = near_dup_config.get("skip_manual_source", True)
+    should_check_near_dup = near_dup_config.get("enabled", True)
+
+    if should_check_near_dup and (not skip_manual or source != "manual"):
+        # TODO(M4): Optimize with time-window (last 30 days) or rolling window (last 1000)
+        # For now: full scan for hook/batch/import sources
         all_memories = storage.get_all_memories()
 
         if all_memories:
@@ -181,74 +192,78 @@ def commit_memory(
 
             # Check if near-duplicate
             if max_score >= near_dup_threshold:
-                # Mark as near-duplicate in metadata
+                # M3 FIX: Don't create new memory - reinforce canonical instead
                 matched_id = most_similar_id
                 matched_score = max_score
-                duplicate_metadata = {
-                    "duplicate_of": most_similar_id,
-                    "duplicate_score": round(max_score, 4),
-                }
 
-    # Generate ID
-    memory_id = f"mem_{uuid.uuid4()}"
+    # M3 FIX: Atomic transaction for store + event + cache updates
+    # All DB writes happen in one transaction to prevent partial state
+    with storage.conn:
+        # M3 FIX (Option A): Near-dupe reinforces canonical, doesn't create new memory
+        if matched_id is not None:
+            # Near-duplicate detected - reinforce canonical memory, don't insert new
+            outcome = CommitOutcome.near_dupe(
+                memory_id=matched_id,  # Return canonical ID, not new ID
+                matched_memory_id=matched_id,
+                query_score=matched_score,
+                content_hash=content_hash,
+                source=source,
+                tags=tags,
+                artifact_ref=artifact_ref,
+                thresholds=thresholds,
+            )
+        else:
+            # Not a near-duplicate - proceed with normal flow
+            # Generate ID
+            memory_id = f"mem_{uuid.uuid4()}"
 
-    # Create memory node
-    node = MemoryNode.create(
-        memory_id=memory_id,
-        content=normalized,
-        embedding=embedding,
-        source=source,
-        tags=tags,
-    )
+            # Create memory node
+            # M3 FIX: Pass pre-computed content_hash to avoid duplication
+            node = MemoryNode.create(
+                memory_id=memory_id,
+                content=normalized,
+                embedding=embedding,
+                source=source,
+                tags=tags,
+                content_hash=content_hash,
+            )
 
-    # Add near-duplicate metadata if detected
-    if duplicate_metadata:
-        node.metadata.update(duplicate_metadata)
+            # Store (exact dedupe handled in storage layer)
+            stored_id = storage.store_memory(node)
 
-    # Store (exact dedupe handled in storage layer)
-    stored_id = storage.store_memory(node)
+            # Build outcome based on what happened
+            if stored_id != memory_id:
+                # Exact duplicate detected by storage layer (hash match)
+                outcome = CommitOutcome.exact_dupe(
+                    memory_id=stored_id,
+                    content_hash=content_hash,
+                    source=source,
+                    tags=tags,
+                    artifact_ref=artifact_ref,
+                    thresholds=thresholds,
+                )
+            else:
+                # New memory inserted
+                outcome = CommitOutcome.inserted_new(
+                    memory_id=stored_id,
+                    content_hash=content_hash,
+                    source=source,
+                    tags=tags,
+                    artifact_ref=artifact_ref,
+                    thresholds=thresholds,
+                )
 
-    # Build outcome based on what happened
-    if stored_id != memory_id:
-        # Exact duplicate detected by storage layer (hash match)
-        outcome = CommitOutcome.exact_dupe(
-            memory_id=stored_id,
-            content_hash=content_hash,
-            source=source,
-            tags=tags,
-            artifact_ref=artifact_ref,
-            thresholds=thresholds,
-        )
-    elif matched_id is not None:
-        # Near-duplicate detected
-        outcome = CommitOutcome.near_dupe(
-            memory_id=stored_id,
-            matched_memory_id=matched_id,
-            query_score=matched_score,
-            content_hash=content_hash,
-            source=source,
-            tags=tags,
-            artifact_ref=artifact_ref,
-            thresholds=thresholds,
-        )
-    else:
-        # New memory inserted
-        outcome = CommitOutcome.inserted_new(
-            memory_id=stored_id,
-            content_hash=content_hash,
-            source=source,
-            tags=tags,
-            artifact_ref=artifact_ref,
-            thresholds=thresholds,
-        )
+        # M3: Log event if event_storage provided
+        # (Must happen inside transaction before commit)
+        if event_storage:
+            _log_commit_event(outcome, storage, event_storage)
+
+        # Transaction commits here automatically (context manager)
 
     # Invoke hook if provided (M2→M3 bridge)
+    # (Happens after successful commit)
     if on_commit:
         on_commit(outcome)
-
-    # M3: Log event if event_storage provided
-    if event_storage:
-        _log_commit_event(outcome, storage, event_storage)
 
     return outcome
 

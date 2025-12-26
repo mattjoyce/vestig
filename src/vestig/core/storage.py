@@ -21,6 +21,10 @@ class MemoryStorage:
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.conn = sqlite3.connect(str(self.db_path))
+
+        # M3 FIX: Enable foreign key constraints (SQLite doesn't enforce by default)
+        self.conn.execute("PRAGMA foreign_keys = ON")
+
         self._init_schema()
 
     def _init_schema(self):
@@ -45,13 +49,14 @@ class MemoryStorage:
         if "content_hash" not in columns:
             self.conn.execute("ALTER TABLE memories ADD COLUMN content_hash TEXT")
 
-            # Create unique index on content_hash for dedupe
-            self.conn.execute(
-                """
-                CREATE UNIQUE INDEX IF NOT EXISTS idx_content_hash
-                ON memories(content_hash)
-                """
-            )
+        # M3 FIX: Always ensure unique index exists (even if column already present)
+        # Create unique index on content_hash for dedupe
+        self.conn.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_content_hash
+            ON memories(content_hash)
+            """
+        )
 
         # M3: Add temporal columns (check first, then ALTER TABLE)
         cursor = self.conn.execute("PRAGMA table_info(memories)")
@@ -167,7 +172,7 @@ class MemoryStorage:
                 node.reinforce_count,
             ),
         )
-        self.conn.commit()
+        # NOTE: Caller manages transaction commit
         return node.id
 
     def get_memory(self, memory_id: str) -> Optional[MemoryNode]:
@@ -259,7 +264,7 @@ class MemoryStorage:
             "UPDATE memories SET reinforce_count = reinforce_count + 1 WHERE id = ?",
             (memory_id,),
         )
-        self.conn.commit()
+        # NOTE: Caller manages transaction commit
 
     def update_last_seen(self, memory_id: str, timestamp: str) -> None:
         """Update last_seen_at timestamp"""
@@ -267,7 +272,7 @@ class MemoryStorage:
             "UPDATE memories SET last_seen_at = ? WHERE id = ?",
             (timestamp, memory_id),
         )
-        self.conn.commit()
+        # NOTE: Caller manages transaction commit
 
     def deprecate_memory(
         self, memory_id: str, t_invalid: Optional[str] = None
@@ -284,7 +289,7 @@ class MemoryStorage:
             """,
             (now, t_invalid, memory_id),
         )
-        self.conn.commit()
+        # NOTE: Caller manages transaction commit
 
     def get_active_memories(self) -> List[MemoryNode]:
         """Get all non-expired memories (for retrieval)"""

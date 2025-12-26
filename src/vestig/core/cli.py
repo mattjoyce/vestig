@@ -177,6 +177,53 @@ def cmd_show(args):
         storage.close()
 
 
+def cmd_deprecate(args):
+    """Handle 'vestig memory deprecate' command"""
+    from vestig.core.models import EventNode
+
+    config = args.config_dict
+    storage, _, event_storage, _ = build_runtime(config)
+
+    try:
+        # Verify memory exists
+        memory = storage.get_memory(args.id)
+        if memory is None:
+            print(f"Error: Memory not found: {args.id}", file=sys.stderr)
+            sys.exit(1)
+
+        # Check if already deprecated
+        if memory.t_expired:
+            print(f"Warning: Memory {args.id} is already deprecated (t_expired={memory.t_expired})", file=sys.stderr)
+            sys.exit(1)
+
+        # M3 FIX #5: Atomic transaction for event + deprecation
+        with storage.conn:
+            # Create DEPRECATE event
+            event = EventNode.create(
+                memory_id=args.id,
+                event_type="DEPRECATE",
+                source="manual",
+                payload={
+                    "reason": args.reason or "Manual deprecation",
+                    "t_invalid": args.t_invalid,
+                }
+            )
+            event_storage.add_event(event)
+
+            # Mark memory as deprecated
+            storage.deprecate_memory(args.id, t_invalid=args.t_invalid)
+
+            # Transaction commits here automatically
+
+        print(f"Memory {args.id} deprecated successfully")
+
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    finally:
+        storage.close()
+
+
 def cmd_memory(args):
     """Handle 'vestig memory' subcommand routing"""
     # This is just a router - actual work done by add/search/recall/show
@@ -240,6 +287,19 @@ def main():
     parser_show = memory_subparsers.add_parser("show", help="Show memory details by ID")
     parser_show.add_argument("id", help="Memory ID")
     parser_show.set_defaults(func=cmd_show)
+
+    # vestig memory deprecate
+    parser_deprecate = memory_subparsers.add_parser(
+        "deprecate", help="Mark memory as deprecated"
+    )
+    parser_deprecate.add_argument("id", help="Memory ID to deprecate")
+    parser_deprecate.add_argument(
+        "--reason", help="Reason for deprecation (stored in event payload)"
+    )
+    parser_deprecate.add_argument(
+        "--t-invalid", help="When fact became invalid (ISO 8601 timestamp)"
+    )
+    parser_deprecate.set_defaults(func=cmd_deprecate)
 
     # Set default for memory command (show help if no subcommand)
     parser_memory.set_defaults(func=cmd_memory, memory_parser=parser_memory)

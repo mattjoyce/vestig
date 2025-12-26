@@ -46,7 +46,7 @@ class MemoryEventStorage:
                 json.dumps(event.payload),
             ),
         )
-        self.conn.commit()
+        # NOTE: Caller manages transaction commit
         return event.event_id
 
     def get_events_for_memory(self, memory_id: str, limit: int = 100) -> List[EventNode]:

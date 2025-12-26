@@ -37,6 +37,7 @@ class MemoryNode:
         embedding: List[float],
         source: str = "manual",
         tags: List[str] = None,
+        content_hash: Optional[str] = None,  # M3 FIX: Allow passing pre-computed hash
     ) -> "MemoryNode":
         """
         Create a new memory node with M3 temporal initialization.
@@ -47,12 +48,14 @@ class MemoryNode:
             embedding: Content embedding vector
             source: Source of the memory (manual, hook, batch)
             tags: Optional tags for filtering
+            content_hash: Pre-computed content hash (optional, computed if not provided)
 
         Returns:
             MemoryNode instance
         """
-        # Compute content hash for dedupe
-        content_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
+        # Compute content hash if not provided (backward compatibility)
+        if content_hash is None:
+            content_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
 
         # Build metadata
         metadata = {"source": source}
