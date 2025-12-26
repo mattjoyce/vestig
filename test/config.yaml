@@ -38,11 +38,15 @@ m3:
 m4:
   entity_types:
     allowed_types:
-      - PERSON
-      - ORG
-      - SYSTEM
-      - PROJECT
-      - PLACE
+      - PERSON      # People, developers, users
+      - ORG         # Organizations, companies, teams
+      - SYSTEM      # Software systems, services, applications
+      - PROJECT     # Projects, repositories, codebases
+      - PLACE       # Locations, servers, environments
+      - SKILL       # Programming languages, methodologies, techniques
+      - TOOL        # Tools, libraries, frameworks, packages
+      - FILE        # Files, paths, configurations, documents
+      - CONCEPT     # Abstract concepts, patterns, principles, ideas
 
   entity_extraction:
     enabled: true

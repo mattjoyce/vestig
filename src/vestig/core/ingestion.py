@@ -24,17 +24,35 @@ class ExtractedMemory:
     content: str
     confidence: float
     rationale: str
+    entities: list[tuple[str, str, float, str]]  # (name, type, confidence, evidence)
 
 
 # Pydantic schemas for LLM structured output
+class EntitySchema(BaseModel):
+    """Schema for an extracted entity"""
+
+    name: str = Field(description="Entity name or identifier")
+    type: str = Field(
+        description="Entity type: PERSON, ORG, SYSTEM, PROJECT, PLACE, SKILL, TOOL, FILE, or CONCEPT"
+    )
+    confidence: float = Field(ge=0.0, le=1.0, description="Confidence score 0.0-1.0")
+    evidence: str = Field(
+        description="Text snippet from memory that supports this entity"
+    )
+
+
 class MemorySchema(BaseModel):
-    """Schema for a single memory"""
+    """Schema for a single memory with entities"""
 
     content: str = Field(
         description="The full memory text with enough context to be self-contained"
     )
     confidence: float = Field(ge=0.0, le=1.0, description="Confidence score 0.0-1.0")
     rationale: str = Field(description="Brief explanation of why this is worth remembering")
+    entities: list[EntitySchema] = Field(
+        default_factory=list,
+        description="Entities mentioned in this memory (people, orgs, systems, projects, places)",
+    )
 
 
 class MemoryExtractionResult(BaseModel):
@@ -155,11 +173,23 @@ def extract_memories_from_chunk(
         if not content or len(content) < 10:
             continue
 
+        # Extract entities from schema
+        entities = [
+            (
+                entity.name.strip(),
+                entity.type.strip().upper(),
+                entity.confidence,
+                entity.evidence.strip(),
+            )
+            for entity in memory_schema.entities
+        ]
+
         memories.append(
             ExtractedMemory(
                 content=content,
                 confidence=confidence,
                 rationale=rationale,
+                entities=entities,
             )
         )
 
@@ -248,6 +278,15 @@ def ingest_document(
                     )
                     print(f"      Confidence: {memory.confidence:.2f}")
                     print(f"      Rationale: {memory.rationale}")
+                    if memory.entities:
+                        print(f"      Entities ({len(memory.entities)}):")
+                        for name, entity_type, conf, evidence in memory.entities:
+                            evid_str = (
+                                f', evidence="{evidence[:50]}..."'
+                                if len(evidence) > 50
+                                else f', evidence="{evidence}"'
+                            )
+                            print(f"        - {name} ({entity_type}, confidence={conf:.2f}{evid_str})")
 
             # Commit each memory
             for idx, memory in enumerate(extracted, 1):
@@ -260,6 +299,7 @@ def ingest_document(
                         event_storage=event_storage,
                         m4_config=m4_config,
                         artifact_ref=path.name,
+                        pre_extracted_entities=memory.entities if memory.entities else None,
                     )
 
                     if outcome.outcome == "INSERTED_NEW":
