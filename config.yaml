@@ -24,6 +24,13 @@ hygiene:
     enabled: true
     threshold: 0.92
 
+# Document ingestion (LLM-based memory extraction)
+ingestion:
+  model: claude-sonnet-4.5          # LLM for memory extraction
+  chunk_size: 20000                 # Characters per chunk (≈5k tokens)
+  chunk_overlap: 500                # Overlap for context continuity
+  min_confidence: 0.6               # Minimum confidence threshold
+
 # M3: Time & Truth (TraceRank, temporal ranking)
 m3:
   event_logging:

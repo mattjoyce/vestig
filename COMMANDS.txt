@@ -1,0 +1,38 @@
+# VESTIG INGESTION - EXACT COMMANDS
+
+# 1. Set API key
+export ANTHROPIC_API_KEY="sk-ant-..."
+
+# 2. Activate environment
+source ~/Environments/vestig/bin/activate
+
+# 3. Ingest session file (creates test_vestig.db)
+# Model now comes from config (config_test.yaml: ingestion.model)
+python -m vestig.core.cli --config config_test.yaml ingest your_session.txt
+
+# 4. Search memories
+python -m vestig.core.cli --config config_test.yaml memory search "your query here"
+
+# 5. Quick stats
+sqlite3 test_vestig.db "SELECT COUNT(*) as memories FROM memories;"
+sqlite3 test_vestig.db "SELECT COUNT(*) as entities FROM entities;"
+sqlite3 test_vestig.db "SELECT COUNT(*) as edges FROM edges;"
+
+# 6. Show entities
+sqlite3 test_vestig.db "SELECT canonical_name, entity_type FROM entities;"
+
+# 7. Show memories with entities
+sqlite3 test_vestig.db "
+  SELECT
+    substr(m.content, 1, 80) as memory,
+    e.canonical_name as entity,
+    e.entity_type as type
+  FROM edges ed
+  JOIN memories m ON ed.from_node = m.id
+  JOIN entities e ON ed.to_node = e.id
+  WHERE ed.edge_type = 'MENTIONS'
+  LIMIT 20;
+"
+
+# 8. Cleanup
+rm test_vestig.db

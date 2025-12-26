@@ -1,19 +1,20 @@
 """Document ingestion with LLM-based memory extraction"""
 
-import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import Any
 
-from vestig.core.entity_extraction import (
-    load_prompts,
-    substitute_tokens,
-    call_llm,
-)
+from pydantic import BaseModel, Field
+
 from vestig.core.commitment import commit_memory
 from vestig.core.embeddings import EmbeddingEngine
-from vestig.core.storage import MemoryStorage
+from vestig.core.entity_extraction import (
+    call_llm,
+    load_prompts,
+    substitute_tokens,
+)
 from vestig.core.event_storage import MemoryEventStorage
+from vestig.core.storage import MemoryStorage
 
 
 @dataclass
@@ -23,6 +24,19 @@ class ExtractedMemory:
     content: str
     confidence: float
     rationale: str
+
+
+# Pydantic schemas for LLM structured output
+class MemorySchema(BaseModel):
+    """Schema for a single memory"""
+    content: str = Field(description="The full memory text with enough context to be self-contained")
+    confidence: float = Field(ge=0.0, le=1.0, description="Confidence score 0.0-1.0")
+    rationale: str = Field(description="Brief explanation of why this is worth remembering")
+
+
+class MemoryExtractionResult(BaseModel):
+    """Schema for memory extraction response"""
+    memories: list[MemorySchema] = Field(description="List of extracted memories")
 
 
 @dataclass
@@ -35,10 +49,10 @@ class IngestionResult:
     memories_committed: int
     memories_deduplicated: int
     entities_created: int
-    errors: List[str]
+    errors: list[str]
 
 
-def chunk_text_by_chars(text: str, chunk_size: int = 20000, overlap: int = 500) -> List[str]:
+def chunk_text_by_chars(text: str, chunk_size: int = 20000, overlap: int = 500) -> list[str]:
     """
     Chunk text by character count with overlap.
 
@@ -90,9 +104,9 @@ def chunk_text_by_chars(text: str, chunk_size: int = 20000, overlap: int = 500) 
 
 def extract_memories_from_chunk(
     chunk: str,
-    model: str = "claude-sonnet-4.5",
+    model: str,
     min_confidence: float = 0.6,
-) -> List[ExtractedMemory]:
+) -> list[ExtractedMemory]:
     """
     Extract memories from a text chunk using LLM.
 
@@ -118,55 +132,24 @@ def extract_memories_from_chunk(
 
     prompt = substitute_tokens(template, content=chunk)
 
-    # Call LLM
+    # Call LLM with schema for structured output
     try:
-        response = call_llm(prompt, model=model)
+        result = call_llm(prompt, model=model, schema=MemoryExtractionResult)
     except Exception as e:
         raise ValueError(f"LLM call failed: {e}")
 
-    # Parse JSON response
-    try:
-        result = json.loads(response)
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Invalid JSON response from LLM: {e}\nResponse: {response[:500]}")
-
-    # Validate structure
-    if "memories" not in result:
-        raise ValueError("Missing 'memories' key in extraction result")
-
-    if not isinstance(result["memories"], list):
-        raise ValueError("'memories' must be a list")
-
-    # Parse and validate memories
+    # Convert schema response to ExtractedMemory objects
     memories = []
-    for i, mem_dict in enumerate(result["memories"]):
-        # Validate required fields
-        if "content" not in mem_dict:
-            print(f"Warning: Memory {i} missing 'content' field, skipping")
-            continue
-        if "confidence" not in mem_dict:
-            print(f"Warning: Memory {i} missing 'confidence' field, skipping")
-            continue
-
-        content = str(mem_dict["content"]).strip()
-        rationale = str(mem_dict.get("rationale", "")).strip()
-
-        # Validate confidence
-        try:
-            confidence = float(mem_dict["confidence"])
-        except (ValueError, TypeError):
-            print(f"Warning: Memory {i} has invalid confidence, skipping")
-            continue
-
-        if not (0.0 <= confidence <= 1.0):
-            print(f"Warning: Memory {i} confidence out of range, skipping")
-            continue
+    for memory_schema in result.memories:
+        content = memory_schema.content.strip()
+        confidence = memory_schema.confidence
+        rationale = memory_schema.rationale.strip()
 
         # Apply confidence threshold
         if confidence < min_confidence:
             continue
 
-        # Skip empty content
+        # Skip empty or too-short content
         if not content or len(content) < 10:
             continue
 
@@ -185,11 +168,11 @@ def ingest_document(
     document_path: str,
     storage: MemoryStorage,
     embedding_engine: EmbeddingEngine,
-    event_storage: Optional[MemoryEventStorage] = None,
-    m4_config: Optional[Dict[str, Any]] = None,
+    extraction_model: str,
+    event_storage: MemoryEventStorage | None = None,
+    m4_config: dict[str, Any] | None = None,
     chunk_size: int = 20000,
     chunk_overlap: int = 500,
-    extraction_model: str = "claude-sonnet-4.5",
     min_confidence: float = 0.6,
     source: str = "document_ingest",
 ) -> IngestionResult:

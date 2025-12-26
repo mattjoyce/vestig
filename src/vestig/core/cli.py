@@ -2,17 +2,17 @@
 
 import argparse
 import sys
-from typing import Dict, Any, Tuple
+from typing import Any
 
 from vestig.core.commitment import commit_memory
 from vestig.core.config import load_config
 from vestig.core.embeddings import EmbeddingEngine
-from vestig.core.storage import MemoryStorage
 from vestig.core.event_storage import MemoryEventStorage
+from vestig.core.storage import MemoryStorage
 from vestig.core.tracerank import TraceRankConfig
 
 
-def validate_config(config: Dict[str, Any]) -> None:
+def validate_config(config: dict[str, Any]) -> None:
     """
     Validate required config keys.
 
@@ -39,7 +39,7 @@ def validate_config(config: Dict[str, Any]) -> None:
             raise ValueError(f"Missing required config key: {'.'.join(path)}.{key}")
 
 
-def build_runtime(config: Dict[str, Any]) -> Tuple[MemoryStorage, EmbeddingEngine, MemoryEventStorage, TraceRankConfig]:
+def build_runtime(config: dict[str, Any]) -> tuple[MemoryStorage, EmbeddingEngine, MemoryEventStorage, TraceRankConfig]:
     """
     Build storage, embedding engine, event storage, and TraceRank config from config.
 
@@ -242,6 +242,16 @@ def cmd_ingest(args):
     # Get M4 config for entity extraction
     m4_config = config.get("m4", {})
 
+    # Get ingestion config with CLI overrides
+    ingestion_config = config.get("ingestion", {})
+    model = args.model if args.model else ingestion_config.get("model")
+    chunk_size = args.chunk_size if args.chunk_size else ingestion_config.get("chunk_size", 20000)
+    chunk_overlap = args.chunk_overlap if args.chunk_overlap else ingestion_config.get("chunk_overlap", 500)
+    min_confidence = args.min_confidence if args.min_confidence is not None else ingestion_config.get("min_confidence", 0.6)
+
+    if not model:
+        raise ValueError("Model must be specified in config (ingestion.model) or via --model argument")
+
     try:
         result = ingest_document(
             document_path=args.document,
@@ -249,10 +259,10 @@ def cmd_ingest(args):
             embedding_engine=embedding_engine,
             event_storage=event_storage,
             m4_config=m4_config,
-            chunk_size=args.chunk_size,
-            chunk_overlap=args.chunk_overlap,
-            extraction_model=args.model,
-            min_confidence=args.min_confidence,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            extraction_model=model,
+            min_confidence=min_confidence,
             source="document_ingest",
         )
 
@@ -306,25 +316,21 @@ def main():
     parser_ingest.add_argument(
         "--chunk-size",
         type=int,
-        default=20000,
-        help="Characters per chunk (default: 20000 ≈ 5k tokens)",
+        help="Characters per chunk (overrides config, default from config or 20000)",
     )
     parser_ingest.add_argument(
         "--chunk-overlap",
         type=int,
-        default=500,
-        help="Character overlap between chunks (default: 500)",
+        help="Character overlap between chunks (overrides config, default from config or 500)",
     )
     parser_ingest.add_argument(
         "--model",
-        default="claude-sonnet-4.5",
-        help="LLM model for extraction (default: claude-sonnet-4.5)",
+        help="LLM model for extraction (overrides config, required if not in config)",
     )
     parser_ingest.add_argument(
         "--min-confidence",
         type=float,
-        default=0.6,
-        help="Minimum confidence for extracted memories (default: 0.6)",
+        help="Minimum confidence for extracted memories (overrides config, default from config or 0.6)",
     )
     parser_ingest.set_defaults(func=cmd_ingest)
 

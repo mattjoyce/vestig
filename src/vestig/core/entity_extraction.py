@@ -5,9 +5,10 @@ import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Dict, Any
+from typing import Any
 
 import yaml
+from pydantic import BaseModel, Field
 
 
 @dataclass
@@ -20,7 +21,21 @@ class ExtractedEntity:
     evidence: str
 
 
-def load_prompts(prompts_path: str = "prompts.yaml") -> Dict[str, str]:
+# Pydantic schemas for LLM structured output
+class EntitySchema(BaseModel):
+    """Schema for a single entity"""
+    name: str = Field(description="Entity name")
+    type: str = Field(description="Entity type (PERSON, ORG, SYSTEM, PROJECT, PLACE)")
+    confidence: float = Field(ge=0.0, le=1.0, description="Confidence score 0.0-1.0")
+    evidence: str = Field(description="Evidence text supporting this entity")
+
+
+class EntityExtractionResult(BaseModel):
+    """Schema for entity extraction response"""
+    entities: list[EntitySchema] = Field(description="List of extracted entities")
+
+
+def load_prompts(prompts_path: str = "prompts.yaml") -> dict[str, str]:
     """Load prompts from YAML file"""
     path = Path(prompts_path)
     if not path.exists():
@@ -54,68 +69,53 @@ def substitute_tokens(template: str, **kwargs) -> str:
     return result
 
 
-def call_llm(prompt: str, model: str = "claude-sonnet-4.5") -> str:
+def call_llm(prompt: str, model: str, schema: type[BaseModel] | None = None):
     """
-    Call LLM with prompt using Anthropic SDK.
+    Call LLM with prompt using llm module.
 
     Args:
         prompt: Full prompt text
-        model: Model name (e.g., "claude-sonnet-4.5")
+        model: Model name (e.g., "claude-haiku-4.5")
+        schema: Optional Pydantic model for structured output
 
     Returns:
-        LLM response text
+        If schema provided: Pydantic model instance
+        If no schema: str (response text)
 
     Raises:
-        ImportError: If anthropic SDK not installed
+        ImportError: If llm module not installed
         Exception: If LLM call fails
     """
     try:
-        import anthropic
+        import llm
     except ImportError:
         raise ImportError(
-            "anthropic SDK not installed. Install with: pip install anthropic"
+            "llm module not installed. Install with: pip install llm"
         )
-
-    # Get API key from environment
-    import os
-
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise ValueError(
-            "ANTHROPIC_API_KEY environment variable not set. "
-            "Get your API key from https://console.anthropic.com/"
-        )
-
-    # Map model name to Anthropic model ID
-    model_map = {
-        "claude-sonnet-4.5": "claude-sonnet-4-20250514",
-        "claude-sonnet-4": "claude-sonnet-4-20250514",
-        "claude-opus-4": "claude-opus-4-20250514",
-        "claude-haiku-4": "claude-4-haiku-20250107",
-    }
-
-    model_id = model_map.get(model, model)
-
-    # Call Anthropic API
-    client = anthropic.Anthropic(api_key=api_key)
 
     try:
-        message = client.messages.create(
-            model=model_id,
-            max_tokens=1024,
-            messages=[{"role": "user", "content": prompt}],
-        )
+        # Get model and call it
+        llm_model = llm.get_model(model)
 
-        # Extract text from response
-        return message.content[0].text
+        if schema:
+            # Use structured output with schema
+            response = llm_model.prompt(prompt, schema=schema)
+            # Parse JSON response and validate with schema
+            json_text = response.text()
+            data = json.loads(json_text)
+            return schema.model_validate(data)
+        else:
+            # Return raw text
+            response = llm_model.prompt(prompt)
+            return response.text()
 
     except Exception as e:
         raise Exception(f"LLM call failed: {e}")
 
 
 def validate_extraction_result(
-    result: Dict[str, Any], allowed_types: List[str]
-) -> List[ExtractedEntity]:
+    result: dict[str, Any], allowed_types: list[str]
+) -> list[ExtractedEntity]:
     """
     Validate and parse LLM extraction result.
 
@@ -190,7 +190,7 @@ def validate_extraction_result(
     return entities
 
 
-def apply_heuristic_cleanup(entities: List[ExtractedEntity]) -> List[ExtractedEntity]:
+def apply_heuristic_cleanup(entities: list[ExtractedEntity]) -> list[ExtractedEntity]:
     """
     Apply optional heuristic cleanup to extracted entities.
 
@@ -254,11 +254,11 @@ def apply_heuristic_cleanup(entities: List[ExtractedEntity]) -> List[ExtractedEn
 
 def extract_entities_llm(
     content: str,
-    allowed_types: List[str],
-    model: str = "claude-sonnet-4.5",
+    allowed_types: list[str],
+    model: str,
     apply_heuristics: bool = True,
     prompts_path: str = "prompts.yaml",
-) -> List[ExtractedEntity]:
+) -> list[ExtractedEntity]:
     """
     Extract entities from content using LLM.
 
@@ -290,21 +290,31 @@ def extract_entities_llm(
         content=content,
     )
 
-    # Call LLM
+    # Call LLM with schema for structured output
     try:
-        response = call_llm(prompt, model=model)
+        result = call_llm(prompt, model=model, schema=EntityExtractionResult)
     except NotImplementedError:
         # For testing purposes, return empty list if LLM not implemented
         return []
+    except Exception as e:
+        raise ValueError(f"LLM extraction failed: {e}")
 
-    # Parse JSON response
-    try:
-        result = json.loads(response)
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Invalid JSON response from LLM: {e}")
+    # Convert schema response to ExtractedEntity objects
+    entities = []
+    for entity_schema in result.entities:
+        # Validate type against allowed types
+        entity_type_upper = entity_schema.type.upper()
+        if entity_type_upper not in allowed_types:
+            continue  # Skip invalid types
 
-    # Validate extraction result
-    entities = validate_extraction_result(result, allowed_types)
+        entities.append(
+            ExtractedEntity(
+                name=entity_schema.name.strip(),
+                entity_type=entity_type_upper,
+                confidence=entity_schema.confidence,
+                evidence=entity_schema.evidence.strip()[:200],  # Truncate evidence
+            )
+        )
 
     # Apply optional heuristic cleanup
     if apply_heuristics:
@@ -330,9 +340,9 @@ def extract_and_store_entities(
     content: str,
     memory_id: str,
     storage,  # MemoryStorage instance
-    config: Dict[str, Any],
-    artifact_ref: Optional[str] = None,
-) -> List[tuple]:
+    config: dict[str, Any],
+    artifact_ref: str | None = None,
+) -> list[tuple]:
     """
     Extract entities from content and store with deduplication.
 
@@ -363,7 +373,10 @@ def extract_and_store_entities(
     llm_config = config.get("entity_extraction", {}).get("llm", {})
     heuristics_config = config.get("entity_extraction", {}).get("heuristics", {})
 
-    model = llm_config.get("model", "claude-sonnet-4.5")
+    model = llm_config.get("model")
+    if not model:
+        raise ValueError("m4.entity_extraction.llm.model must be specified in config")
+
     min_confidence = llm_config.get("min_confidence", 0.75)
     apply_heuristics = heuristics_config.get("strip_titles", True)
 
