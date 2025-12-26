@@ -29,13 +29,17 @@ class ExtractedMemory:
 # Pydantic schemas for LLM structured output
 class MemorySchema(BaseModel):
     """Schema for a single memory"""
-    content: str = Field(description="The full memory text with enough context to be self-contained")
+
+    content: str = Field(
+        description="The full memory text with enough context to be self-contained"
+    )
     confidence: float = Field(ge=0.0, le=1.0, description="Confidence score 0.0-1.0")
     rationale: str = Field(description="Brief explanation of why this is worth remembering")
 
 
 class MemoryExtractionResult(BaseModel):
     """Schema for memory extraction response"""
+
     memories: list[MemorySchema] = Field(description="List of extracted memories")
 
 
@@ -126,9 +130,7 @@ def extract_memories_from_chunk(
     template = prompts.get("extract_memories_from_session")
 
     if not template:
-        raise ValueError(
-            "'extract_memories_from_session' prompt not found in prompts.yaml"
-        )
+        raise ValueError("'extract_memories_from_session' prompt not found in prompts.yaml")
 
     prompt = substitute_tokens(template, content=chunk)
 

@@ -1,17 +1,17 @@
 """Graph traversal and expansion (M4: Graph Layer)"""
 
-from typing import List, Dict, Any, Set
-from vestig.core.models import MemoryNode
+from typing import Any
+
 from vestig.core.storage import MemoryStorage
 
 
 def expand_via_entities(
-    memory_ids: List[str],
+    memory_ids: list[str],
     storage: MemoryStorage,
     limit: int = 5,
     include_expired: bool = False,
     min_confidence: float = 0.75,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """
     Expand via shared entities (1-hop through MENTIONS edges).
 
@@ -32,7 +32,7 @@ def expand_via_entities(
             - expansion_score: Number of shared entities (for ranking)
     """
     # Track candidate memories and their shared entities
-    candidates: Dict[str, Set[str]] = {}  # memory_id -> set of shared entity IDs
+    candidates: dict[str, set[str]] = {}  # memory_id -> set of shared entity IDs
 
     # For each source memory, find connected entities
     for source_id in memory_ids:
@@ -97,12 +97,12 @@ def expand_via_entities(
 
 
 def expand_via_related(
-    memory_ids: List[str],
+    memory_ids: list[str],
     storage: MemoryStorage,
     limit: int = 5,
     include_expired: bool = False,
     min_confidence: float = 0.0,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """
     Expand via RELATED edges (1-hop semantic similarity).
 
@@ -123,7 +123,7 @@ def expand_via_related(
             - source_memory_id: Which source memory connected to this
     """
     # Track candidate memories and their best similarity score
-    candidates: Dict[str, tuple] = {}  # memory_id -> (score, source_id)
+    candidates: dict[str, tuple] = {}  # memory_id -> (score, source_id)
 
     # For each source memory, find RELATED edges
     for source_id in memory_ids:
@@ -177,12 +177,12 @@ def expand_via_related(
 
 
 def expand_with_graph(
-    memory_ids: List[str],
+    memory_ids: list[str],
     storage: MemoryStorage,
     entity_limit: int = 3,
     related_limit: int = 3,
     include_expired: bool = False,
-) -> Dict[str, List[Dict[str, Any]]]:
+) -> dict[str, list[dict[str, Any]]]:
     """
     Perform both entity and related expansions in one call.
 

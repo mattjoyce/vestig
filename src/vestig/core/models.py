@@ -5,7 +5,7 @@ import string
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Dict, List, Any, Optional
+from typing import Any
 
 
 @dataclass
@@ -14,20 +14,20 @@ class MemoryNode:
 
     id: str
     content: str
-    content_embedding: List[float]
+    content_embedding: list[float]
     content_hash: str  # SHA256 of normalized content (M2: dedupe)
     created_at: str  # ISO 8601 timestamp
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     # M3: Bi-temporal fields
-    t_valid: Optional[str] = None  # When fact became true (event time)
-    t_invalid: Optional[str] = None  # When fact stopped being true (event time)
-    t_created: Optional[str] = None  # When we learned it (transaction time)
-    t_expired: Optional[str] = None  # When deprecated/superseded
+    t_valid: str | None = None  # When fact became true (event time)
+    t_invalid: str | None = None  # When fact stopped being true (event time)
+    t_created: str | None = None  # When we learned it (transaction time)
+    t_expired: str | None = None  # When deprecated/superseded
     temporal_stability: str = "unknown"  # "static" | "dynamic" | "unknown"
 
     # M3: Reinforcement tracking (cached from events)
-    last_seen_at: Optional[str] = None  # Most recent reinforcement
+    last_seen_at: str | None = None  # Most recent reinforcement
     reinforce_count: int = 0  # Total reinforcement events
 
     @classmethod
@@ -35,10 +35,10 @@ class MemoryNode:
         cls,
         memory_id: str,
         content: str,
-        embedding: List[float],
+        embedding: list[float],
         source: str = "manual",
-        tags: List[str] = None,
-        content_hash: Optional[str] = None,  # M3 FIX: Allow passing pre-computed hash
+        tags: list[str] = None,
+        content_hash: str | None = None,  # M3 FIX: Allow passing pre-computed hash
     ) -> "MemoryNode":
         """
         Create a new memory node with M3 temporal initialization.
@@ -97,15 +97,15 @@ class EntityNode:
     canonical_name: str  # Canonical form of entity name
     norm_key: str  # Normalization key for deduplication (type:normalized_name)
     created_at: str  # ISO 8601 timestamp
-    expired_at: Optional[str] = None  # When entity was merged/deprecated
-    merged_into: Optional[str] = None  # ID of entity this was merged into
+    expired_at: str | None = None  # When entity was merged/deprecated
+    merged_into: str | None = None  # ID of entity this was merged into
 
     @classmethod
     def create(
         cls,
         entity_type: str,
         canonical_name: str,
-        entity_id: Optional[str] = None,
+        entity_id: str | None = None,
     ) -> "EntityNode":
         """
         Create a new entity node with computed norm_key.
@@ -152,14 +152,14 @@ class EdgeNode:
     weight: float  # Edge weight (1.0 default, or similarity score)
 
     # M4: LLM extraction metadata
-    confidence: Optional[float] = None  # Extraction confidence (0.0-1.0)
-    evidence: Optional[str] = None  # Short explanation (max 200 chars)
+    confidence: float | None = None  # Extraction confidence (0.0-1.0)
+    evidence: str | None = None  # Short explanation (max 200 chars)
 
     # M4: Bi-temporal fields (same as entities)
-    t_valid: Optional[str] = None  # When relationship became true
-    t_invalid: Optional[str] = None  # When relationship stopped being true
-    t_created: Optional[str] = None  # When we learned about this relationship
-    t_expired: Optional[str] = None  # When edge was invalidated
+    t_valid: str | None = None  # When relationship became true
+    t_invalid: str | None = None  # When relationship stopped being true
+    t_created: str | None = None  # When we learned about this relationship
+    t_expired: str | None = None  # When edge was invalidated
 
     @classmethod
     def create(
@@ -168,9 +168,9 @@ class EdgeNode:
         to_node: str,
         edge_type: str,
         weight: float = 1.0,
-        confidence: Optional[float] = None,
-        evidence: Optional[str] = None,
-        edge_id: Optional[str] = None,
+        confidence: float | None = None,
+        evidence: str | None = None,
+        edge_id: str | None = None,
     ) -> "EdgeNode":
         """
         Create a new edge node with bi-temporal initialization.
@@ -191,11 +191,9 @@ class EdgeNode:
             ValueError: If edge_type is invalid
         """
         # Enforce edge type constraints
-        ALLOWED_EDGE_TYPES = {"MENTIONS", "RELATED"}
-        if edge_type not in ALLOWED_EDGE_TYPES:
-            raise ValueError(
-                f"Invalid edge_type: {edge_type}. Allowed: {ALLOWED_EDGE_TYPES}"
-            )
+        allowed_edge_types = {"MENTIONS", "RELATED"}
+        if edge_type not in allowed_edge_types:
+            raise ValueError(f"Invalid edge_type: {edge_type}. Allowed: {allowed_edge_types}")
 
         if edge_id is None:
             edge_id = f"edge_{uuid.uuid4()}"
@@ -228,12 +226,14 @@ class EventNode:
 
     event_id: str  # evt_<uuid>
     memory_id: str  # FK to memories table
-    event_type: str  # ADD | REINFORCE_EXACT | REINFORCE_NEAR | DEPRECATE | SUPERSEDE | ENTITY_EXTRACTED
+    event_type: (
+        str  # ADD | REINFORCE_EXACT | REINFORCE_NEAR | DEPRECATE | SUPERSEDE | ENTITY_EXTRACTED
+    )
     occurred_at: str  # UTC timestamp (ISO 8601)
     source: str  # manual | hook | import | batch | llm
-    actor: Optional[str] = None  # User/agent identifier
-    artifact_ref: Optional[str] = None  # Session ID, filename, etc.
-    payload: Dict[str, Any] = field(default_factory=dict)  # Event details
+    actor: str | None = None  # User/agent identifier
+    artifact_ref: str | None = None  # Session ID, filename, etc.
+    payload: dict[str, Any] = field(default_factory=dict)  # Event details
 
     @classmethod
     def create(
@@ -241,9 +241,9 @@ class EventNode:
         memory_id: str,
         event_type: str,
         source: str = "manual",
-        actor: Optional[str] = None,
-        artifact_ref: Optional[str] = None,
-        payload: Optional[Dict[str, Any]] = None,
+        actor: str | None = None,
+        artifact_ref: str | None = None,
+        payload: dict[str, Any] | None = None,
     ) -> "EventNode":
         """Create new event with generated ID and timestamp"""
         return cls(
@@ -259,6 +259,7 @@ class EventNode:
 
 
 # M4: Utility Functions
+
 
 def compute_norm_key(text: str, entity_type: str) -> str:
     """

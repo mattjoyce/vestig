@@ -1,12 +1,12 @@
 """Configuration loading with minimal error handling"""
 
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import yaml
 
 
-def load_config(config_path: str = "config.yaml") -> Dict[str, Any]:
+def load_config(config_path: str = "config.yaml") -> dict[str, Any]:
     """
     Load configuration from YAML file.
 
@@ -32,8 +32,6 @@ def load_config(config_path: str = "config.yaml") -> Dict[str, Any]:
 
     # Validate db_path exists in config
     if "storage" not in config or "db_path" not in config["storage"]:
-        raise ValueError(
-            f"Invalid config: missing storage.db_path in {config_path}"
-        )
+        raise ValueError(f"Invalid config: missing storage.db_path in {config_path}")
 
     return config

@@ -39,7 +39,9 @@ def validate_config(config: dict[str, Any]) -> None:
             raise ValueError(f"Missing required config key: {'.'.join(path)}.{key}")
 
 
-def build_runtime(config: dict[str, Any]) -> tuple[MemoryStorage, EmbeddingEngine, MemoryEventStorage, TraceRankConfig]:
+def build_runtime(
+    config: dict[str, Any],
+) -> tuple[MemoryStorage, EmbeddingEngine, MemoryEventStorage, TraceRankConfig]:
     """
     Build storage, embedding engine, event storage, and TraceRank config from config.
 
@@ -193,7 +195,10 @@ def cmd_deprecate(args):
 
         # Check if already deprecated
         if memory.t_expired:
-            print(f"Warning: Memory {args.id} is already deprecated (t_expired={memory.t_expired})", file=sys.stderr)
+            print(
+                f"Warning: Memory {args.id} is already deprecated (t_expired={memory.t_expired})",
+                file=sys.stderr,
+            )
             sys.exit(1)
 
         # M3 FIX #5: Atomic transaction for event + deprecation
@@ -206,7 +211,7 @@ def cmd_deprecate(args):
                 payload={
                     "reason": args.reason or "Manual deprecation",
                     "t_invalid": args.t_invalid,
-                }
+                },
             )
             event_storage.add_event(event)
 
@@ -246,11 +251,19 @@ def cmd_ingest(args):
     ingestion_config = config.get("ingestion", {})
     model = args.model if args.model else ingestion_config.get("model")
     chunk_size = args.chunk_size if args.chunk_size else ingestion_config.get("chunk_size", 20000)
-    chunk_overlap = args.chunk_overlap if args.chunk_overlap else ingestion_config.get("chunk_overlap", 500)
-    min_confidence = args.min_confidence if args.min_confidence is not None else ingestion_config.get("min_confidence", 0.6)
+    chunk_overlap = (
+        args.chunk_overlap if args.chunk_overlap else ingestion_config.get("chunk_overlap", 500)
+    )
+    min_confidence = (
+        args.min_confidence
+        if args.min_confidence is not None
+        else ingestion_config.get("min_confidence", 0.6)
+    )
 
     if not model:
-        raise ValueError("Model must be specified in config (ingestion.model) or via --model argument")
+        raise ValueError(
+            "Model must be specified in config (ingestion.model) or via --model argument"
+        )
 
     try:
         result = ingest_document(
@@ -336,19 +349,13 @@ def main():
 
     # vestig memory
     parser_memory = subparsers.add_parser("memory", help="Memory operations")
-    memory_subparsers = parser_memory.add_subparsers(
-        dest="memory_command", help="Memory commands"
-    )
+    memory_subparsers = parser_memory.add_subparsers(dest="memory_command", help="Memory commands")
 
     # vestig memory add
     parser_add = memory_subparsers.add_parser("add", help="Add a new memory")
     parser_add.add_argument("content", help="Memory content")
-    parser_add.add_argument(
-        "--source", default="manual", help="Memory source (default: manual)"
-    )
-    parser_add.add_argument(
-        "--tags", help="Comma-separated tags (e.g., bug,auth,fix)"
-    )
+    parser_add.add_argument("--source", default="manual", help="Memory source (default: manual)")
+    parser_add.add_argument("--tags", help="Comma-separated tags (e.g., bug,auth,fix)")
     parser_add.set_defaults(func=cmd_add)
 
     # vestig memory search
@@ -377,9 +384,7 @@ def main():
     parser_show.set_defaults(func=cmd_show)
 
     # vestig memory deprecate
-    parser_deprecate = memory_subparsers.add_parser(
-        "deprecate", help="Mark memory as deprecated"
-    )
+    parser_deprecate = memory_subparsers.add_parser("deprecate", help="Mark memory as deprecated")
     parser_deprecate.add_argument("id", help="Memory ID to deprecate")
     parser_deprecate.add_argument(
         "--reason", help="Reason for deprecation (stored in event payload)"

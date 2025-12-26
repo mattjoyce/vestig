@@ -1,7 +1,7 @@
 """Retrieval logic for M1 (brute-force cosine similarity) with M3 TraceRank"""
 
 from datetime import datetime
-from typing import List, Tuple, Optional
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -9,8 +9,12 @@ from vestig.core.embeddings import EmbeddingEngine
 from vestig.core.models import MemoryNode
 from vestig.core.storage import MemoryStorage
 
+if TYPE_CHECKING:
+    from vestig.core.event_storage import MemoryEventStorage
+    from vestig.core.tracerank import TraceRankConfig
 
-def cosine_similarity(a: List[float], b: List[float]) -> float:
+
+def cosine_similarity(a: list[float], b: list[float]) -> float:
     """
     Compute cosine similarity between two vectors.
 
@@ -39,10 +43,10 @@ def search_memories(
     storage: MemoryStorage,
     embedding_engine: EmbeddingEngine,
     limit: int = 5,
-    event_storage: Optional['MemoryEventStorage'] = None,  # M3
-    tracerank_config: Optional['TraceRankConfig'] = None,   # M3
-    include_expired: bool = False,                          # M3
-) -> List[Tuple[MemoryNode, float]]:
+    event_storage: MemoryEventStorage | None = None,  # M3
+    tracerank_config: TraceRankConfig | None = None,  # M3
+    include_expired: bool = False,  # M3
+) -> list[tuple[MemoryNode, float]]:
     """
     Search memories by semantic similarity (brute-force) with M3 TraceRank.
 
@@ -93,7 +97,7 @@ def search_memories(
     return scored_memories[:limit]
 
 
-def format_search_results(results: List[Tuple[MemoryNode, float]]) -> str:
+def format_search_results(results: list[tuple[MemoryNode, float]]) -> str:
     """
     Format search results for display.
 
@@ -127,7 +131,7 @@ def format_search_results(results: List[Tuple[MemoryNode, float]]) -> str:
     return "\n".join(lines)
 
 
-def format_recall_results(results: List[Tuple[MemoryNode, float]]) -> str:
+def format_recall_results(results: list[tuple[MemoryNode, float]]) -> str:
     """
     Format recall results for agent context (M2: stable contract, M3: temporal hints).
 
@@ -153,11 +157,11 @@ def format_recall_results(results: List[Tuple[MemoryNode, float]]) -> str:
         header = f"[{memory.id}] (source={source}, created={memory.created_at}, score={score:.4f}"
 
         # M3: Add reinforcement + validity hints
-        if hasattr(memory, 'reinforce_count') and memory.reinforce_count > 0:
+        if hasattr(memory, "reinforce_count") and memory.reinforce_count > 0:
             header += f", reinforced={memory.reinforce_count}x"
-        if hasattr(memory, 'last_seen_at') and memory.last_seen_at:
+        if hasattr(memory, "last_seen_at") and memory.last_seen_at:
             header += f", last_seen={memory.last_seen_at}"
-        if hasattr(memory, 't_expired') and memory.t_expired:
+        if hasattr(memory, "t_expired") and memory.t_expired:
             header += ", status=EXPIRED"
 
         header += ")"

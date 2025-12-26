@@ -1,26 +1,25 @@
 """TraceRank: Temporal reinforcement scoring for M3"""
 
+import math
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import List, Optional
-import math
+
 from vestig.core.models import EventNode
 
 
 @dataclass
 class TraceRankConfig:
     """TraceRank configuration"""
+
     enabled: bool = True
-    tau_days: float = 21.0          # Recency decay time constant (3 weeks)
-    cooldown_hours: float = 24.0     # Anti-burst window
-    burst_discount: float = 0.2      # Weight for events in cooldown
-    k: float = 0.35                  # TraceRank boost strength
+    tau_days: float = 21.0  # Recency decay time constant (3 weeks)
+    cooldown_hours: float = 24.0  # Anti-burst window
+    burst_discount: float = 0.2  # Weight for events in cooldown
+    k: float = 0.35  # TraceRank boost strength
 
 
 def compute_tracerank_multiplier(
-    events: List[EventNode],
-    config: TraceRankConfig,
-    query_time: Optional[datetime] = None
+    events: list[EventNode], config: TraceRankConfig, query_time: datetime | None = None
 ) -> float:
     """
     Compute TraceRank multiplier from reinforcement events.

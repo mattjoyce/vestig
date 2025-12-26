@@ -1,8 +1,9 @@
 """Event and outcome types for M2→M3 bridge"""
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any, Callable
+from typing import Any
 
 
 @dataclass
@@ -27,16 +28,16 @@ class CommitOutcome:
     source: str = "manual"  # manual | hook | import | batch
 
     # Dupe/near-dupe fields
-    matched_memory_id: Optional[str] = None  # ID of matched memory (if dupe)
-    query_score: Optional[float] = None  # Similarity score (for near-dupe)
+    matched_memory_id: str | None = None  # ID of matched memory (if dupe)
+    query_score: float | None = None  # Similarity score (for near-dupe)
 
     # Hygiene rejection fields
-    hygiene_reasons: List[str] = field(default_factory=list)  # Rejection reasons
+    hygiene_reasons: list[str] = field(default_factory=list)  # Rejection reasons
 
     # Metadata
-    thresholds: Dict[str, Any] = field(default_factory=dict)  # Config thresholds used
-    tags: Optional[List[str]] = None
-    artifact_ref: Optional[str] = None  # Session ID, filename, URL, etc.
+    thresholds: dict[str, Any] = field(default_factory=dict)  # Config thresholds used
+    tags: list[str] | None = None
+    artifact_ref: str | None = None  # Session ID, filename, URL, etc.
 
     @classmethod
     def inserted_new(
@@ -44,9 +45,9 @@ class CommitOutcome:
         memory_id: str,
         content_hash: str,
         source: str = "manual",
-        tags: Optional[List[str]] = None,
-        artifact_ref: Optional[str] = None,
-        thresholds: Optional[Dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        artifact_ref: str | None = None,
+        thresholds: dict[str, Any] | None = None,
     ) -> "CommitOutcome":
         """Create outcome for a new memory insertion."""
         return cls(
@@ -66,9 +67,9 @@ class CommitOutcome:
         memory_id: str,
         content_hash: str,
         source: str = "manual",
-        tags: Optional[List[str]] = None,
-        artifact_ref: Optional[str] = None,
-        thresholds: Optional[Dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        artifact_ref: str | None = None,
+        thresholds: dict[str, Any] | None = None,
     ) -> "CommitOutcome":
         """Create outcome for an exact duplicate (hash match)."""
         return cls(
@@ -91,9 +92,9 @@ class CommitOutcome:
         query_score: float,
         content_hash: str,
         source: str = "manual",
-        tags: Optional[List[str]] = None,
-        artifact_ref: Optional[str] = None,
-        thresholds: Optional[Dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        artifact_ref: str | None = None,
+        thresholds: dict[str, Any] | None = None,
     ) -> "CommitOutcome":
         """Create outcome for a near-duplicate (semantic match)."""
         return cls(
@@ -113,11 +114,11 @@ class CommitOutcome:
     def rejected_hygiene(
         cls,
         content_hash: str,
-        hygiene_reasons: List[str],
+        hygiene_reasons: list[str],
         source: str = "manual",
-        tags: Optional[List[str]] = None,
-        artifact_ref: Optional[str] = None,
-        thresholds: Optional[Dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        artifact_ref: str | None = None,
+        thresholds: dict[str, Any] | None = None,
     ) -> "CommitOutcome":
         """Create outcome for a hygiene rejection."""
         return cls(

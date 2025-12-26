@@ -3,9 +3,8 @@
 import json
 import sqlite3
 from pathlib import Path
-from typing import List, Optional
 
-from vestig.core.models import MemoryNode, EntityNode, EdgeNode
+from vestig.core.models import EdgeNode, EntityNode, MemoryNode
 
 
 class MemoryStorage:
@@ -77,14 +76,10 @@ class MemoryStorage:
         if "last_seen_at" not in columns:
             self.conn.execute("ALTER TABLE memories ADD COLUMN last_seen_at TEXT")
         if "reinforce_count" not in columns:
-            self.conn.execute(
-                "ALTER TABLE memories ADD COLUMN reinforce_count INTEGER DEFAULT 0"
-            )
+            self.conn.execute("ALTER TABLE memories ADD COLUMN reinforce_count INTEGER DEFAULT 0")
 
         # Backfill t_created from created_at for existing memories
-        self.conn.execute(
-            "UPDATE memories SET t_created = created_at WHERE t_created IS NULL"
-        )
+        self.conn.execute("UPDATE memories SET t_created = created_at WHERE t_created IS NULL")
 
         # M3: Create memory_events table
         self.conn.execute(
@@ -269,7 +264,7 @@ class MemoryStorage:
         # NOTE: Caller manages transaction commit
         return node.id
 
-    def get_memory(self, memory_id: str) -> Optional[MemoryNode]:
+    def get_memory(self, memory_id: str) -> MemoryNode | None:
         """
         Retrieve a memory by ID.
 
@@ -309,7 +304,7 @@ class MemoryStorage:
             reinforce_count=row[12] or 0,
         )
 
-    def get_all_memories(self) -> List[MemoryNode]:
+    def get_all_memories(self) -> list[MemoryNode]:
         """
         Load all memories (for brute-force search).
 
@@ -368,9 +363,7 @@ class MemoryStorage:
         )
         # NOTE: Caller manages transaction commit
 
-    def deprecate_memory(
-        self, memory_id: str, t_invalid: Optional[str] = None
-    ) -> None:
+    def deprecate_memory(self, memory_id: str, t_invalid: str | None = None) -> None:
         """Mark memory as deprecated/expired"""
         from datetime import datetime, timezone
 
@@ -385,7 +378,7 @@ class MemoryStorage:
         )
         # NOTE: Caller manages transaction commit
 
-    def get_active_memories(self) -> List[MemoryNode]:
+    def get_active_memories(self) -> list[MemoryNode]:
         """Get all non-expired memories (for retrieval)"""
         cursor = self.conn.execute(
             """
@@ -464,7 +457,7 @@ class MemoryStorage:
         self.conn.commit()
         return entity.id
 
-    def get_entity(self, entity_id: str) -> Optional[EntityNode]:
+    def get_entity(self, entity_id: str) -> EntityNode | None:
         """
         Retrieve entity by ID.
 
@@ -499,7 +492,7 @@ class MemoryStorage:
 
     def find_entity_by_norm_key(
         self, norm_key: str, include_expired: bool = False
-    ) -> Optional[EntityNode]:
+    ) -> EntityNode | None:
         """
         Find entity by normalization key (deduplication lookup).
 
@@ -531,7 +524,7 @@ class MemoryStorage:
             merged_into=row[6],
         )
 
-    def get_all_entities(self, include_expired: bool = False) -> List[EntityNode]:
+    def get_all_entities(self, include_expired: bool = False) -> list[EntityNode]:
         """
         Get all entities across all types.
 
@@ -575,7 +568,7 @@ class MemoryStorage:
 
     def get_entities_by_type(
         self, entity_type: str, include_expired: bool = False
-    ) -> List[EntityNode]:
+    ) -> list[EntityNode]:
         """
         Get all entities of a specific type.
 
@@ -619,9 +612,7 @@ class MemoryStorage:
 
         return entities
 
-    def expire_entity(
-        self, entity_id: str, merged_into: Optional[str] = None
-    ) -> None:
+    def expire_entity(self, entity_id: str, merged_into: str | None = None) -> None:
         """
         Mark entity as expired (soft delete / merge).
 
@@ -657,7 +648,7 @@ class MemoryStorage:
         # Check for duplicate edge (same from/to/type, not expired)
         cursor = self.conn.execute(
             """
-            SELECT edge_id FROM edges 
+            SELECT edge_id FROM edges
             WHERE from_node = ? AND to_node = ? AND edge_type = ? AND t_expired IS NULL
             """,
             (edge.from_node, edge.to_node, edge.edge_type),
@@ -671,7 +662,7 @@ class MemoryStorage:
         # Insert new edge
         self.conn.execute(
             """
-            INSERT INTO edges (edge_id, from_node, to_node, edge_type, weight, 
+            INSERT INTO edges (edge_id, from_node, to_node, edge_type, weight,
                               confidence, evidence, t_valid, t_invalid, t_created, t_expired)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
@@ -695,10 +686,10 @@ class MemoryStorage:
     def get_edges_from_memory(
         self,
         memory_id: str,
-        edge_type: Optional[str] = None,
+        edge_type: str | None = None,
         include_expired: bool = False,
         min_confidence: float = 0.0,
-    ) -> List[EdgeNode]:
+    ) -> list[EdgeNode]:
         """
         Get all outgoing edges from a memory node.
 
@@ -778,7 +769,7 @@ class MemoryStorage:
         entity_id: str,
         include_expired: bool = False,
         min_confidence: float = 0.0,
-    ) -> List[EdgeNode]:
+    ) -> list[EdgeNode]:
         """
         Get all incoming edges to an entity node.
 
@@ -792,7 +783,7 @@ class MemoryStorage:
         """
         if include_expired:
             query = """
-                SELECT edge_id, from_node, to_node, edge_type, weight, 
+                SELECT edge_id, from_node, to_node, edge_type, weight,
                        confidence, evidence, t_valid, t_invalid, t_created, t_expired
                 FROM edges
                 WHERE to_node = ? AND (confidence IS NULL OR confidence >= ?)
@@ -800,7 +791,7 @@ class MemoryStorage:
             """
         else:
             query = """
-                SELECT edge_id, from_node, to_node, edge_type, weight, 
+                SELECT edge_id, from_node, to_node, edge_type, weight,
                        confidence, evidence, t_valid, t_invalid, t_created, t_expired
                 FROM edges
                 WHERE to_node = ? AND t_expired IS NULL AND (confidence IS NULL OR confidence >= ?)
@@ -829,7 +820,7 @@ class MemoryStorage:
 
         return edges
 
-    def get_edge(self, edge_id: str) -> Optional[EdgeNode]:
+    def get_edge(self, edge_id: str) -> EdgeNode | None:
         """
         Retrieve edge by ID.
 
@@ -841,7 +832,7 @@ class MemoryStorage:
         """
         cursor = self.conn.execute(
             """
-            SELECT edge_id, from_node, to_node, edge_type, weight, 
+            SELECT edge_id, from_node, to_node, edge_type, weight,
                    confidence, evidence, t_valid, t_invalid, t_created, t_expired
             FROM edges
             WHERE edge_id = ?

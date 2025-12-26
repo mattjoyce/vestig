@@ -24,6 +24,7 @@ class ExtractedEntity:
 # Pydantic schemas for LLM structured output
 class EntitySchema(BaseModel):
     """Schema for a single entity"""
+
     name: str = Field(description="Entity name")
     type: str = Field(description="Entity type (PERSON, ORG, SYSTEM, PROJECT, PLACE)")
     confidence: float = Field(ge=0.0, le=1.0, description="Confidence score 0.0-1.0")
@@ -32,6 +33,7 @@ class EntitySchema(BaseModel):
 
 class EntityExtractionResult(BaseModel):
     """Schema for entity extraction response"""
+
     entities: list[EntitySchema] = Field(description="List of extracted entities")
 
 
@@ -89,9 +91,7 @@ def call_llm(prompt: str, model: str, schema: type[BaseModel] | None = None):
     try:
         import llm
     except ImportError:
-        raise ImportError(
-            "llm module not installed. Install with: pip install llm"
-        )
+        raise ImportError("llm module not installed. Install with: pip install llm")
 
     try:
         # Get model and call it
@@ -157,9 +157,7 @@ def validate_extraction_result(
             raise ValueError(f"Entity {i}: 'name' cannot be empty")
 
         if entity_type not in allowed_types:
-            raise ValueError(
-                f"Entity {i}: invalid type '{entity_type}'. Allowed: {allowed_types}"
-            )
+            raise ValueError(f"Entity {i}: invalid type '{entity_type}'. Allowed: {allowed_types}")
 
         # Validate confidence
         try:
@@ -211,7 +209,9 @@ def apply_heuristic_cleanup(entities: list[ExtractedEntity]) -> list[ExtractedEn
     title_pattern = r"^(Dr\.|Dr|Mr\.|Mr|Ms\.|Ms|Mrs\.|Mrs|Prof\.|Prof)\s+"
 
     # Org suffix patterns to normalize
-    org_suffix_pattern = r"\s+(Ltd\.?|Limited|Inc\.?|Incorporated|Corp\.?|Corporation|LLC|L\.L\.C\.)$"
+    org_suffix_pattern = (
+        r"\s+(Ltd\.?|Limited|Inc\.?|Incorporated|Corp\.?|Corporation|LLC|L\.L\.C\.)$"
+    )
 
     for entity in entities:
         name = entity.name
@@ -449,8 +449,6 @@ def extract_and_store_entities(
             entity_id = storage.store_entity(new_entity)
 
         # Return entity info for edge creation
-        stored_entities.append(
-            (entity_id, entity.entity_type, entity.confidence, entity.evidence)
-        )
+        stored_entities.append((entity_id, entity.entity_type, entity.confidence, entity.evidence))
 
     return stored_entities

@@ -1,8 +1,5 @@
 """Embedding generation using sentence-transformers"""
 
-from typing import List
-
-import numpy as np
 from sentence_transformers import SentenceTransformer
 
 
@@ -32,7 +29,7 @@ class EmbeddingEngine:
                 f"got {actual_dimension}"
             )
 
-    def embed_text(self, text: str) -> List[float]:
+    def embed_text(self, text: str) -> list[float]:
         """
         Generate embedding for a single text.
 
@@ -45,7 +42,7 @@ class EmbeddingEngine:
         embedding = self.model.encode(text, normalize_embeddings=self.normalize)
         return embedding.tolist()
 
-    def embed_batch(self, texts: List[str]) -> List[List[float]]:
+    def embed_batch(self, texts: list[str]) -> list[list[float]]:
         """
         Generate embeddings for multiple texts.
 

@@ -2,7 +2,6 @@
 
 import json
 import sqlite3
-from typing import List
 
 from vestig.core.models import EventNode
 
@@ -49,7 +48,7 @@ class MemoryEventStorage:
         # NOTE: Caller manages transaction commit
         return event.event_id
 
-    def get_events_for_memory(self, memory_id: str, limit: int = 100) -> List[EventNode]:
+    def get_events_for_memory(self, memory_id: str, limit: int = 100) -> list[EventNode]:
         """
         Retrieve events for a memory, newest first.
 
@@ -84,7 +83,7 @@ class MemoryEventStorage:
             for row in cursor.fetchall()
         ]
 
-    def get_reinforcement_events(self, memory_id: str) -> List[EventNode]:
+    def get_reinforcement_events(self, memory_id: str) -> list[EventNode]:
         """
         Get only REINFORCE_* events for TraceRank computation.
 

@@ -3,12 +3,15 @@
 import hashlib
 import re
 import uuid
-from typing import Dict, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from vestig.core.embeddings import EmbeddingEngine
 from vestig.core.events import CommitOutcome, OnCommitHook
 from vestig.core.models import MemoryNode
 from vestig.core.storage import MemoryStorage
+
+if TYPE_CHECKING:
+    from vestig.core.event_storage import MemoryEventStorage
 
 # Default hygiene settings (used if not in config)
 DEFAULT_HYGIENE = {
@@ -45,7 +48,7 @@ def normalize_content(content: str, normalize_whitespace: bool = True) -> str:
     return normalized
 
 
-def validate_content(content: str, hygiene_config: Dict[str, Any]) -> None:
+def validate_content(content: str, hygiene_config: dict[str, Any]) -> None:
     """
     Validate content against hygiene rules.
 
@@ -59,9 +62,7 @@ def validate_content(content: str, hygiene_config: Dict[str, Any]) -> None:
     # Check minimum length
     min_chars = hygiene_config.get("min_chars", DEFAULT_HYGIENE["min_chars"])
     if len(content) < min_chars:
-        raise ValueError(
-            f"Content too short: {len(content)} chars (minimum: {min_chars})"
-        )
+        raise ValueError(f"Content too short: {len(content)} chars (minimum: {min_chars})")
 
     # Check maximum length
     max_chars = hygiene_config.get("max_chars", DEFAULT_HYGIENE["max_chars"])
@@ -81,9 +82,7 @@ def validate_content(content: str, hygiene_config: Dict[str, Any]) -> None:
     content_lower = content.lower()
     for pattern in useless_patterns:
         if re.match(pattern, content_lower):
-            raise ValueError(
-                f"Content rejected: appears to be non-substantive ('{content[:50]}')"
-            )
+            raise ValueError(f"Content rejected: appears to be non-substantive ('{content[:50]}')")
 
 
 def commit_memory(
@@ -91,12 +90,12 @@ def commit_memory(
     storage: MemoryStorage,
     embedding_engine: EmbeddingEngine,
     source: str = "manual",
-    hygiene_config: Dict[str, Any] = None,
+    hygiene_config: dict[str, Any] = None,
     tags: list[str] = None,
-    artifact_ref: Optional[str] = None,
-    on_commit: Optional[OnCommitHook] = None,
-    event_storage: Optional['MemoryEventStorage'] = None,  # M3: Event logging
-    m4_config: Optional[Dict[str, Any]] = None,  # M4: Graph config
+    artifact_ref: str | None = None,
+    on_commit: OnCommitHook | None = None,
+    event_storage: MemoryEventStorage | None = None,  # M3: Event logging
+    m4_config: dict[str, Any] | None = None,  # M4: Graph config
 ) -> CommitOutcome:
     """
     Commit a memory to storage with M2 quality firewall, M3 event logging, and M4 entity extraction.
@@ -167,7 +166,6 @@ def commit_memory(
     near_dup_threshold = near_dup_config.get("threshold", 0.92)
     thresholds["near_duplicate_threshold"] = near_dup_threshold
 
-    duplicate_metadata = None
     matched_id = None
     matched_score = None
 
@@ -295,8 +293,8 @@ def _extract_and_link_entities(
     content: str,
     memory_id: str,
     storage: MemoryStorage,
-    m4_config: Dict[str, Any],
-    artifact_ref: Optional[str] = None,
+    m4_config: dict[str, Any],
+    artifact_ref: str | None = None,
 ) -> None:
     """
     Extract entities and create MENTIONS edges (M4).
@@ -349,7 +347,7 @@ def _create_related_edges(
     memory_id: str,
     embedding: list[float],
     storage: MemoryStorage,
-    m4_config: Dict[str, Any],
+    m4_config: dict[str, Any],
 ) -> None:
     """
     Create RELATED edges to semantically similar memories (M4).
@@ -362,8 +360,8 @@ def _create_related_edges(
         storage: Storage instance
         m4_config: M4 configuration dict
     """
-    from vestig.core.retrieval import cosine_similarity
     from vestig.core.models import EdgeNode
+    from vestig.core.retrieval import cosine_similarity
 
     # Check if RELATED edge creation enabled
     related_config = m4_config.get("edge_creation", {}).get("related", {})
@@ -408,7 +406,7 @@ def _create_related_edges(
 def _log_commit_event(
     outcome: CommitOutcome,
     storage: MemoryStorage,
-    event_storage: 'MemoryEventStorage',
+    event_storage: MemoryEventStorage,
 ) -> None:
     """
     Convert CommitOutcome to EventNode and persist (M3).
