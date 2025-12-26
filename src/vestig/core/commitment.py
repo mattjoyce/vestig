@@ -96,9 +96,10 @@ def commit_memory(
     artifact_ref: Optional[str] = None,
     on_commit: Optional[OnCommitHook] = None,
     event_storage: Optional['MemoryEventStorage'] = None,  # M3: Event logging
+    m4_config: Optional[Dict[str, Any]] = None,  # M4: Graph config
 ) -> CommitOutcome:
     """
-    Commit a memory to storage with M2 quality firewall and M3 event logging.
+    Commit a memory to storage with M2 quality firewall, M3 event logging, and M4 entity extraction.
 
     Args:
         content: Memory content text
@@ -110,6 +111,7 @@ def commit_memory(
         artifact_ref: Optional reference to source artifact (session_id, filename, etc.)
         on_commit: Optional hook called with CommitOutcome (M2→M3 bridge)
         event_storage: Optional event storage for M3 event logging
+        m4_config: Optional M4 config for entity extraction + graph construction
 
     Returns:
         CommitOutcome with decision details
@@ -253,6 +255,27 @@ def commit_memory(
                     thresholds=thresholds,
                 )
 
+        # M4: Entity extraction + MENTIONS edge creation
+        # (Only for new memories, not duplicates)
+        # (Must happen inside transaction before commit)
+        if m4_config and outcome.outcome == "INSERTED_NEW":
+            _extract_and_link_entities(
+                content=normalized,
+                memory_id=outcome.memory_id,
+                storage=storage,
+                m4_config=m4_config,
+                artifact_ref=artifact_ref,
+            )
+
+            # M4: RELATED edge creation (Memory → Memory)
+            # Create semantic similarity edges to related memories
+            _create_related_edges(
+                memory_id=outcome.memory_id,
+                embedding=embedding,
+                storage=storage,
+                m4_config=m4_config,
+            )
+
         # M3: Log event if event_storage provided
         # (Must happen inside transaction before commit)
         if event_storage:
@@ -266,6 +289,120 @@ def commit_memory(
         on_commit(outcome)
 
     return outcome
+
+
+def _extract_and_link_entities(
+    content: str,
+    memory_id: str,
+    storage: MemoryStorage,
+    m4_config: Dict[str, Any],
+    artifact_ref: Optional[str] = None,
+) -> None:
+    """
+    Extract entities and create MENTIONS edges (M4).
+
+    Called from commit_memory() inside transaction.
+
+    Args:
+        content: Memory content to extract from
+        memory_id: Memory ID (for MENTIONS edges)
+        storage: Storage instance
+        m4_config: M4 configuration dict
+        artifact_ref: Optional artifact reference for event logging
+    """
+    from vestig.core.entity_extraction import extract_and_store_entities
+    from vestig.core.models import EdgeNode
+
+    # Check if entity extraction enabled
+    extraction_config = m4_config.get("entity_extraction", {})
+    if not extraction_config.get("enabled", True):
+        return
+
+    # Extract and store entities (with deduplication)
+    entities = extract_and_store_entities(
+        content=content,
+        memory_id=memory_id,
+        storage=storage,
+        config=m4_config,
+        artifact_ref=artifact_ref,
+    )
+
+    # Check if MENTIONS edge creation enabled
+    mentions_config = m4_config.get("edge_creation", {}).get("mentions", {})
+    if not mentions_config.get("enabled", True):
+        return
+
+    # Create MENTIONS edges for each entity (confidence-gated)
+    for entity_id, entity_type, confidence, evidence in entities:
+        edge = EdgeNode.create(
+            from_node=memory_id,
+            to_node=entity_id,
+            edge_type="MENTIONS",
+            weight=1.0,
+            confidence=confidence,
+            evidence=evidence,
+        )
+        storage.store_edge(edge)
+
+
+def _create_related_edges(
+    memory_id: str,
+    embedding: list[float],
+    storage: MemoryStorage,
+    m4_config: Dict[str, Any],
+) -> None:
+    """
+    Create RELATED edges to semantically similar memories (M4).
+
+    Called from commit_memory() inside transaction.
+
+    Args:
+        memory_id: New memory ID (source of RELATED edges)
+        embedding: Embedding vector of new memory
+        storage: Storage instance
+        m4_config: M4 configuration dict
+    """
+    from vestig.core.retrieval import cosine_similarity
+    from vestig.core.models import EdgeNode
+
+    # Check if RELATED edge creation enabled
+    related_config = m4_config.get("edge_creation", {}).get("related", {})
+    if not related_config.get("enabled", True):
+        return
+
+    # Get config parameters
+    similarity_threshold = related_config.get("similarity_threshold", 0.6)
+    max_edges_per_memory = related_config.get("max_edges_per_memory", 10)
+
+    # Get all existing memories (exclude current)
+    all_memories = storage.get_all_memories()
+
+    # Compute similarity scores
+    candidates = []
+    for existing in all_memories:
+        if existing.id == memory_id:
+            continue  # Skip self
+
+        score = cosine_similarity(embedding, existing.content_embedding)
+
+        if score >= similarity_threshold:
+            candidates.append((existing.id, score))
+
+    # Sort by score descending and take top-K
+    candidates.sort(key=lambda x: x[1], reverse=True)
+    top_candidates = candidates[:max_edges_per_memory]
+
+    # Create RELATED edges
+    for target_id, score in top_candidates:
+        edge = EdgeNode.create(
+            from_node=memory_id,
+            to_node=target_id,
+            edge_type="RELATED",
+            weight=score,  # Weight = similarity score
+            confidence=score,  # Confidence = similarity score
+            evidence=f"semantic_similarity={score:.3f}",
+        )
+        storage.store_edge(edge)
 
 
 def _log_commit_event(

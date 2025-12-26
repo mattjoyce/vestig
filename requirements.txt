@@ -35,3 +35,4 @@ pytz>=2023.3               # Timezone support
 # pytest>=7.4.0            # Testing framework (when we add tests later)
 # black>=23.0.0            # Code formatting
 # ruff>=0.1.0              # Fast linting
+anthropic>=0.39.0

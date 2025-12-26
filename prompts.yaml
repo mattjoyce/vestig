@@ -1,0 +1,32 @@
+# Vestig LLM Prompts
+# Use {{token}} for variable substitution
+
+# M4: Entity Extraction (LLM-based)
+extract_entities: |
+  Extract entities from the following memory content.
+
+  Allowed entity types: {{allowed_types}}
+
+  Rules:
+  1. Only extract entities that clearly appear in the text
+  2. Assign a confidence score (0.0-1.0) based on how certain you are
+  3. Provide brief evidence (max 200 chars) explaining why this is an entity
+  4. Focus on concrete names, not abstract concepts
+  5. Prefer full names over partial mentions
+
+  Memory content:
+  {{content}}
+
+  Output ONLY valid JSON in this exact format:
+  {
+    "entities": [
+      {
+        "name": "exact name as it appears or normalized form",
+        "type": "PERSON|ORG|SYSTEM|PROJECT|PLACE",
+        "confidence": 0.0-1.0,
+        "evidence": "short explanation"
+      }
+    ]
+  }
+
+  If no entities found, return: {"entities": []}

@@ -5,7 +5,7 @@ import sqlite3
 from pathlib import Path
 from typing import List, Optional
 
-from vestig.core.models import MemoryNode
+from vestig.core.models import MemoryNode, EntityNode, EdgeNode
 
 
 class MemoryStorage:
@@ -120,6 +120,92 @@ class MemoryStorage:
             """
             CREATE INDEX IF NOT EXISTS idx_memories_expired
             ON memories(t_expired) WHERE t_expired IS NOT NULL
+            """
+        )
+
+        # M4: Create entities table
+        self.conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS entities (
+                id TEXT PRIMARY KEY,
+                entity_type TEXT NOT NULL,
+                canonical_name TEXT NOT NULL,
+                norm_key TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                expired_at TEXT,
+                merged_into TEXT
+            )
+            """
+        )
+
+        # M4: Create indexes for entity queries
+        self.conn.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_entities_norm_key
+            ON entities(norm_key)
+            """
+        )
+        self.conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_entities_type
+            ON entities(entity_type)
+            """
+        )
+        self.conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_entities_expired
+            ON entities(expired_at) WHERE expired_at IS NOT NULL
+            """
+        )
+
+        # M4: Create edges table
+        self.conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS edges (
+                edge_id TEXT PRIMARY KEY,
+                from_node TEXT NOT NULL,
+                to_node TEXT NOT NULL,
+                edge_type TEXT NOT NULL,
+                weight REAL NOT NULL,
+                confidence REAL,
+                evidence TEXT,
+                t_valid TEXT,
+                t_invalid TEXT,
+                t_created TEXT,
+                t_expired TEXT
+            )
+            """
+        )
+
+        # M4: Create indexes for edge queries
+        self.conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_edges_from_node
+            ON edges(from_node, edge_type)
+            """
+        )
+        self.conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_edges_to_node
+            ON edges(to_node, edge_type)
+            """
+        )
+        self.conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_edges_type
+            ON edges(edge_type)
+            """
+        )
+        self.conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_edges_confidence
+            ON edges(confidence) WHERE confidence IS NOT NULL
+            """
+        )
+        self.conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_edges_expired
+            ON edges(t_expired) WHERE t_expired IS NOT NULL
             """
         )
 
@@ -323,3 +409,469 @@ class MemoryStorage:
                 )
             )
         return memories
+
+    # M4: Entity operations
+
+    def store_entity(self, entity: EntityNode) -> str:
+        """
+        Persist an entity node (M4: Graph Layer).
+
+        Deduplication via norm_key:
+        - If entity with same norm_key exists and not expired, return existing ID
+        - Otherwise insert new entity
+
+        Args:
+            entity: EntityNode to store
+
+        Returns:
+            Entity ID (existing ID if duplicate detected via norm_key)
+        """
+        # Check for existing entity via norm_key (not expired)
+        cursor = self.conn.execute(
+            "SELECT id FROM entities WHERE norm_key = ? AND expired_at IS NULL",
+            (entity.norm_key,),
+        )
+        existing = cursor.fetchone()
+
+        if existing:
+            # Duplicate found via norm_key - return existing ID
+            return existing[0]
+
+        # No duplicate - insert new entity
+        self.conn.execute(
+            """
+            INSERT INTO entities (id, entity_type, canonical_name, norm_key, created_at, expired_at, merged_into)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                entity.id,
+                entity.entity_type,
+                entity.canonical_name,
+                entity.norm_key,
+                entity.created_at,
+                entity.expired_at,
+                entity.merged_into,
+            ),
+        )
+        self.conn.commit()
+        return entity.id
+
+    def get_entity(self, entity_id: str) -> Optional[EntityNode]:
+        """
+        Retrieve entity by ID.
+
+        Args:
+            entity_id: Entity ID
+
+        Returns:
+            EntityNode if found, None otherwise
+        """
+        cursor = self.conn.execute(
+            """
+            SELECT id, entity_type, canonical_name, norm_key, created_at, expired_at, merged_into
+            FROM entities
+            WHERE id = ?
+            """,
+            (entity_id,),
+        )
+        row = cursor.fetchone()
+
+        if not row:
+            return None
+
+        return EntityNode(
+            id=row[0],
+            entity_type=row[1],
+            canonical_name=row[2],
+            norm_key=row[3],
+            created_at=row[4],
+            expired_at=row[5],
+            merged_into=row[6],
+        )
+
+    def find_entity_by_norm_key(
+        self, norm_key: str, include_expired: bool = False
+    ) -> Optional[EntityNode]:
+        """
+        Find entity by normalization key (deduplication lookup).
+
+        Args:
+            norm_key: Normalization key (format: "TYPE:normalized_name")
+            include_expired: Include expired entities in search
+
+        Returns:
+            EntityNode if found, None otherwise
+        """
+        if include_expired:
+            query = "SELECT id, entity_type, canonical_name, norm_key, created_at, expired_at, merged_into FROM entities WHERE norm_key = ?"
+        else:
+            query = "SELECT id, entity_type, canonical_name, norm_key, created_at, expired_at, merged_into FROM entities WHERE norm_key = ? AND expired_at IS NULL"
+
+        cursor = self.conn.execute(query, (norm_key,))
+        row = cursor.fetchone()
+
+        if not row:
+            return None
+
+        return EntityNode(
+            id=row[0],
+            entity_type=row[1],
+            canonical_name=row[2],
+            norm_key=row[3],
+            created_at=row[4],
+            expired_at=row[5],
+            merged_into=row[6],
+        )
+
+    def get_all_entities(self, include_expired: bool = False) -> List[EntityNode]:
+        """
+        Get all entities across all types.
+
+        Args:
+            include_expired: Include expired entities
+
+        Returns:
+            List of EntityNode objects
+        """
+        if include_expired:
+            query = """
+                SELECT id, entity_type, canonical_name, norm_key, created_at, expired_at, merged_into
+                FROM entities
+                ORDER BY created_at DESC
+            """
+        else:
+            query = """
+                SELECT id, entity_type, canonical_name, norm_key, created_at, expired_at, merged_into
+                FROM entities
+                WHERE expired_at IS NULL
+                ORDER BY created_at DESC
+            """
+
+        cursor = self.conn.execute(query)
+        entities = []
+
+        for row in cursor.fetchall():
+            entities.append(
+                EntityNode(
+                    id=row[0],
+                    entity_type=row[1],
+                    canonical_name=row[2],
+                    norm_key=row[3],
+                    created_at=row[4],
+                    expired_at=row[5],
+                    merged_into=row[6],
+                )
+            )
+
+        return entities
+
+    def get_entities_by_type(
+        self, entity_type: str, include_expired: bool = False
+    ) -> List[EntityNode]:
+        """
+        Get all entities of a specific type.
+
+        Args:
+            entity_type: Entity type (PERSON, ORG, SYSTEM, etc.)
+            include_expired: Include expired entities
+
+        Returns:
+            List of EntityNode objects
+        """
+        if include_expired:
+            query = """
+                SELECT id, entity_type, canonical_name, norm_key, created_at, expired_at, merged_into
+                FROM entities
+                WHERE entity_type = ?
+                ORDER BY created_at DESC
+            """
+        else:
+            query = """
+                SELECT id, entity_type, canonical_name, norm_key, created_at, expired_at, merged_into
+                FROM entities
+                WHERE entity_type = ? AND expired_at IS NULL
+                ORDER BY created_at DESC
+            """
+
+        cursor = self.conn.execute(query, (entity_type,))
+        entities = []
+
+        for row in cursor.fetchall():
+            entities.append(
+                EntityNode(
+                    id=row[0],
+                    entity_type=row[1],
+                    canonical_name=row[2],
+                    norm_key=row[3],
+                    created_at=row[4],
+                    expired_at=row[5],
+                    merged_into=row[6],
+                )
+            )
+
+        return entities
+
+    def expire_entity(
+        self, entity_id: str, merged_into: Optional[str] = None
+    ) -> None:
+        """
+        Mark entity as expired (soft delete / merge).
+
+        Args:
+            entity_id: Entity ID to expire
+            merged_into: Optional ID of entity this was merged into
+        """
+        from datetime import datetime, timezone
+
+        now = datetime.now(timezone.utc).isoformat()
+
+        self.conn.execute(
+            "UPDATE entities SET expired_at = ?, merged_into = ? WHERE id = ?",
+            (now, merged_into, entity_id),
+        )
+        self.conn.commit()
+
+    # M4: Edge operations
+
+    def store_edge(self, edge: EdgeNode) -> str:
+        """
+        Persist an edge (M4: Graph Layer).
+
+        Args:
+            edge: EdgeNode to store
+
+        Returns:
+            Edge ID
+
+        Raises:
+            ValueError: If edge_type is invalid (enforced in EdgeNode.create())
+        """
+        # Check for duplicate edge (same from/to/type, not expired)
+        cursor = self.conn.execute(
+            """
+            SELECT edge_id FROM edges 
+            WHERE from_node = ? AND to_node = ? AND edge_type = ? AND t_expired IS NULL
+            """,
+            (edge.from_node, edge.to_node, edge.edge_type),
+        )
+        existing = cursor.fetchone()
+
+        if existing:
+            # Duplicate edge found - return existing ID
+            return existing[0]
+
+        # Insert new edge
+        self.conn.execute(
+            """
+            INSERT INTO edges (edge_id, from_node, to_node, edge_type, weight, 
+                              confidence, evidence, t_valid, t_invalid, t_created, t_expired)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                edge.edge_id,
+                edge.from_node,
+                edge.to_node,
+                edge.edge_type,
+                edge.weight,
+                edge.confidence,
+                edge.evidence,
+                edge.t_valid,
+                edge.t_invalid,
+                edge.t_created,
+                edge.t_expired,
+            ),
+        )
+        self.conn.commit()
+        return edge.edge_id
+
+    def get_edges_from_memory(
+        self,
+        memory_id: str,
+        edge_type: Optional[str] = None,
+        include_expired: bool = False,
+        min_confidence: float = 0.0,
+    ) -> List[EdgeNode]:
+        """
+        Get all outgoing edges from a memory node.
+
+        Args:
+            memory_id: Source memory ID
+            edge_type: Optional edge type filter (MENTIONS, RELATED)
+            include_expired: Include expired edges
+            min_confidence: Minimum confidence threshold (0.0 = all)
+
+        Returns:
+            List of EdgeNode objects
+        """
+        # Build query based on filters
+        if edge_type:
+            if include_expired:
+                query = """
+                    SELECT edge_id, from_node, to_node, edge_type, weight,
+                           confidence, evidence, t_valid, t_invalid, t_created, t_expired
+                    FROM edges
+                    WHERE from_node = ? AND edge_type = ? AND (confidence IS NULL OR confidence >= ?)
+                    ORDER BY t_created DESC
+                """
+                params = (memory_id, edge_type, min_confidence)
+            else:
+                query = """
+                    SELECT edge_id, from_node, to_node, edge_type, weight,
+                           confidence, evidence, t_valid, t_invalid, t_created, t_expired
+                    FROM edges
+                    WHERE from_node = ? AND edge_type = ? AND t_expired IS NULL AND (confidence IS NULL OR confidence >= ?)
+                    ORDER BY t_created DESC
+                """
+                params = (memory_id, edge_type, min_confidence)
+        else:
+            if include_expired:
+                query = """
+                    SELECT edge_id, from_node, to_node, edge_type, weight,
+                           confidence, evidence, t_valid, t_invalid, t_created, t_expired
+                    FROM edges
+                    WHERE from_node = ? AND (confidence IS NULL OR confidence >= ?)
+                    ORDER BY t_created DESC
+                """
+                params = (memory_id, min_confidence)
+            else:
+                query = """
+                    SELECT edge_id, from_node, to_node, edge_type, weight,
+                       confidence, evidence, t_valid, t_invalid, t_created, t_expired
+                FROM edges
+                WHERE from_node = ? AND t_expired IS NULL AND (confidence IS NULL OR confidence >= ?)
+                ORDER BY t_created DESC
+                """
+                params = (memory_id, min_confidence)
+
+        cursor = self.conn.execute(query, params)
+        edges = []
+
+        for row in cursor.fetchall():
+            edges.append(
+                EdgeNode(
+                    edge_id=row[0],
+                    from_node=row[1],
+                    to_node=row[2],
+                    edge_type=row[3],
+                    weight=row[4],
+                    confidence=row[5],
+                    evidence=row[6],
+                    t_valid=row[7],
+                    t_invalid=row[8],
+                    t_created=row[9],
+                    t_expired=row[10],
+                )
+            )
+
+        return edges
+
+    def get_edges_to_entity(
+        self,
+        entity_id: str,
+        include_expired: bool = False,
+        min_confidence: float = 0.0,
+    ) -> List[EdgeNode]:
+        """
+        Get all incoming edges to an entity node.
+
+        Args:
+            entity_id: Target entity ID
+            include_expired: Include expired edges
+            min_confidence: Minimum confidence threshold
+
+        Returns:
+            List of EdgeNode objects
+        """
+        if include_expired:
+            query = """
+                SELECT edge_id, from_node, to_node, edge_type, weight, 
+                       confidence, evidence, t_valid, t_invalid, t_created, t_expired
+                FROM edges
+                WHERE to_node = ? AND (confidence IS NULL OR confidence >= ?)
+                ORDER BY t_created DESC
+            """
+        else:
+            query = """
+                SELECT edge_id, from_node, to_node, edge_type, weight, 
+                       confidence, evidence, t_valid, t_invalid, t_created, t_expired
+                FROM edges
+                WHERE to_node = ? AND t_expired IS NULL AND (confidence IS NULL OR confidence >= ?)
+                ORDER BY t_created DESC
+            """
+
+        cursor = self.conn.execute(query, (entity_id, min_confidence))
+        edges = []
+
+        for row in cursor.fetchall():
+            edges.append(
+                EdgeNode(
+                    edge_id=row[0],
+                    from_node=row[1],
+                    to_node=row[2],
+                    edge_type=row[3],
+                    weight=row[4],
+                    confidence=row[5],
+                    evidence=row[6],
+                    t_valid=row[7],
+                    t_invalid=row[8],
+                    t_created=row[9],
+                    t_expired=row[10],
+                )
+            )
+
+        return edges
+
+    def get_edge(self, edge_id: str) -> Optional[EdgeNode]:
+        """
+        Retrieve edge by ID.
+
+        Args:
+            edge_id: Edge ID
+
+        Returns:
+            EdgeNode if found, None otherwise
+        """
+        cursor = self.conn.execute(
+            """
+            SELECT edge_id, from_node, to_node, edge_type, weight, 
+                   confidence, evidence, t_valid, t_invalid, t_created, t_expired
+            FROM edges
+            WHERE edge_id = ?
+            """,
+            (edge_id,),
+        )
+        row = cursor.fetchone()
+
+        if not row:
+            return None
+
+        return EdgeNode(
+            edge_id=row[0],
+            from_node=row[1],
+            to_node=row[2],
+            edge_type=row[3],
+            weight=row[4],
+            confidence=row[5],
+            evidence=row[6],
+            t_valid=row[7],
+            t_invalid=row[8],
+            t_created=row[9],
+            t_expired=row[10],
+        )
+
+    def expire_edge(self, edge_id: str) -> None:
+        """
+        Mark edge as expired (soft delete / invalidation).
+
+        Args:
+            edge_id: Edge ID to expire
+        """
+        from datetime import datetime, timezone
+
+        now = datetime.now(timezone.utc).isoformat()
+
+        self.conn.execute(
+            "UPDATE edges SET t_expired = ? WHERE edge_id = ?",
+            (now, edge_id),
+        )
+        self.conn.commit()

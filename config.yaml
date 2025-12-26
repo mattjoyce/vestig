@@ -38,3 +38,52 @@ m3:
 
   retrieval:
     include_expired: false  # Show deprecated memories by default?
+
+# M4: Graph Layer (entities, edges, traversal)
+m4:
+  entity_types:
+    # Configurable entity types (not hardcoded)
+    # Start small, expand as needed
+    allowed_types:
+      - PERSON
+      - ORG
+      - SYSTEM      # Software, services, tools
+      - PROJECT
+      - PLACE
+
+  entity_extraction:
+    enabled: true
+    mode: llm              # "llm" or "heuristic"
+
+    # LLM extraction settings
+    llm:
+      model: claude-sonnet-4.5  # Or from global config
+      max_entities_per_memory: 10
+      min_confidence: 0.75       # Only create edges above this threshold
+      store_low_confidence: false  # Don't store edges below threshold
+      max_evidence_length: 200   # Chars for evidence field
+
+    # Optional heuristic cleanup (post-LLM)
+    heuristics:
+      strip_titles: true         # "Dr Alice" → "Alice"
+      normalize_org_suffixes: true  # "Acme Ltd" → "Acme"
+      reject_garbage: true       # All punctuation, too short
+      split_lists: false         # "A, B and C" → separate entities (risky)
+
+  edge_creation:
+    mentions:
+      enabled: true
+      default_weight: 1.0
+      confidence_gated: true     # Respect min_confidence from extraction
+
+    related:
+      enabled: true
+      similarity_threshold: 0.6   # Conservative (high bar)
+      max_edges_per_memory: 10    # Cap to prevent graph sprawl
+
+  graph_expansion:
+    enabled: true
+    max_expand_via_entities: 3   # Limit 1-hop entity expansion
+    max_expand_via_related: 3    # Limit 1-hop RELATED expansion
+    include_expired: false       # Exclude expired edges by default
+    min_confidence: 0.75         # Exclude low-confidence edges from expansion
