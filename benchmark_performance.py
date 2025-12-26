@@ -21,6 +21,7 @@ def benchmark_memory_commit(
     test_memories: list[str],
     scenario_name: str,
     hygiene_config: dict | None = None,
+    m4_model: str | None = None,
 ) -> dict:
     """
     Benchmark memory commit performance.
@@ -31,6 +32,8 @@ def benchmark_memory_commit(
         m4_config: M4 config (empty dict to disable)
         test_memories: List of test memory strings
         scenario_name: Name for this benchmark scenario
+        hygiene_config: Optional hygiene config
+        m4_model: Optional M4 model override
 
     Returns:
         Dict with timing results
@@ -41,6 +44,11 @@ def benchmark_memory_commit(
     print(f"\n{'='*70}")
     print(f"Scenario: {scenario_name}")
     print(f"{'='*70}")
+
+    # Override M4 model if specified
+    if m4_model and m4_config:
+        m4_config = m4_config.copy()
+        m4_config["entity_extraction"]["llm"]["model"] = m4_model
 
     for i, content in enumerate(test_memories, 1):
         start = time.time()
@@ -149,16 +157,14 @@ def main():
     print("\n" + "=" * 70)
     print("SCENARIO 2: M4 with claude-sonnet-4.5")
     storage = MemoryStorage(db_path)
-    m4_config_sonnet = config.get("m4", {}).copy()
-    if m4_config_sonnet:
-        m4_config_sonnet["entity_extraction"]["llm"]["model"] = "claude-sonnet-4.5"
     result = benchmark_memory_commit(
         storage,
         embedding_engine,
-        m4_config_sonnet,
+        config.get("m4", {}),
         test_memories,
         "M4 (claude-sonnet-4.5)",
         hygiene_no_neardup,
+        m4_model="claude-sonnet-4.5",
     )
     results.append(result)
     storage.close()
@@ -171,16 +177,14 @@ def main():
     print("\n" + "=" * 70)
     print("SCENARIO 3: M4 with claude-haiku-4.5")
     storage = MemoryStorage(db_path)
-    m4_config_haiku = config.get("m4", {}).copy()
-    if m4_config_haiku:
-        m4_config_haiku["entity_extraction"]["llm"]["model"] = "claude-haiku-4.5"
     result = benchmark_memory_commit(
         storage,
         embedding_engine,
-        m4_config_haiku,
+        config.get("m4", {}),
         test_memories,
         "M4 (claude-haiku-4.5)",
         hygiene_no_neardup,
+        m4_model="claude-haiku-4.5",
     )
     results.append(result)
     storage.close()
