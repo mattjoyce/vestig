@@ -108,23 +108,29 @@ def format_search_results(results: List[Tuple[MemoryNode, float]]) -> str:
 
 def format_recall_results(results: List[Tuple[MemoryNode, float]]) -> str:
     """
-    Format recall results for agent context (clean text blocks).
+    Format recall results for agent context (M2: stable contract).
 
     Args:
         results: List of (MemoryNode, similarity_score) tuples
 
     Returns:
         Formatted string suitable for LLM context
+
+    Format:
+        [mem_...] (source=manual, created=2025-12-26T08:12:00Z, score=0.8123)
+        <content>
     """
     if not results:
         return "No memories found."
 
     blocks = []
-    for memory, _ in results:
-        # Boring UTC timestamp (no humanization)
-        created_dt = datetime.fromisoformat(memory.created_at.replace("Z", "+00:00"))
-        timestamp_str = created_dt.strftime("%Y-%m-%d %H:%M UTC")
+    for memory, score in results:
+        # Extract source from metadata
+        source = memory.metadata.get("source", "unknown")
 
-        blocks.append(f"{memory.content}\n\nCreated: {timestamp_str}")
+        # Format: [id] (source=..., created=..., score=...)
+        header = f"[{memory.id}] (source={source}, created={memory.created_at}, score={score:.4f})"
+
+        blocks.append(f"{header}\n{memory.content}")
 
     return "\n\n---\n\n".join(blocks)

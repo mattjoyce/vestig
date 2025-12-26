@@ -61,14 +61,33 @@ def cmd_add(args):
     config = args.config_dict
     storage, embedding_engine = build_runtime(config)
 
+    # Parse tags if provided
+    tags = None
+    if args.tags:
+        tags = [tag.strip() for tag in args.tags.split(",")]
+
     try:
-        memory_id = commit_memory(
+        outcome = commit_memory(
             content=args.content,
             storage=storage,
             embedding_engine=embedding_engine,
-            source="manual",
+            source=args.source,
+            hygiene_config=config.get("hygiene", {}),
+            tags=tags,
         )
-        print(f"Memory stored: {memory_id}")
+
+        # Display outcome info
+        if outcome.outcome == "EXACT_DUPE":
+            print(f"Memory stored: {outcome.memory_id} (exact duplicate detected)")
+        elif outcome.outcome == "NEAR_DUPE":
+            print(
+                f"Memory stored: {outcome.memory_id} "
+                f"(near-duplicate of {outcome.matched_memory_id}, "
+                f"score={outcome.query_score:.4f})"
+            )
+        else:  # INSERTED_NEW
+            print(f"Memory stored: {outcome.memory_id}")
+
     except ValueError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
@@ -169,6 +188,12 @@ def main():
     # vestig memory add
     parser_add = memory_subparsers.add_parser("add", help="Add a new memory")
     parser_add.add_argument("content", help="Memory content")
+    parser_add.add_argument(
+        "--source", default="manual", help="Memory source (default: manual)"
+    )
+    parser_add.add_argument(
+        "--tags", help="Comma-separated tags (e.g., bug,auth,fix)"
+    )
     parser_add.set_defaults(func=cmd_add)
 
     # vestig memory search

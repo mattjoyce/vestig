@@ -1,4 +1,4 @@
-# Vestig M1 Configuration
+# Vestig Configuration
 
 # Embedding configuration
 embedding:
@@ -13,3 +13,13 @@ storage:
 # Retrieval
 retrieval:
   default_limit: 5
+
+# M2: Content hygiene (quality firewall)
+hygiene:
+  min_chars: 12
+  max_chars: 4000
+  normalize_whitespace: true
+  reject_exact_duplicates: true
+  near_duplicate:
+    enabled: true
+    threshold: 0.92
