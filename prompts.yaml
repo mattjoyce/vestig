@@ -11,8 +11,8 @@ extract_entities: |
   1. Only extract entities that clearly appear in the text
   2. Assign a confidence score (0.0-1.0) based on how certain you are
   3. Provide brief evidence (max 200 chars) explaining why this is an entity
-  4. Focus on concrete names, not abstract concepts
-  5. Prefer full names over partial mentions
+  4. Prefer full names over partial mentions
+  5. Entity types: PERSON, ORG, SYSTEM, PROJECT, PLACE, SKILL, TOOL, FILE, CONCEPT
 
   Memory content:
   {{content}}
@@ -22,7 +22,7 @@ extract_entities: |
     "entities": [
       {
         "name": "exact name as it appears or normalized form",
-        "type": "PERSON|ORG|SYSTEM|PROJECT|PLACE",
+        "type": "PERSON|ORG|SYSTEM|PROJECT|PLACE|SKILL|TOOL|FILE|CONCEPT",
         "confidence": 0.0-1.0,
         "evidence": "short explanation"
       }
@@ -33,28 +33,43 @@ extract_entities: |
 
 # Session Ingestion: Extract memories from conversation transcripts
 extract_memories_from_session: |
-  Extract discrete, factual memories from this conversation transcript.
+  Extract discrete, factual memories from this conversation transcript, along with entities mentioned in each memory.
 
-  Guidelines:
-  1. Extract ONE clear fact, decision, insight, or piece of knowledge per memory
-  2. Each memory should be self-contained with enough context to understand it independently
-  3. Focus on substantive content (technical details, decisions, learnings, etc.)
-  4. Skip greetings, small talk, and purely procedural exchanges
-  5. Preserve important context (who said/did what, when applicable)
-  6. Assign confidence based on how clear and factual the information is
+  GUIDELINES FOR MEMORIES:
+  - One clear fact, decision, insight, or knowledge point per memory
+  - Self-contained with sufficient context for standalone understanding
+  - Substantive content only: technical details, decisions, learnings
+  - Skip greetings, small talk, procedural exchanges
+  - Preserve key context (who, what, when relevant)
+  - Confidence reflects clarity and factuality
 
-  Conversation chunk:
+  GUIDELINES FOR ENTITIES:
+  - Extract entities mentioned in each memory
+  - Entity types: PERSON, ORG, SYSTEM, PROJECT, PLACE, SKILL, TOOL, FILE, CONCEPT
+  - Only extract entities that are clearly mentioned in the memory
+  - Provide text evidence supporting each entity
+  - Confidence reflects certainty this is the correct entity type
+
+  CONVERSATION CHUNK:
   {{content}}
 
-  Output ONLY valid JSON in this exact format:
+  OUTPUT (valid JSON only):
   {
     "memories": [
       {
-        "content": "The full memory text with enough context to be self-contained",
+        "content": "self-contained memory with context",
         "confidence": 0.0-1.0,
-        "rationale": "Brief explanation of why this is worth remembering"
+        "rationale": "why this matters",
+        "entities": [
+          {
+            "name": "entity name",
+            "type": "PERSON|ORG|SYSTEM|PROJECT|PLACE|SKILL|TOOL|FILE|CONCEPT",
+            "confidence": 0.0-1.0,
+            "evidence": "text snippet supporting this entity"
+          }
+        ]
       }
     ]
   }
 
-  If no substantive memories found, return: {"memories": []}
+  Return {"memories": []} if none found.
