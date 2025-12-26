@@ -96,6 +96,7 @@ def commit_memory(
     on_commit: OnCommitHook | None = None,
     event_storage: MemoryEventStorage | None = None,  # M3: Event logging
     m4_config: dict[str, Any] | None = None,  # M4: Graph config
+    pre_extracted_entities: list[tuple[str, str, float, str]] | None = None,  # M4: Pre-extracted entities
 ) -> CommitOutcome:
     """
     Commit a memory to storage with M2 quality firewall, M3 event logging, and M4 entity extraction.
@@ -111,6 +112,8 @@ def commit_memory(
         on_commit: Optional hook called with CommitOutcome (M2→M3 bridge)
         event_storage: Optional event storage for M3 event logging
         m4_config: Optional M4 config for entity extraction + graph construction
+        pre_extracted_entities: Optional pre-extracted entities (name, type, confidence, evidence)
+                                Skips LLM extraction if provided
 
     Returns:
         CommitOutcome with decision details
@@ -137,6 +140,36 @@ def commit_memory(
     normalized = normalize_content(
         content, normalize_whitespace=hygiene.get("normalize_whitespace", True)
     )
+
+    # M4: One-shot entity extraction for manual adds (if not pre-extracted)
+    # Treat manual content as a "chunk" and extract entities using the same prompt
+    if pre_extracted_entities is None and m4_config is not None:
+        extraction_config = m4_config.get("entity_extraction", {})
+        if extraction_config.get("enabled", True):
+            from vestig.core.ingestion import extract_memories_from_chunk
+
+            # Get extraction model from M4 config
+            extraction_model = extraction_config.get("llm", {}).get("model")
+            min_confidence = extraction_config.get("llm", {}).get("min_confidence", 0.75)
+
+            if extraction_model:
+                try:
+                    # Extract entities one-shot (treating manual input as a chunk)
+                    extracted = extract_memories_from_chunk(
+                        normalized,
+                        model=extraction_model,
+                        min_confidence=min_confidence,
+                    )
+
+                    # Use entities from first extracted memory if available
+                    if extracted and len(extracted) > 0:
+                        pre_extracted_entities = extracted[0].entities
+                    else:
+                        pre_extracted_entities = []
+
+                except Exception as e:
+                    # Fall back to empty entities if extraction fails
+                    pre_extracted_entities = []
 
     # Calculate content hash early (needed for all outcomes)
     content_hash = hashlib.sha256(normalized.encode("utf-8")).hexdigest()
@@ -263,6 +296,7 @@ def commit_memory(
                 storage=storage,
                 m4_config=m4_config,
                 artifact_ref=artifact_ref,
+                pre_extracted_entities=pre_extracted_entities,
             )
 
             # M4: RELATED edge creation (Memory → Memory)
@@ -295,20 +329,23 @@ def _extract_and_link_entities(
     storage: MemoryStorage,
     m4_config: dict[str, Any],
     artifact_ref: str | None = None,
+    pre_extracted_entities: list[tuple[str, str, float, str]] | None = None,
 ) -> None:
     """
-    Extract entities and create MENTIONS edges (M4).
+    Store entities and create MENTIONS edges (M4).
 
     Called from commit_memory() inside transaction.
+    Entities are always pre-extracted using one-shot extraction in commit_memory().
 
     Args:
-        content: Memory content to extract from
+        content: Memory content (not used, kept for backward compatibility)
         memory_id: Memory ID (for MENTIONS edges)
         storage: Storage instance
         m4_config: M4 configuration dict
-        artifact_ref: Optional artifact reference for event logging
+        artifact_ref: Optional artifact reference (not used, kept for backward compatibility)
+        pre_extracted_entities: Pre-extracted entities (name, type, confidence, evidence)
     """
-    from vestig.core.entity_extraction import extract_and_store_entities
+    from vestig.core.entity_extraction import store_entities
     from vestig.core.models import EdgeNode
 
     # Check if entity extraction enabled
@@ -316,13 +353,16 @@ def _extract_and_link_entities(
     if not extraction_config.get("enabled", True):
         return
 
-    # Extract and store entities (with deduplication)
-    entities = extract_and_store_entities(
-        content=content,
+    # Store pre-extracted entities (with deduplication)
+    # Entities are always extracted one-shot in commit_memory()
+    if pre_extracted_entities is None:
+        pre_extracted_entities = []
+
+    entities = store_entities(
+        entities=pre_extracted_entities,
         memory_id=memory_id,
         storage=storage,
         config=m4_config,
-        artifact_ref=artifact_ref,
     )
 
     # Check if MENTIONS edge creation enabled

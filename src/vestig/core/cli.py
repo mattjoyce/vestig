@@ -92,6 +92,7 @@ def cmd_add(args):
             hygiene_config=config.get("hygiene", {}),
             tags=tags,
             event_storage=event_storage,  # M3: Enable event logging
+            m4_config=config.get("m4", {}),  # M4: Enable one-shot entity extraction
         )
 
         # Display outcome info

@@ -1,36 +1,6 @@
 # Vestig LLM Prompts
 # Use {{token}} for variable substitution
 
-# M4: Entity Extraction (LLM-based)
-extract_entities: |
-  Extract entities from the memory content below.
-
-  ENTITY TYPES: {{allowed_types}}
-
-  RULES:
-  - Only extract entities explicitly mentioned in text
-  - Score confidence 0.0-1.0 based on clarity
-  - Evidence max 200 chars
-  - Use full names where available
-  - Types: PERSON, ORG, SYSTEM, PROJECT, PLACE, SKILL, TOOL, FILE, CONCEPT
-
-  MEMORY CONTENT:
-  {{content}}
-
-  OUTPUT (valid JSON only):
-  {
-    "entities": [
-      {
-        "name": "exact or normalized name",
-        "type": "PERSON|ORG|SYSTEM|PROJECT|PLACE|SKILL|TOOL|FILE|CONCEPT",
-        "confidence": 0.0-1.0,
-        "evidence": "brief explanation"
-      }
-    ]
-  }
-
-  Return {"entities": []} if none found.
-
 # Session Ingestion: Extract memories from conversation transcripts
 extract_memories_from_session: |
   Extract discrete, factual memories from this conversation transcript, along with entities mentioned in each memory.
