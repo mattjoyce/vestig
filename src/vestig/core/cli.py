@@ -277,6 +277,7 @@ def cmd_ingest(args):
             extraction_model=model,
             min_confidence=min_confidence,
             source="document_ingest",
+            verbose=args.verbose,
         )
 
         # Print summary
@@ -344,6 +345,11 @@ def main():
         "--min-confidence",
         type=float,
         help="Minimum confidence for extracted memories (overrides config, default from config or 0.6)",
+    )
+    parser_ingest.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Show detailed extraction output (memories, entities, confidence values)",
     )
     parser_ingest.set_defaults(func=cmd_ingest)
 

@@ -177,6 +177,7 @@ def ingest_document(
     chunk_overlap: int = 500,
     min_confidence: float = 0.6,
     source: str = "document_ingest",
+    verbose: bool = False,
 ) -> IngestionResult:
     """
     Ingest document by extracting memories with LLM and committing them.
@@ -236,8 +237,20 @@ def ingest_document(
             print(f"{len(extracted)} memories extracted", flush=True)
             memories_extracted += len(extracted)
 
+            # Show extracted memories in verbose mode
+            if verbose and extracted:
+                for idx, memory in enumerate(extracted, 1):
+                    print(f"    Memory {idx}:")
+                    print(
+                        f"      Content: {memory.content[:100]}..."
+                        if len(memory.content) > 100
+                        else f"      Content: {memory.content}"
+                    )
+                    print(f"      Confidence: {memory.confidence:.2f}")
+                    print(f"      Rationale: {memory.rationale}")
+
             # Commit each memory
-            for memory in extracted:
+            for idx, memory in enumerate(extracted, 1):
                 try:
                     outcome = commit_memory(
                         content=memory.content,
@@ -251,6 +264,33 @@ def ingest_document(
 
                     if outcome.outcome == "INSERTED_NEW":
                         memories_committed += 1
+
+                        # Show entities in verbose mode
+                        if verbose:
+                            # Get MENTIONS edges for this memory
+                            edges = storage.get_edges_from_memory(
+                                outcome.memory_id, edge_type="MENTIONS", include_expired=False
+                            )
+                            if edges:
+                                print(f"      Entities extracted ({len(edges)}):")
+                                for edge in edges:
+                                    entity = storage.get_entity(edge.to_node)
+                                    if entity:
+                                        conf_str = (
+                                            f", confidence={edge.confidence:.2f}"
+                                            if edge.confidence
+                                            else ""
+                                        )
+                                        evid_str = (
+                                            f', evidence="{edge.evidence[:50]}..."'
+                                            if edge.evidence and len(edge.evidence) > 50
+                                            else f', evidence="{edge.evidence}"'
+                                            if edge.evidence
+                                            else ""
+                                        )
+                                        print(
+                                            f"        - {entity.canonical_name} ({entity.entity_type}{conf_str}{evid_str})"
+                                        )
                     else:
                         memories_deduplicated += 1
 
