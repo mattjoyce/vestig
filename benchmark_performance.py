@@ -116,6 +116,13 @@ def main():
     # Load config
     config = load_config("config.yaml")
 
+    # Initialize embedding engine once (reuse across scenarios)
+    print("Loading embedding model...")
+    embedding_engine = EmbeddingEngine(
+        model_name=config["embedding"]["model"],
+        expected_dimension=config["embedding"]["dimension"],
+    )
+
     # Disable near-duplicate to ensure all memories are inserted
     hygiene_no_neardup = {
         "near_duplicate": {"enabled": False},
@@ -128,10 +135,6 @@ def main():
     print("\n" + "=" * 70)
     print("SCENARIO 1: No M4 (Embedding + Storage only)")
     storage = MemoryStorage(db_path)
-    embedding_engine = EmbeddingEngine(
-        model_name=config["embedding"]["model"],
-        expected_dimension=config["embedding"]["dimension"],
-    )
     result = benchmark_memory_commit(
         storage, embedding_engine, {}, test_memories, "No M4 (baseline)", hygiene_no_neardup
     )
@@ -146,10 +149,6 @@ def main():
     print("\n" + "=" * 70)
     print("SCENARIO 2: M4 with claude-sonnet-4.5")
     storage = MemoryStorage(db_path)
-    embedding_engine = EmbeddingEngine(
-        model_name=config["embedding"]["model"],
-        expected_dimension=config["embedding"]["dimension"],
-    )
     m4_config_sonnet = config.get("m4", {}).copy()
     if m4_config_sonnet:
         m4_config_sonnet["entity_extraction"]["llm"]["model"] = "claude-sonnet-4.5"
@@ -172,10 +171,6 @@ def main():
     print("\n" + "=" * 70)
     print("SCENARIO 3: M4 with claude-haiku-4.5")
     storage = MemoryStorage(db_path)
-    embedding_engine = EmbeddingEngine(
-        model_name=config["embedding"]["model"],
-        expected_dimension=config["embedding"]["dimension"],
-    )
     m4_config_haiku = config.get("m4", {}).copy()
     if m4_config_haiku:
         m4_config_haiku["entity_extraction"]["llm"]["model"] = "claude-haiku-4.5"
