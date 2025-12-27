@@ -14,18 +14,81 @@ from vestig.core.entity_extraction import (
     substitute_tokens,
 )
 from vestig.core.event_storage import MemoryEventStorage
-from vestig.core.ingest_sources import normalize_document_text
+from vestig.core.ingest_sources import (
+    extract_claude_session_chunks,
+    normalize_document_text,
+)
 from vestig.core.storage import MemoryStorage
 
 
 @dataclass
+class TemporalHints:
+    """
+    Temporal metadata extracted by parsers.
+
+    Represents the temporal context for a document/chunk being ingested.
+    These hints flow from parser → ExtractedMemory → MemoryNode.
+    """
+
+    # Primary timestamp for this content
+    t_valid: str | None = None  # ISO 8601 timestamp
+
+    # Temporal classification
+    stability: str = "unknown"  # "static" | "dynamic" | "unknown"
+
+    # Evidence for debugging
+    extraction_method: str = "default"  # "jsonl_timestamp" | "file_mtime" | "filename_pattern" | "default"
+    evidence: str | None = None  # Human-readable explanation
+
+    @classmethod
+    def from_now(cls) -> "TemporalHints":
+        """Create hints with current time (fallback)."""
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc).isoformat()
+        return cls(
+            t_valid=now,
+            stability="unknown",
+            extraction_method="default",
+            evidence="No temporal metadata available; using current time"
+        )
+
+    @classmethod
+    def from_file_mtime(cls, path: Path) -> "TemporalHints":
+        """Extract temporal hints from file modification time."""
+        from datetime import datetime, timezone
+        mtime = path.stat().st_mtime
+        dt = datetime.fromtimestamp(mtime, tz=timezone.utc)
+        return cls(
+            t_valid=dt.isoformat(),
+            stability="unknown",
+            extraction_method="file_mtime",
+            evidence=f"Extracted from file modification time: {path.name}"
+        )
+
+    @classmethod
+    def from_timestamp(cls, timestamp: str, evidence: str) -> "TemporalHints":
+        """Create hints from explicit timestamp (e.g., JSONL event)."""
+        return cls(
+            t_valid=timestamp,
+            stability="unknown",
+            extraction_method="jsonl_timestamp",
+            evidence=evidence
+        )
+
+
+@dataclass
 class ExtractedMemory:
-    """Memory extracted from document by LLM"""
+    """Memory extracted from document by LLM with temporal hints"""
 
     content: str
     confidence: float
     rationale: str
     entities: list[tuple[str, str, float, str]]  # (name, type, confidence, evidence)
+
+    # Temporal hints (optional, None = use defaults)
+    t_valid_hint: str | None = None           # When fact became true (ISO 8601)
+    temporal_stability_hint: str | None = None # "static" | "dynamic" | "unknown"
+    temporal_evidence: str | None = None       # Brief explanation of temporal extraction
 
 
 # Pydantic schemas for LLM structured output
@@ -50,6 +113,10 @@ class MemorySchema(BaseModel):
     )
     confidence: float = Field(ge=0.0, le=1.0, description="Confidence score 0.0-1.0")
     rationale: str = Field(description="Brief explanation of why this is worth remembering")
+    temporal_stability: str = Field(
+        default="unknown",
+        description="Temporal stability: static (permanent facts), dynamic (changing state), or unknown"
+    )
     entities: list[EntitySchema] = Field(
         default_factory=list,
         description="Entities mentioned in this memory (people, orgs, systems, projects, places)",
@@ -158,6 +225,7 @@ def extract_memories_from_chunk(
     chunk: str,
     model: str,
     min_confidence: float = 0.6,
+    temporal_hints: TemporalHints | None = None,
 ) -> list[ExtractedMemory]:
     """
     Extract memories from a text chunk using LLM.
@@ -166,9 +234,10 @@ def extract_memories_from_chunk(
         chunk: Text chunk to extract from
         model: LLM model to use
         min_confidence: Minimum confidence threshold
+        temporal_hints: Optional temporal context for this chunk
 
     Returns:
-        List of ExtractedMemory objects
+        List of ExtractedMemory objects with temporal hints
 
     Raises:
         ValueError: If LLM returns invalid JSON
@@ -214,12 +283,32 @@ def extract_memories_from_chunk(
             for entity in memory_schema.entities
         ]
 
+        # Attach temporal hints to each extracted memory
+        t_valid_hint = None
+        temporal_stability_hint = "unknown"
+        temporal_evidence = None
+
+        if temporal_hints:
+            t_valid_hint = temporal_hints.t_valid
+            # Use LLM-classified stability, fallback to parser hints
+            temporal_stability_hint = memory_schema.temporal_stability
+            if not temporal_stability_hint or temporal_stability_hint == "unknown":
+                temporal_stability_hint = temporal_hints.stability
+            temporal_evidence = temporal_hints.evidence
+
+        # If no temporal hints from parser, use LLM classification only
+        if not temporal_hints and memory_schema.temporal_stability:
+            temporal_stability_hint = memory_schema.temporal_stability
+
         memories.append(
             ExtractedMemory(
                 content=content,
                 confidence=confidence,
                 rationale=rationale,
                 entities=entities,
+                t_valid_hint=t_valid_hint,
+                temporal_stability_hint=temporal_stability_hint,
+                temporal_evidence=temporal_evidence,
             )
         )
 
@@ -273,10 +362,10 @@ def ingest_document(
     if not path.exists():
         raise FileNotFoundError(f"Document not found: {document_path}")
 
-    text = path.read_text(encoding="utf-8")
+    raw_text = path.read_text(encoding="utf-8")
 
-    text, resolved_format = normalize_document_text(
-        text,
+    text, resolved_format, document_temporal_hints = normalize_document_text(
+        raw_text,
         source_format=source_format,
         format_config=format_config,
         path=path,
@@ -286,9 +375,24 @@ def ingest_document(
         raise ValueError(f"No ingestible content found in {document_path}")
     if verbose:
         print(f"Normalized input using format: {resolved_format}")
+        print(f"Temporal extraction: {document_temporal_hints.extraction_method}")
+        if document_temporal_hints.t_valid:
+            print(f"  t_valid: {document_temporal_hints.t_valid}")
+        if document_temporal_hints.evidence:
+            print(f"  Evidence: {document_temporal_hints.evidence}")
 
     # Chunk text
-    chunks = chunk_text_by_chars(text, chunk_size=chunk_size, overlap=chunk_overlap)
+    if resolved_format == "claude-session":
+        chunks_with_hints = extract_claude_session_chunks(
+            raw_text,
+            format_config or {},
+            chunk_size,
+            chunk_overlap,
+        )
+        chunks = [chunk for chunk, _ in chunks_with_hints]
+    else:
+        chunks = chunk_text_by_chars(text, chunk_size=chunk_size, overlap=chunk_overlap)
+        chunks_with_hints = [(chunk, document_temporal_hints) for chunk in chunks]
 
     print(f"Processing {path.name}: {len(text):,} chars → {len(chunks)} chunks")
 
@@ -302,7 +406,7 @@ def ingest_document(
     entities_before = len(storage.get_all_entities())
 
     # Process each chunk
-    for i, chunk in enumerate(chunks, 1):
+    for i, (chunk, chunk_hints) in enumerate(chunks_with_hints, 1):
         print(f"  Chunk {i}/{len(chunks)}: ", end="", flush=True)
 
         try:
@@ -311,6 +415,7 @@ def ingest_document(
                 chunk,
                 model=extraction_model,
                 min_confidence=min_confidence,
+                temporal_hints=chunk_hints,
             )
 
             print(f"{len(extracted)} memories extracted", flush=True)
@@ -367,6 +472,7 @@ def ingest_document(
                         m4_config=m4_config,
                         artifact_ref=path.name,
                         pre_extracted_entities=combined_entities or None,
+                        temporal_hints=memory,  # Pass ExtractedMemory with temporal fields
                     )
 
                     if outcome.outcome == "INSERTED_NEW":
@@ -379,7 +485,7 @@ def ingest_document(
                                 outcome.memory_id, edge_type="MENTIONS", include_expired=False
                             )
                             if edges:
-                                print(f"      Entities extracted ({len(edges)}):")
+                                print(f"    Memory {idx} - Entities committed ({len(edges)}):")
                                 for edge in edges:
                                     entity = storage.get_entity(edge.to_node)
                                     if entity:
@@ -396,7 +502,7 @@ def ingest_document(
                                             else ""
                                         )
                                         print(
-                                            f"        - {entity.canonical_name} ({entity.entity_type}{conf_str}{evid_str})"
+                                            f"      - {entity.canonical_name} ({entity.entity_type}{conf_str}{evid_str})"
                                         )
                     else:
                         memories_deduplicated += 1
