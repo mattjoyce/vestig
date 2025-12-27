@@ -36,6 +36,11 @@ ENV/
 # Vestig data (runtime)
 data/
 
+# Agent guidance (local)
+AGENTS.md
+CLAUDE.md
+.claude/
+
 # OS
 .DS_Store
 Thumbs.db
