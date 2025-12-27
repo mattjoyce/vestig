@@ -80,6 +80,19 @@ export ANTHROPIC_API_KEY="your-key-here"
 # Ingest using config (model, chunk size, etc. from config_test.yaml)
 python -m vestig.core.cli --config config_test.yaml ingest your_session.txt
 
+# Ingest a Claude Code session export (JSONL)
+python -m vestig.core.cli --config config_test.yaml ingest session.jsonl \
+  --format claude-session
+
+# Ingest multiple session files with a glob
+python -m vestig.core.cli --config config_test.yaml ingest "session*.jsonl" \
+  --format claude-session
+
+# Force a project entity onto every memory
+python -m vestig.core.cli --config config_test.yaml ingest session.jsonl \
+  --format claude-session \
+  --force-entity PROJECT:vestig
+
 # Or override config with CLI args
 python -m vestig.core.cli --config config_test.yaml ingest your_session.txt \
   --model claude-haiku-4.5 \

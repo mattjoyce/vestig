@@ -14,6 +14,7 @@ from vestig.core.entity_extraction import (
     substitute_tokens,
 )
 from vestig.core.event_storage import MemoryEventStorage
+from vestig.core.ingest_sources import normalize_document_text
 from vestig.core.storage import MemoryStorage
 
 
@@ -72,6 +73,35 @@ class IngestionResult:
     memories_deduplicated: int
     entities_created: int
     errors: list[str]
+
+
+def parse_force_entities(force_entities: list[str] | None) -> list[tuple[str, str, float, str]]:
+    if not force_entities:
+        return []
+
+    parsed: list[tuple[str, str, float, str]] = []
+    for raw in force_entities:
+        if not raw:
+            continue
+        if ":" not in raw:
+            raise ValueError(f"Forced entity must be TYPE:Name, got: {raw}")
+        entity_type, name = raw.split(":", 1)
+        entity_type = entity_type.strip().upper()
+        name = name.strip()
+        if not entity_type or not name:
+            raise ValueError(f"Forced entity must be TYPE:Name, got: {raw}")
+        parsed.append((name, entity_type, 1.0, "forced_ingest"))
+
+    seen: set[tuple[str, str]] = set()
+    unique: list[tuple[str, str, float, str]] = []
+    for name, entity_type, confidence, evidence in parsed:
+        key = (name.lower(), entity_type)
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append((name, entity_type, confidence, evidence))
+
+    return unique
 
 
 def chunk_text_by_chars(text: str, chunk_size: int = 20000, overlap: int = 500) -> list[str]:
@@ -207,6 +237,9 @@ def ingest_document(
     chunk_overlap: int = 500,
     min_confidence: float = 0.6,
     source: str = "document_ingest",
+    source_format: str = "auto",
+    format_config: dict[str, Any] | None = None,
+    force_entities: list[str] | None = None,
     verbose: bool = False,
 ) -> IngestionResult:
     """
@@ -223,6 +256,10 @@ def ingest_document(
         extraction_model: LLM model for memory extraction
         min_confidence: Minimum confidence for extracted memories
         source: Source tag for committed memories
+        source_format: Input format (auto|plain|claude-session)
+        format_config: Format-specific configuration
+        force_entities: Entity list to attach to every memory
+        verbose: Print detailed extraction output
 
     Returns:
         IngestionResult with statistics
@@ -237,6 +274,18 @@ def ingest_document(
         raise FileNotFoundError(f"Document not found: {document_path}")
 
     text = path.read_text(encoding="utf-8")
+
+    text, resolved_format = normalize_document_text(
+        text,
+        source_format=source_format,
+        format_config=format_config,
+        path=path,
+    )
+    forced_entities = parse_force_entities(force_entities)
+    if not text.strip():
+        raise ValueError(f"No ingestible content found in {document_path}")
+    if verbose:
+        print(f"Normalized input using format: {resolved_format}")
 
     # Chunk text
     chunks = chunk_text_by_chars(text, chunk_size=chunk_size, overlap=chunk_overlap)
@@ -291,6 +340,24 @@ def ingest_document(
             # Commit each memory
             for idx, memory in enumerate(extracted, 1):
                 try:
+                    combined_entities = []
+                    if memory.entities:
+                        combined_entities.extend(memory.entities)
+                    if forced_entities:
+                        combined_entities.extend(forced_entities)
+                    if combined_entities:
+                        seen_entities: set[tuple[str, str]] = set()
+                        deduped_entities = []
+                        for name, entity_type, confidence, evidence in combined_entities:
+                            key = (name.lower(), entity_type)
+                            if key in seen_entities:
+                                continue
+                            seen_entities.add(key)
+                            deduped_entities.append(
+                                (name, entity_type, confidence, evidence)
+                            )
+                        combined_entities = deduped_entities
+
                     outcome = commit_memory(
                         content=memory.content,
                         storage=storage,
@@ -299,7 +366,7 @@ def ingest_document(
                         event_storage=event_storage,
                         m4_config=m4_config,
                         artifact_ref=path.name,
-                        pre_extracted_entities=memory.entities if memory.entities else None,
+                        pre_extracted_entities=combined_entities or None,
                     )
 
                     if outcome.outcome == "INSERTED_NEW":

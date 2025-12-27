@@ -22,6 +22,16 @@ ingestion:
   chunk_size: 20000
   chunk_overlap: 500
   min_confidence: 0.6
+  format: auto
+  force_entities: []
+  claude_session:
+    include_roles:
+      - user
+      - assistant
+    include_message_types:
+      - text
+    drop_thinking: true
+    drop_tool_use: true
 
 m3:
   temporal:

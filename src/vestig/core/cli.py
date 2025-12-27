@@ -1,6 +1,8 @@
 """CLI entry point for Vestig memory system"""
 
 import argparse
+import glob
+import os
 import sys
 from typing import Any
 
@@ -37,6 +39,14 @@ def validate_config(config: dict[str, Any]) -> None:
             current = current[part]
         if key not in current:
             raise ValueError(f"Missing required config key: {'.'.join(path)}.{key}")
+
+
+def expand_ingest_paths(pattern: str) -> list[str]:
+    """Expand glob patterns for ingest paths."""
+    expanded = os.path.expanduser(pattern)
+    if glob.has_magic(expanded):
+        return sorted(glob.glob(expanded))
+    return [expanded]
 
 
 def build_runtime(
@@ -260,52 +270,107 @@ def cmd_ingest(args):
         if args.min_confidence is not None
         else ingestion_config.get("min_confidence", 0.6)
     )
+    source_format = args.format if args.format else ingestion_config.get("format", "auto")
+    format_config = ingestion_config.get("claude_session", {})
+    force_entities = ingestion_config.get("force_entities", [])
+    if args.force_entity:
+        force_entities = force_entities + args.force_entity
 
     if not model:
         raise ValueError(
             "Model must be specified in config (ingestion.model) or via --model argument"
         )
 
-    try:
-        result = ingest_document(
-            document_path=args.document,
-            storage=storage,
-            embedding_engine=embedding_engine,
-            event_storage=event_storage,
-            m4_config=m4_config,
-            chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap,
-            extraction_model=model,
-            min_confidence=min_confidence,
-            source="document_ingest",
-            verbose=args.verbose,
-        )
-
-        # Print summary
-        print("\n" + "=" * 70)
-        print("INGESTION COMPLETE")
-        print("=" * 70)
-        print(f"Document: {result.document_path}")
-        print(f"Chunks processed: {result.chunks_processed}")
-        print(f"Memories extracted: {result.memories_extracted}")
-        print(f"Memories committed: {result.memories_committed}")
-        print(f"Duplicates skipped: {result.memories_deduplicated}")
-        print(f"Entities created: {result.entities_created}")
-
-        if result.errors:
-            print(f"\nErrors: {len(result.errors)}")
-            for error in result.errors[:5]:  # Show first 5 errors
-                print(f"  - {error}")
-            if len(result.errors) > 5:
-                print(f"  ... and {len(result.errors) - 5} more")
-
-        print("=" * 70)
-
-    except FileNotFoundError as e:
-        print(f"Error: {e}", file=sys.stderr)
+    paths = expand_ingest_paths(args.document)
+    if not paths:
+        print(f"No files match: {args.document}", file=sys.stderr)
         sys.exit(1)
-    except Exception as e:
-        print(f"Error during ingestion: {e}", file=sys.stderr)
+
+    total = {
+        "chunks": 0,
+        "extracted": 0,
+        "committed": 0,
+        "deduped": 0,
+        "entities": 0,
+        "errors": 0,
+    }
+    failures = []
+
+    for idx, document_path in enumerate(paths, 1):
+        try:
+            if len(paths) > 1:
+                print("\n" + "=" * 70)
+                print(f"INGESTING {idx}/{len(paths)}")
+                print("=" * 70)
+
+            result = ingest_document(
+                document_path=document_path,
+                storage=storage,
+                embedding_engine=embedding_engine,
+                event_storage=event_storage,
+                m4_config=m4_config,
+                chunk_size=chunk_size,
+                chunk_overlap=chunk_overlap,
+                extraction_model=model,
+                min_confidence=min_confidence,
+                source="document_ingest",
+                source_format=source_format,
+                format_config=format_config,
+                force_entities=force_entities,
+                verbose=args.verbose,
+            )
+
+            total["chunks"] += result.chunks_processed
+            total["extracted"] += result.memories_extracted
+            total["committed"] += result.memories_committed
+            total["deduped"] += result.memories_deduplicated
+            total["entities"] += result.entities_created
+            total["errors"] += len(result.errors)
+
+            # Print summary
+            print("\n" + "=" * 70)
+            print("INGESTION COMPLETE")
+            print("=" * 70)
+            print(f"Document: {result.document_path}")
+            print(f"Chunks processed: {result.chunks_processed}")
+            print(f"Memories extracted: {result.memories_extracted}")
+            print(f"Memories committed: {result.memories_committed}")
+            print(f"Duplicates skipped: {result.memories_deduplicated}")
+            print(f"Entities created: {result.entities_created}")
+
+            if result.errors:
+                print(f"\nErrors: {len(result.errors)}")
+                for error in result.errors[:5]:  # Show first 5 errors
+                    print(f"  - {error}")
+                if len(result.errors) > 5:
+                    print(f"  ... and {len(result.errors) - 5} more")
+
+            print("=" * 70)
+
+        except FileNotFoundError as e:
+            failures.append(str(e))
+        except Exception as e:
+            failures.append(f"{document_path}: {e}")
+
+    if len(paths) > 1:
+        print("\n" + "=" * 70)
+        print("INGESTION SUMMARY")
+        print("=" * 70)
+        print(f"Documents: {len(paths)}")
+        print(f"Chunks processed: {total['chunks']}")
+        print(f"Memories extracted: {total['extracted']}")
+        print(f"Memories committed: {total['committed']}")
+        print(f"Duplicates skipped: {total['deduped']}")
+        print(f"Entities created: {total['entities']}")
+        print(f"Errors: {total['errors']}")
+        print("=" * 70)
+
+    if failures:
+        print("\nErrors during ingestion:", file=sys.stderr)
+        for error in failures[:5]:
+            print(f"  - {error}", file=sys.stderr)
+        if len(failures) > 5:
+            print(f"  ... and {len(failures) - 5} more", file=sys.stderr)
         sys.exit(1)
 
 
@@ -328,6 +393,16 @@ def main():
         "ingest", help="Ingest document by extracting memories with LLM"
     )
     parser_ingest.add_argument("document", help="Path to document file")
+    parser_ingest.add_argument(
+        "--format",
+        choices=["auto", "plain", "claude-session"],
+        help="Input format (default from config ingestion.format or auto)",
+    )
+    parser_ingest.add_argument(
+        "--force-entity",
+        action="append",
+        help="Force entity on every memory (format TYPE:Name, repeatable)",
+    )
     parser_ingest.add_argument(
         "--chunk-size",
         type=int,

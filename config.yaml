@@ -30,6 +30,16 @@ ingestion:
   chunk_size: 20000                 # Characters per chunk (≈5k tokens)
   chunk_overlap: 500                # Overlap for context continuity
   min_confidence: 0.6               # Minimum confidence threshold
+  format: auto                      # auto|plain|claude-session
+  force_entities: []                # Forced entities (TYPE:Name) on every memory
+  claude_session:
+    include_roles:
+      - user
+      - assistant
+    include_message_types:
+      - text
+    drop_thinking: true
+    drop_tool_use: true
 
 # M3: Time & Truth (TraceRank, temporal ranking)
 m3:
