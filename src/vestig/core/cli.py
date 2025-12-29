@@ -500,6 +500,9 @@ def cmd_ingest(args):
     # Get M4 config for entity extraction
     m4_config = config.get("m4", {})
 
+    # Get prompts config for prompt version selection
+    prompts_config = config.get("prompts", {})
+
     # Get ingestion config with CLI overrides
     ingestion_config = config.get("ingestion", {})
     model = args.model if args.model else ingestion_config.get("model")
@@ -551,6 +554,7 @@ def cmd_ingest(args):
                 embedding_engine=embedding_engine,
                 event_storage=event_storage,
                 m4_config=m4_config,
+                prompts_config=prompts_config,
                 chunk_size=chunk_size,
                 chunk_overlap=chunk_overlap,
                 extraction_model=model,

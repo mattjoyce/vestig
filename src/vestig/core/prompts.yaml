@@ -75,7 +75,7 @@ extract_memories_from_session:
 summary_v1:
   description: >
     Create a grounded document/session summary from extracted MEMORY nodes.
-    The summary MUST ONLY use provided memory items. Each bullet must cite memory_ids.
+    The summary MUST ONLY use provided memory items. 
   system: |
     You are a careful summarization engine for a memory graph.
     You must ONLY use the provided MEMORY items as evidence.
@@ -114,3 +114,45 @@ summary_v1:
     - themes: 3–8 short tags (single words or short phrases).
     - open_questions: empty list unless there are genuine gaps/ambiguities.
     - Do not quote long passages. Do not add commentary about your process.
+# Create embedding-optimized summaries from MEMORY nodes
+summary_v2:
+  description: >
+    Generate dense, searchable summaries from MEMORY nodes for embedding retrieval.
+    Output must be grounded in provided memories only.
+  system: |
+    Generate embedding-optimized summaries from provided MEMORY items.
+    Rules: Use only provided memories. No invented facts. Prioritize searchable keywords and phrases.
+    Output valid JSON matching schema.
+  user: |
+    Summarize for embedding search.
+
+    Source: {{source_label}}
+    Run: {{ingest_run_id}}
+
+    MEMORIES:
+    {{memory_items}}
+
+    SCHEMA:
+    {
+      "summary": {
+        "title": "string - descriptive, keyword-rich (8-12 words)",
+        "overview": "string - dense 2-3 sentences with key entities, actions, outcomes",
+        "bullets": [
+          {
+            "text": "string - specific insight with entities/numbers",
+            "memory_ids": ["mem_xxx"]
+          }
+        ],
+        "themes": ["string - searchable terms"],
+        "gaps": ["string - missing info"] 
+      }
+    }
+
+    OPTIMIZE FOR SEARCH:
+    - title: Include main entities, topics, or outcomes
+    - overview: Front-load key terms, entities, dates, locations
+    - bullets: 6-10 items. Cite 1-3 memory_ids each. Use specific nouns/verbs.
+    - themes: 4-8 terms optimized for semantic search
+    - gaps: Empty unless critical information missing
+
+    Output JSON only.

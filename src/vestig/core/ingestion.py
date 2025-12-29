@@ -349,6 +349,7 @@ def generate_summary(
     model: str,
     source_label: str,
     ingest_run_id: str,
+    prompt_name: str = "summary_v1",
 ) -> SummaryResult:
     """
     Generate summary from extracted memories using LLM (M4).
@@ -358,6 +359,7 @@ def generate_summary(
         model: LLM model to use
         source_label: Human-readable source label (filename/session name)
         ingest_run_id: Ingest run identifier (artifact_ref)
+        prompt_name: Name of prompt template in prompts.yaml (default: summary_v1)
 
     Returns:
         SummaryResult with structured summary data
@@ -369,10 +371,10 @@ def generate_summary(
 
     # Load and get prompt
     prompts = load_prompts()
-    summary_prompt = prompts.get("summary_v1")
+    summary_prompt = prompts.get(prompt_name)
 
     if not summary_prompt:
-        raise ValueError("'summary_v1' prompt not found in prompts.yaml")
+        raise ValueError(f"'{prompt_name}' prompt not found in prompts.yaml")
 
     # Format memories list for prompt
     memory_items_list = []
@@ -547,6 +549,7 @@ def ingest_document(
     extraction_model: str,
     event_storage: MemoryEventStorage | None = None,
     m4_config: dict[str, Any] | None = None,
+    prompts_config: dict[str, Any] | None = None,
     chunk_size: int = 20000,
     chunk_overlap: int = 500,
     min_confidence: float = 0.6,
@@ -565,6 +568,7 @@ def ingest_document(
         embedding_engine: Embedding engine
         event_storage: Optional event storage
         m4_config: Optional M4 config (for entity extraction)
+        prompts_config: Optional prompts config (for selecting prompt versions)
         chunk_size: Characters per chunk (default 20k ≈ 5k tokens)
         chunk_overlap: Character overlap between chunks
         extraction_model: LLM model for memory extraction
@@ -792,12 +796,18 @@ def ingest_document(
                 )
 
             if len(committed_memories) >= 5:
+                # Get summary prompt name from config (default: summary_v1)
+                prompt_name = "summary_v1"
+                if prompts_config:
+                    prompt_name = prompts_config.get("summary", "summary_v1")
+
                 # Generate summary
                 summary_result = generate_summary(
                     memories=committed_memories,
                     model=extraction_model,
                     source_label=path.name,
                     ingest_run_id=path.name,
+                    prompt_name=prompt_name,
                 )
 
                 # Commit summary with edges

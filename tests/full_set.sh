@@ -1,4 +1,5 @@
 export TRANSFORMERS_NO_PROGRESS_BAR=1
+export TOKENIZERS_PARALLELISM=true
 source ~/Environments/vestig/bin/activate
 bash tests/test_m2_smoke.sh
 bash tests/test_m3_smoke.sh

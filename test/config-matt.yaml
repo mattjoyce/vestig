@@ -42,6 +42,15 @@ ingestion:
     drop_thinking: true
     drop_tool_use: true
 
+# Prompt configuration
+prompts:
+  # Memory extraction prompt (from prompts.yaml)
+  extract_memories: "extract_memories_from_session"
+
+  # Summary generation prompt (from prompts.yaml)
+  # Change to "summary_v2" or other versions to experiment
+  summary: "summary_v1"
+
 # M3: Time & Truth (TraceRank, temporal ranking)
 m3:
   event_logging:
