@@ -81,16 +81,31 @@ def search_memories(
         semantic_score = cosine_similarity(query_embedding, memory.content_embedding)
         scored_memories.append((memory, semantic_score))
 
-    # M3: Apply TraceRank if enabled
+    # M3: Apply Enhanced TraceRank if enabled
     if event_storage and tracerank_config and tracerank_config.enabled:
-        from vestig.core.tracerank import compute_tracerank_multiplier
+        from vestig.core.tracerank import compute_enhanced_multiplier
 
-        # Compute TraceRank for all memories
+        # Compute Enhanced TraceRank for all memories
         for i, (memory, semantic_score) in enumerate(scored_memories):
+            # Get reinforcement events
             events = event_storage.get_reinforcement_events(memory.id)
-            tracerank = compute_tracerank_multiplier(events, tracerank_config)
-            # Multiply semantic score by TraceRank
-            scored_memories[i] = (memory, semantic_score * tracerank)
+
+            # Get inbound edge count (graph connectivity)
+            inbound_edges = storage.get_edges_to_memory(memory.id, include_expired=False)
+            edge_count = len(inbound_edges)
+
+            # Compute comprehensive multiplier
+            multiplier = compute_enhanced_multiplier(
+                memory_id=memory.id,
+                temporal_stability=memory.temporal_stability,
+                t_valid=memory.t_valid or memory.created_at,  # Fallback to created_at
+                inbound_edge_count=edge_count,
+                reinforcement_events=events,
+                config=tracerank_config,
+            )
+
+            # Multiply semantic score by enhanced multiplier
+            scored_memories[i] = (memory, semantic_score * multiplier)
 
     # Sort by final score descending and return top-K
     scored_memories.sort(key=lambda x: x[1], reverse=True)
@@ -161,6 +176,8 @@ def format_recall_results(results: list[tuple[MemoryNode, float]]) -> str:
             header += f", reinforced={memory.reinforce_count}x"
         if hasattr(memory, "last_seen_at") and memory.last_seen_at:
             header += f", last_seen={memory.last_seen_at}"
+        if hasattr(memory, "temporal_stability") and memory.temporal_stability:
+            header += f", stability={memory.temporal_stability}"
         if hasattr(memory, "t_expired") and memory.t_expired:
             header += ", status=EXPIRED"
 

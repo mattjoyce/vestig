@@ -34,6 +34,12 @@ m3:
     cooldown_hours: 24.0
     burst_discount: 0.2
     k: 0.35
+    # Enhanced force multiplier
+    graph_connectivity_enabled: true
+    graph_k: 0.15
+    temporal_decay_enabled: true
+    dynamic_tau_days: 90.0
+    static_boost: 1.0
 
 m4:
   entity_types:

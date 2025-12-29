@@ -8,15 +8,26 @@ source ~/Environments/vestig/bin/activate
 echo "=== M3 Smoke Test: Time & Truth ==="
 echo ""
 
-# Clean slate
-rm -f data/memory.db
-echo "✓ Clean database"
+# Resolve repo root for config access
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+TMP_DIR="$REPO_ROOT/tests/tmp"
+mkdir -p "$TMP_DIR"
+VENV_PYTHON="$HOME/Environments/vestig/bin/python3"
+VESTIG_CMD=(env HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONPATH="$REPO_ROOT/src" "$VENV_PYTHON" -m vestig.core.cli)
+
+# Use temp database + config
+DB=$(mktemp "$TMP_DIR/vestig-m3.XXXXXX")
+CONFIG=$(mktemp "$TMP_DIR/vestig-m3-config.XXXXXX")
+sed "s|db_path:.*|db_path: \"$DB\"|g" "$REPO_ROOT/config_test.yaml" > "$CONFIG"
+echo "✓ Using temp database: $DB"
+echo "✓ Using config: $CONFIG"
+trap 'rm -f "$DB" "$CONFIG"' EXIT
 echo ""
 
 # Test 1: Schema migration handles new columns
 echo "Test 1: Schema migration (backward compatibility)"
-vestig memory add "Testing M3 migration with temporal fields" > /dev/null
-if vestig memory search "migration" --limit 1 | grep -q "mem_"; then
+"${VESTIG_CMD[@]}" --config "$CONFIG" memory add "Testing M3 migration with temporal fields" > /dev/null
+if "${VESTIG_CMD[@]}" --config "$CONFIG" memory search "migration" --limit 1 | grep -q "mem_"; then
     echo "✓ Schema migration successful"
 else
     echo "✗ FAIL: Schema migration failed"
@@ -26,8 +37,8 @@ echo ""
 
 # Test 2: Reinforcement creates events (not duplicates)
 echo "Test 2: Reinforcement events (exact duplicate)"
-ID2=$(vestig memory add "Learning Python async/await patterns" | grep -oE 'mem_[a-f0-9-]+')
-ID3=$(vestig memory add "Learning Python async/await patterns" | grep -oE 'mem_[a-f0-9-]+')
+ID2=$("${VESTIG_CMD[@]}" --config "$CONFIG" memory add "Learning Python async/await patterns" | grep -oE 'mem_[a-f0-9-]+')
+ID3=$("${VESTIG_CMD[@]}" --config "$CONFIG" memory add "Learning Python async/await patterns" | grep -oE 'mem_[a-f0-9-]+')
 
 if [ "$ID2" == "$ID3" ]; then
     echo "✓ Exact duplicate returned same ID: $ID2"
@@ -41,18 +52,18 @@ echo ""
 echo "Test 3: TraceRank (reinforced memory ranks higher)"
 
 # Add two identical memories, reinforce one
-UNREINFORCED=$(vestig memory add "Machine learning models require careful hyperparameter tuning" | grep -oE 'mem_[a-f0-9-]+')
+UNREINFORCED=$("${VESTIG_CMD[@]}" --config "$CONFIG" memory add "Machine learning models require careful hyperparameter tuning" | grep -oE 'mem_[a-f0-9-]+')
 echo "  Created memory A (unreinforced): ${UNREINFORCED:0:16}..."
 
-REINFORCED=$(vestig memory add "Deep learning frameworks provide powerful abstraction layers" | grep -oE 'mem_[a-f0-9-]+')
+REINFORCED=$("${VESTIG_CMD[@]}" --config "$CONFIG" memory add "Deep learning frameworks provide powerful abstraction layers" | grep -oE 'mem_[a-f0-9-]+')
 sleep 1
-vestig memory add "Deep learning frameworks provide powerful abstraction layers" > /dev/null
+"${VESTIG_CMD[@]}" --config "$CONFIG" memory add "Deep learning frameworks provide powerful abstraction layers" > /dev/null
 sleep 1
-vestig memory add "Deep learning frameworks provide powerful abstraction layers" > /dev/null
+"${VESTIG_CMD[@]}" --config "$CONFIG" memory add "Deep learning frameworks provide powerful abstraction layers" > /dev/null
 echo "  Created memory B (reinforced 2x): ${REINFORCED:0:16}..."
 
 # Search for a query where both are somewhat similar
-SEARCH_RESULTS=$(vestig memory search "deep learning machine learning frameworks" --limit 5)
+SEARCH_RESULTS=$("${VESTIG_CMD[@]}" --config "$CONFIG" memory search "deep learning machine learning frameworks" --limit 5)
 
 # Get scores for both
 UNREINFORCED_SCORE=$(echo "$SEARCH_RESULTS" | grep -A1 "$UNREINFORCED" | grep "Score:" | grep -oE '[0-9]+\.[0-9]+' | head -1)
@@ -76,7 +87,7 @@ echo ""
 
 # Test 4: Recall shows M3 hints
 echo "Test 4: Recall output includes M3 hints"
-RECALL_OUTPUT=$(vestig memory recall "Python async" --limit 1)
+RECALL_OUTPUT=$("${VESTIG_CMD[@]}" --config "$CONFIG" memory recall "Python async" --limit 1)
 
 if echo "$RECALL_OUTPUT" | grep -q "reinforced="; then
     REINFORCE_COUNT=$(echo "$RECALL_OUTPUT" | grep -oE 'reinforced=[0-9]+' | grep -oE '[0-9]+')
@@ -94,14 +105,14 @@ echo ""
 
 # Test 5: Event history validation (Python API)
 echo "Test 5: Event history (verify events logged in database)"
-python3 -c "
+"$VENV_PYTHON" -c "
 import sys
-sys.path.insert(0, 'src')
+sys.path.insert(0, '$REPO_ROOT/src')
 from vestig.core.storage import MemoryStorage
 from vestig.core.event_storage import MemoryEventStorage
 from vestig.core.config import load_config
 
-config = load_config('config.yaml')
+config = load_config('$CONFIG')
 storage = MemoryStorage(config['storage']['db_path'])
 event_storage = MemoryEventStorage(storage.conn)
 
@@ -127,7 +138,7 @@ echo ""
 
 # Test 6: Active vs expired memories (setup for future)
 echo "Test 6: Memory lifecycle (active memories only)"
-ACTIVE_COUNT=$(vestig memory search "anything" --limit 100 | grep -c "ID:" || true)
+ACTIVE_COUNT=$("${VESTIG_CMD[@]}" --config "$CONFIG" memory search "anything" --limit 100 | grep -c "ID:" || true)
 echo "  Total active memories: $ACTIVE_COUNT"
 echo "✓ get_active_memories() filters work (all current memories are active)"
 echo ""

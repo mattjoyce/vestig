@@ -2,6 +2,7 @@
 
 import argparse
 import glob
+import json
 import os
 import sys
 from typing import Any
@@ -41,6 +42,24 @@ def validate_config(config: dict[str, Any]) -> None:
             raise ValueError(f"Missing required config key: {'.'.join(path)}.{key}")
 
 
+def _truncate(text: str, length: int = 80) -> str:
+    if len(text) <= length:
+        return text
+    return text[: max(0, length - 3)] + "..."
+
+
+def _resolve_node_label(storage: MemoryStorage, node_id: str, length: int = 80) -> str:
+    if node_id.startswith("mem_"):
+        memory = storage.get_memory(node_id)
+        if memory:
+            return _truncate(memory.content, length)
+    if node_id.startswith("ent_"):
+        entity = storage.get_entity(node_id)
+        if entity:
+            return f"{entity.canonical_name} ({entity.entity_type})"
+    return node_id
+
+
 def expand_ingest_paths(pattern: str) -> list[str]:
     """Expand glob patterns for ingest paths."""
     expanded = os.path.expanduser(pattern)
@@ -78,6 +97,7 @@ def build_runtime(
         cooldown_hours=tracerank_cfg.get("cooldown_hours", 24.0),
         burst_discount=tracerank_cfg.get("burst_discount", 0.2),
         k=tracerank_cfg.get("k", 0.35),
+        ephemeral_tau_days=tracerank_cfg.get("ephemeral_tau_days"),
     )
 
     return storage, embedding_engine, event_storage, tracerank_config
@@ -168,12 +188,14 @@ def cmd_recall(args):
 
 def cmd_show(args):
     """Handle 'vestig memory show' command"""
-    import json
-
     config = args.config_dict
     storage = MemoryStorage(config["storage"]["db_path"])
 
     try:
+        if args.expand > 1:
+            print("Error: Only expansion depth 0 or 1 is supported", file=sys.stderr)
+            sys.exit(1)
+
         memory = storage.get_memory(args.id)
         if memory is None:
             print(f"Error: Memory not found: {args.id}", file=sys.stderr)
@@ -182,10 +204,219 @@ def cmd_show(args):
         # Display full memory details
         print(f"ID: {memory.id}")
         print(f"Created: {memory.created_at}")
+        print(f"t_valid: {memory.t_valid}")
+        print(f"t_invalid: {memory.t_invalid}")
+        print(f"t_created: {memory.t_created}")
+        print(f"t_expired: {memory.t_expired}")
+        print(f"temporal_stability: {memory.temporal_stability}")
+        print(f"last_seen_at: {memory.last_seen_at}")
+        print(f"reinforce_count: {memory.reinforce_count}")
         print(f"Metadata: {json.dumps(memory.metadata, indent=2)}")
         print(f"Embedding: {len(memory.content_embedding)} dimensions")
         print(f"  First 5 values: {memory.content_embedding[:5]}")
         print(f"\nContent:\n{memory.content}")
+
+        if args.expand == 1:
+            mentions = storage.get_edges_from_memory(
+                memory.id,
+                edge_type="MENTIONS",
+                include_expired=args.include_expired,
+            )
+            related = storage.get_edges_from_memory(
+                memory.id,
+                edge_type="RELATED",
+                include_expired=args.include_expired,
+            )
+
+            print("\nMENTIONS:")
+            if not mentions:
+                print("  (none)")
+            for edge in mentions:
+                label = _resolve_node_label(storage, edge.to_node)
+                conf = f"{edge.confidence:.2f}" if edge.confidence is not None else "n/a"
+                print(f"  - {edge.to_node} | {label} | confidence={conf}")
+
+            print("\nRELATED:")
+            if not related:
+                print("  (none)")
+            for edge in related:
+                label = _resolve_node_label(storage, edge.to_node)
+                print(f"  - {edge.to_node} | {label} | weight={edge.weight:.2f}")
+    finally:
+        storage.close()
+
+
+def cmd_memory_list(args):
+    """Handle 'vestig memory list' command"""
+    config = args.config_dict
+    storage = MemoryStorage(config["storage"]["db_path"])
+
+    try:
+        query = (
+            "SELECT id, content, created_at, t_expired, metadata "
+            "FROM memories "
+        )
+        params = []
+        if not args.include_expired:
+            query += "WHERE t_expired IS NULL "
+        query += "ORDER BY created_at DESC LIMIT ?"
+        params.append(args.limit)
+
+        cursor = storage.conn.execute(query, params)
+        rows = cursor.fetchall()
+
+        for row in rows:
+            memory_id, content, created_at, t_expired, metadata_json = row
+            metadata = json.loads(metadata_json)
+            source = metadata.get("source", "unknown")
+            status = "expired" if t_expired else "active"
+            snippet = _truncate(content, args.snippet_len)
+            print(f"{memory_id} | {created_at} | {source} | {status} | {snippet}")
+    finally:
+        storage.close()
+
+
+def cmd_entity_list(args):
+    """Handle 'vestig entity list' command"""
+    config = args.config_dict
+    storage = MemoryStorage(config["storage"]["db_path"])
+
+    try:
+        query = (
+            "SELECT e.id, e.entity_type, e.canonical_name, e.created_at, "
+            "e.expired_at, e.merged_into, "
+            "COUNT(ed.edge_id) AS mentions "
+            "FROM entities e "
+            "LEFT JOIN edges ed ON ed.to_node = e.id "
+            "AND ed.edge_type = 'MENTIONS' AND ed.t_expired IS NULL "
+        )
+        params = []
+        if not args.include_expired:
+            query += "WHERE e.expired_at IS NULL "
+        query += "GROUP BY e.id ORDER BY mentions DESC, e.created_at DESC LIMIT ?"
+        params.append(args.limit)
+
+        cursor = storage.conn.execute(query, params)
+        rows = cursor.fetchall()
+        for row in rows:
+            entity_id, entity_type, name, created_at, expired_at, merged_into, mentions = row
+            status = "expired" if expired_at else "active"
+            merged = f" -> {merged_into}" if merged_into else ""
+            print(
+                f"{entity_id} | {entity_type} | {name} | mentions={mentions} | "
+                f"{created_at} | {status}{merged}"
+            )
+    finally:
+        storage.close()
+
+
+def cmd_entity_show(args):
+    """Handle 'vestig entity show' command"""
+    config = args.config_dict
+    storage = MemoryStorage(config["storage"]["db_path"])
+
+    try:
+        if args.expand > 1:
+            print("Error: Only expansion depth 0 or 1 is supported", file=sys.stderr)
+            sys.exit(1)
+
+        entity = storage.get_entity(args.id)
+        if entity is None:
+            print(f"Error: Entity not found: {args.id}", file=sys.stderr)
+            sys.exit(1)
+
+        print(f"ID: {entity.id}")
+        print(f"Type: {entity.entity_type}")
+        print(f"Name: {entity.canonical_name}")
+        print(f"Created: {entity.created_at}")
+        print(f"Expired: {entity.expired_at}")
+        print(f"Merged into: {entity.merged_into}")
+
+        if args.expand == 1:
+            edges = storage.get_edges_to_entity(
+                entity.id,
+                include_expired=args.include_expired,
+            )
+            print("\nMENTIONED IN:")
+            if not edges:
+                print("  (none)")
+            for edge in edges:
+                label = _resolve_node_label(storage, edge.from_node)
+                conf = f"{edge.confidence:.2f}" if edge.confidence is not None else "n/a"
+                print(f"  - {edge.from_node} | {label} | confidence={conf}")
+    finally:
+        storage.close()
+
+
+def cmd_edge_list(args):
+    """Handle 'vestig edge list' command"""
+    config = args.config_dict
+    storage = MemoryStorage(config["storage"]["db_path"])
+
+    try:
+        query = (
+            "SELECT edge_id, from_node, to_node, edge_type, weight, confidence, "
+            "t_created, t_expired FROM edges "
+        )
+        params = []
+        if args.type != "ALL":
+            query += "WHERE edge_type = ? "
+            params.append(args.type)
+            if not args.include_expired:
+                query += "AND t_expired IS NULL "
+        else:
+            if not args.include_expired:
+                query += "WHERE t_expired IS NULL "
+        query += "ORDER BY t_created DESC LIMIT ?"
+        params.append(args.limit)
+
+        cursor = storage.conn.execute(query, params)
+        rows = cursor.fetchall()
+        for row in rows:
+            edge_id, from_node, to_node, edge_type, weight, confidence, t_created, t_expired = (
+                row
+            )
+            from_label = _resolve_node_label(storage, from_node, args.snippet_len)
+            to_label = _resolve_node_label(storage, to_node, args.snippet_len)
+            conf = f"{confidence:.2f}" if confidence is not None else "n/a"
+            status = "expired" if t_expired else "active"
+            print(
+                f"{edge_id} | {edge_type} | {status} | {from_node} -> {to_node} | "
+                f"weight={weight:.2f} | confidence={conf}"
+            )
+            print(f"  from: {from_label}")
+            print(f"  to:   {to_label}")
+    finally:
+        storage.close()
+
+
+def cmd_edge_show(args):
+    """Handle 'vestig edge show' command"""
+    config = args.config_dict
+    storage = MemoryStorage(config["storage"]["db_path"])
+
+    try:
+        edge = storage.get_edge(args.id)
+        if edge is None:
+            print(f"Error: Edge not found: {args.id}", file=sys.stderr)
+            sys.exit(1)
+
+        print(f"ID: {edge.edge_id}")
+        print(f"Type: {edge.edge_type}")
+        print(f"From: {edge.from_node}")
+        print(f"To: {edge.to_node}")
+        print(f"Weight: {edge.weight}")
+        print(f"Confidence: {edge.confidence}")
+        print(f"Evidence: {edge.evidence}")
+        print(f"t_valid: {edge.t_valid}")
+        print(f"t_invalid: {edge.t_invalid}")
+        print(f"t_created: {edge.t_created}")
+        print(f"t_expired: {edge.t_expired}")
+
+        from_label = _resolve_node_label(storage, edge.from_node)
+        to_label = _resolve_node_label(storage, edge.to_node)
+        print(f"\nFrom node: {from_label}")
+        print(f"To node: {to_label}")
     finally:
         storage.close()
 
@@ -241,10 +472,13 @@ def cmd_deprecate(args):
 
 
 def cmd_memory(args):
-    """Handle 'vestig memory' subcommand routing"""
-    # This is just a router - actual work done by add/search/recall/show
-    # If we get here without a memory subcommand, show help
-    args.memory_parser.print_help()
+    """Handle noun subcommand routing"""
+    # If we get here without a subcommand, show help
+    parser = getattr(args, "noun_parser", None)
+    if parser is None:
+        parser = getattr(args, "memory_parser", None)
+    if parser is not None:
+        parser.print_help()
     sys.exit(1)
 
 
@@ -463,7 +697,39 @@ def main():
     # vestig memory show
     parser_show = memory_subparsers.add_parser("show", help="Show memory details by ID")
     parser_show.add_argument("id", help="Memory ID")
+    parser_show.add_argument(
+        "--expand",
+        type=int,
+        default=0,
+        help="Expansion depth (0 or 1)",
+    )
+    parser_show.add_argument(
+        "--include-expired",
+        action="store_true",
+        help="Include expired edges in expansion",
+    )
     parser_show.set_defaults(func=cmd_show)
+
+    # vestig memory list
+    parser_list = memory_subparsers.add_parser("list", help="List memories")
+    parser_list.add_argument(
+        "--limit",
+        type=int,
+        default=20,
+        help="Number of memories to show (default: 20)",
+    )
+    parser_list.add_argument(
+        "--snippet-len",
+        type=int,
+        default=80,
+        help="Snippet length for content preview (default: 80)",
+    )
+    parser_list.add_argument(
+        "--include-expired",
+        action="store_true",
+        help="Include expired memories",
+    )
+    parser_list.set_defaults(func=cmd_memory_list)
 
     # vestig memory deprecate
     parser_deprecate = memory_subparsers.add_parser("deprecate", help="Mark memory as deprecated")
@@ -477,7 +743,78 @@ def main():
     parser_deprecate.set_defaults(func=cmd_deprecate)
 
     # Set default for memory command (show help if no subcommand)
-    parser_memory.set_defaults(func=cmd_memory, memory_parser=parser_memory)
+    parser_memory.set_defaults(func=cmd_memory, noun_parser=parser_memory)
+
+    # vestig entity
+    parser_entity = subparsers.add_parser("entity", help="Entity operations")
+    entity_subparsers = parser_entity.add_subparsers(dest="entity_command", help="Entity commands")
+
+    parser_entity_list = entity_subparsers.add_parser("list", help="List entities")
+    parser_entity_list.add_argument(
+        "--limit",
+        type=int,
+        default=20,
+        help="Number of entities to show (default: 20)",
+    )
+    parser_entity_list.add_argument(
+        "--include-expired",
+        action="store_true",
+        help="Include expired entities",
+    )
+    parser_entity_list.set_defaults(func=cmd_entity_list)
+
+    parser_entity_show = entity_subparsers.add_parser("show", help="Show entity details by ID")
+    parser_entity_show.add_argument("id", help="Entity ID")
+    parser_entity_show.add_argument(
+        "--expand",
+        type=int,
+        default=0,
+        help="Expansion depth (0 or 1)",
+    )
+    parser_entity_show.add_argument(
+        "--include-expired",
+        action="store_true",
+        help="Include expired edges in expansion",
+    )
+    parser_entity_show.set_defaults(func=cmd_entity_show)
+
+    parser_entity.set_defaults(func=cmd_memory, noun_parser=parser_entity)
+
+    # vestig edge
+    parser_edge = subparsers.add_parser("edge", help="Edge operations")
+    edge_subparsers = parser_edge.add_subparsers(dest="edge_command", help="Edge commands")
+
+    parser_edge_list = edge_subparsers.add_parser("list", help="List edges")
+    parser_edge_list.add_argument(
+        "--limit",
+        type=int,
+        default=20,
+        help="Number of edges to show (default: 20)",
+    )
+    parser_edge_list.add_argument(
+        "--type",
+        choices=["ALL", "MENTIONS", "RELATED"],
+        default="ALL",
+        help="Edge type filter (default: ALL)",
+    )
+    parser_edge_list.add_argument(
+        "--snippet-len",
+        type=int,
+        default=60,
+        help="Snippet length for node previews (default: 60)",
+    )
+    parser_edge_list.add_argument(
+        "--include-expired",
+        action="store_true",
+        help="Include expired edges",
+    )
+    parser_edge_list.set_defaults(func=cmd_edge_list)
+
+    parser_edge_show = edge_subparsers.add_parser("show", help="Show edge details by ID")
+    parser_edge_show.add_argument("id", help="Edge ID")
+    parser_edge_show.set_defaults(func=cmd_edge_show)
+
+    parser_edge.set_defaults(func=cmd_memory, noun_parser=parser_edge)
 
     args = parser.parse_args()
 

@@ -3,18 +3,22 @@
 
 import os
 import sys
-import json
 import tempfile
 from unittest.mock import patch, MagicMock
 
+# Ensure tests run offline if the model is already cached
+os.environ.setdefault("HF_HUB_OFFLINE", "1")
+os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from vestig.core.commitment import commit_memory
 from vestig.core.embeddings import EmbeddingEngine
 from vestig.core.storage import MemoryStorage
 from vestig.core.event_storage import MemoryEventStorage
 from vestig.core.config import load_config
+from vestig.core.ingestion import MemoryExtractionResult
 
 
 def test_mentions_edge_creation():
@@ -27,7 +31,7 @@ def test_mentions_edge_creation():
 
     try:
         # Load config and initialize storage
-        config = load_config("config.yaml")
+        config = load_config("config_test.yaml")
         storage = MemoryStorage(db_path)
         event_storage = MemoryEventStorage(storage.conn)
         embedding_engine = EmbeddingEngine(
@@ -65,28 +69,33 @@ def test_mentions_edge_creation():
         print("Test 1: Entity extraction creates entities and MENTIONS edges")
 
         # Mock the extract_entities_llm function to return test entities
-        mock_llm_response = json.dumps(
+        mock_llm_response = MemoryExtractionResult.model_validate(
             {
-                "entities": [
+                "memories": [
                     {
-                        "name": "Alice Smith",
-                        "type": "PERSON",
-                        "confidence": 0.92,
-                        "evidence": "mentioned as the developer",
-                    },
-                    {
-                        "name": "PostgreSQL",
-                        "type": "SYSTEM",
+                        "content": "Alice Smith fixed the PostgreSQL replication bug",
                         "confidence": 0.95,
-                        "evidence": "the database system",
-                    },
+                        "rationale": "test",
+                        "entities": [
+                            {
+                                "name": "Alice Smith",
+                                "type": "PERSON",
+                                "confidence": 0.92,
+                                "evidence": "mentioned as the developer",
+                            },
+                            {
+                                "name": "PostgreSQL",
+                                "type": "SYSTEM",
+                                "confidence": 0.95,
+                                "evidence": "the database system",
+                            },
+                        ],
+                    }
                 ]
             }
         )
 
-        with patch(
-            "vestig.core.entity_extraction.call_llm", return_value=mock_llm_response
-        ):
+        with patch("vestig.core.ingestion.call_llm", return_value=mock_llm_response):
             # Commit memory with M4 config
             outcome = commit_memory(
                 content="Alice Smith fixed the PostgreSQL replication bug",
@@ -145,23 +154,27 @@ def test_mentions_edge_creation():
         # Test 2: Low confidence entities filtered out
         print("\nTest 2: Low confidence entities filtered by threshold")
 
-        mock_llm_response_low = json.dumps(
+        mock_llm_response_low = MemoryExtractionResult.model_validate(
             {
-                "entities": [
+                "memories": [
                     {
-                        "name": "Bob",
-                        "type": "PERSON",
-                        "confidence": 0.60,  # Below 0.75 threshold
-                        "evidence": "mentioned briefly",
-                    },
+                        "content": "Bob mentioned something about the bug",
+                        "confidence": 0.90,
+                        "rationale": "test",
+                        "entities": [
+                            {
+                                "name": "Bob",
+                                "type": "PERSON",
+                                "confidence": 0.60,  # Below 0.75 threshold
+                                "evidence": "mentioned briefly",
+                            }
+                        ],
+                    }
                 ]
             }
         )
 
-        with patch(
-            "vestig.core.entity_extraction.call_llm",
-            return_value=mock_llm_response_low,
-        ):
+        with patch("vestig.core.ingestion.call_llm", return_value=mock_llm_response_low):
             outcome2 = commit_memory(
                 content="Bob mentioned something about the bug",
                 storage=storage,
@@ -187,23 +200,27 @@ def test_mentions_edge_creation():
         # Test 3: Entity deduplication reuses existing entity
         print("\nTest 3: Entity deduplication reuses existing entity")
 
-        mock_llm_response_dupe = json.dumps(
+        mock_llm_response_dupe = MemoryExtractionResult.model_validate(
             {
-                "entities": [
+                "memories": [
                     {
-                        "name": "Alice Smith",  # Same person as before
-                        "type": "PERSON",
-                        "confidence": 0.88,
-                        "evidence": "the developer again",
-                    },
+                        "content": "Alice Smith also fixed the backup script",
+                        "confidence": 0.90,
+                        "rationale": "test",
+                        "entities": [
+                            {
+                                "name": "Alice Smith",  # Same person as before
+                                "type": "PERSON",
+                                "confidence": 0.88,
+                                "evidence": "the developer again",
+                            }
+                        ],
+                    }
                 ]
             }
         )
 
-        with patch(
-            "vestig.core.entity_extraction.call_llm",
-            return_value=mock_llm_response_dupe,
-        ):
+        with patch("vestig.core.ingestion.call_llm", return_value=mock_llm_response_dupe):
             outcome3 = commit_memory(
                 content="Alice Smith also fixed the backup script",
                 storage=storage,

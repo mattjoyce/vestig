@@ -97,9 +97,10 @@ def commit_memory(
     event_storage: MemoryEventStorage | None = None,  # M3: Event logging
     m4_config: dict[str, Any] | None = None,  # M4: Graph config
     pre_extracted_entities: list[tuple[str, str, float, str]] | None = None,  # M4: Pre-extracted entities
+    temporal_hints: Any | None = None,  # ExtractedMemory with temporal fields
 ) -> CommitOutcome:
     """
-    Commit a memory to storage with M2 quality firewall, M3 event logging, and M4 entity extraction.
+    Commit a memory to storage with M2 quality firewall, M3 event logging, M4 entity extraction, and temporal hints.
 
     Args:
         content: Memory content text
@@ -114,6 +115,7 @@ def commit_memory(
         m4_config: Optional M4 config for entity extraction + graph construction
         pre_extracted_entities: Optional pre-extracted entities (name, type, confidence, evidence)
                                 Skips LLM extraction if provided
+        temporal_hints: Optional ExtractedMemory with temporal fields (t_valid_hint, temporal_stability_hint)
 
     Returns:
         CommitOutcome with decision details
@@ -143,6 +145,9 @@ def commit_memory(
 
     # M4: One-shot entity extraction for manual adds (if not pre-extracted)
     # Treat manual content as a "chunk" and extract entities using the same prompt
+    extraction_model = None
+    extraction_min_confidence = None
+    prompt_hash = None
     if pre_extracted_entities is None and m4_config is not None:
         extraction_config = m4_config.get("entity_extraction", {})
         if extraction_config.get("enabled", True):
@@ -150,15 +155,25 @@ def commit_memory(
 
             # Get extraction model from M4 config
             extraction_model = extraction_config.get("llm", {}).get("model")
-            min_confidence = extraction_config.get("llm", {}).get("min_confidence", 0.75)
+            extraction_min_confidence = extraction_config.get("llm", {}).get(
+                "min_confidence", 0.75
+            )
 
             if extraction_model:
                 try:
+                    if event_storage:
+                        from vestig.core.entity_extraction import compute_prompt_hash, load_prompts
+
+                        prompts = load_prompts()
+                        template = prompts.get("extract_memories_from_session")
+                        if template:
+                            prompt_hash = compute_prompt_hash(template)
+
                     # Extract entities one-shot (treating manual input as a chunk)
                     extracted = extract_memories_from_chunk(
                         normalized,
                         model=extraction_model,
-                        min_confidence=min_confidence,
+                        min_confidence=extraction_min_confidence,
                     )
 
                     # Use entities from first extracted memory if available
@@ -173,6 +188,16 @@ def commit_memory(
 
     # Calculate content hash early (needed for all outcomes)
     content_hash = hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+
+    # Extract temporal hints if provided
+    t_valid_hint = None
+    temporal_stability_hint = None
+    if temporal_hints is not None:
+        # Check if it has temporal fields (duck typing)
+        if hasattr(temporal_hints, "t_valid_hint"):
+            t_valid_hint = temporal_hints.t_valid_hint
+        if hasattr(temporal_hints, "temporal_stability_hint"):
+            temporal_stability_hint = temporal_hints.temporal_stability_hint
 
     # Validate content against hygiene rules
     try:
@@ -259,6 +284,8 @@ def commit_memory(
                 source=source,
                 tags=tags,
                 content_hash=content_hash,
+                t_valid_hint=t_valid_hint,  # Temporal extraction
+                temporal_stability_hint=temporal_stability_hint,  # Temporal classification
             )
 
             # Store (exact dedupe handled in storage layer)
@@ -297,6 +324,10 @@ def commit_memory(
                 m4_config=m4_config,
                 artifact_ref=artifact_ref,
                 pre_extracted_entities=pre_extracted_entities,
+                event_storage=event_storage,
+                extraction_model=extraction_model,
+                prompt_hash=prompt_hash,
+                min_confidence=extraction_min_confidence,
             )
 
             # M4: RELATED edge creation (Memory → Memory)
@@ -330,6 +361,10 @@ def _extract_and_link_entities(
     m4_config: dict[str, Any],
     artifact_ref: str | None = None,
     pre_extracted_entities: list[tuple[str, str, float, str]] | None = None,
+    event_storage: MemoryEventStorage | None = None,
+    extraction_model: str | None = None,
+    prompt_hash: str | None = None,
+    min_confidence: float | None = None,
 ) -> None:
     """
     Store entities and create MENTIONS edges (M4).
@@ -369,6 +404,23 @@ def _extract_and_link_entities(
     mentions_config = m4_config.get("edge_creation", {}).get("mentions", {})
     if not mentions_config.get("enabled", True):
         return
+
+    if event_storage and extraction_model:
+        from vestig.core.models import EventNode
+
+        event = EventNode.create(
+            memory_id=memory_id,
+            event_type="ENTITY_EXTRACTED",
+            source="system",
+            artifact_ref=artifact_ref,
+            payload={
+                "model_name": extraction_model,
+                "prompt_hash": prompt_hash,
+                "entity_count": len(entities),
+                "min_confidence": min_confidence,
+            },
+        )
+        event_storage.add_event(event)
 
     # Create MENTIONS edges for each entity (confidence-gated)
     for entity_id, entity_type, confidence, evidence in entities:

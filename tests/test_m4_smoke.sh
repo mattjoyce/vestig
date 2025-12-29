@@ -9,9 +9,23 @@ echo "M4 SMOKE TEST: Graph Layer Validation"
 echo "======================================================================"
 echo ""
 
-# Use temp database
-DB=$(mktemp -t vestig-m4-smoke.XXXXXX)
+# Resolve repo root for config access
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+TMP_DIR="$REPO_ROOT/tests/tmp"
+mkdir -p "$TMP_DIR"
+
+# Use temp database + config
+DB=$(mktemp "$TMP_DIR/vestig-m4-smoke.XXXXXX")
+CONFIG=$(mktemp "$TMP_DIR/vestig-m4-config.XXXXXX")
+sed "s|db_path:.*|db_path: \"$DB\"|g" "$REPO_ROOT/config_test.yaml" > "$CONFIG"
 echo "Using temp database: $DB"
+echo "Using config: $CONFIG"
+export DB_PATH="$DB"
+export CONFIG_PATH="$CONFIG"
+export REPO_ROOT
+export HF_HUB_OFFLINE=1
+export TRANSFORMERS_OFFLINE=1
+trap 'rm -f "$DB" "$CONFIG"' EXIT
 
 # Activate virtual environment
 source ~/Environments/vestig/bin/activate
@@ -20,12 +34,11 @@ source ~/Environments/vestig/bin/activate
 python3 << 'EOF'
 import os
 import sys
-import json
 from pathlib import Path
 from unittest.mock import patch
 
 # Add src to path
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+sys.path.insert(0, str(Path(os.environ["REPO_ROOT"]) / "src"))
 
 from vestig.core.commitment import commit_memory
 from vestig.core.embeddings import EmbeddingEngine
@@ -33,12 +46,13 @@ from vestig.core.storage import MemoryStorage
 from vestig.core.event_storage import MemoryEventStorage
 from vestig.core.config import load_config
 from vestig.core.graph import expand_via_entities, expand_via_related
+from vestig.core.ingestion import MemoryExtractionResult
 
 # Get temp DB path
-db_path = os.environ.get('DB_PATH')
+db_path = os.environ["DB_PATH"]
 
 # Load config
-config = load_config("config.yaml")
+config = load_config(os.environ["CONFIG_PATH"])
 storage = MemoryStorage(db_path)
 event_storage = MemoryEventStorage(storage.conn)
 embedding_engine = EmbeddingEngine(
@@ -50,14 +64,21 @@ embedding_engine = EmbeddingEngine(
 m4_config = config.get("m4", {})
 
 print("Test 1: Entity extraction and storage")
-mock_response = json.dumps({
-    "entities": [
-        {"name": "Alice", "type": "PERSON", "confidence": 0.90, "evidence": "developer"},
-        {"name": "PostgreSQL", "type": "SYSTEM", "confidence": 0.95, "evidence": "database"},
+mock_response = MemoryExtractionResult.model_validate({
+    "memories": [
+        {
+            "content": "Alice fixed PostgreSQL bug",
+            "confidence": 0.90,
+            "rationale": "test",
+            "entities": [
+                {"name": "Alice", "type": "PERSON", "confidence": 0.90, "evidence": "developer"},
+                {"name": "PostgreSQL", "type": "SYSTEM", "confidence": 0.95, "evidence": "database"},
+            ],
+        }
     ]
 })
 
-with patch("vestig.core.entity_extraction.call_llm", return_value=mock_response):
+with patch("vestig.core.ingestion.call_llm", return_value=mock_response):
     outcome = commit_memory(
         content="Alice fixed PostgreSQL bug",
         storage=storage,
@@ -79,7 +100,7 @@ print("✓ MENTIONS edge creation working")
 
 print("\nTest 2: Entity deduplication")
 # Add another memory with same entity
-with patch("vestig.core.entity_extraction.call_llm", return_value=mock_response):
+with patch("vestig.core.ingestion.call_llm", return_value=mock_response):
     outcome2 = commit_memory(
         content="Alice optimized PostgreSQL queries",
         storage=storage,
@@ -134,7 +155,5 @@ print(f"  Edges: {len(all_edges)}")
 
 EOF
 
-# Cleanup
-rm -f "$DB"
 echo ""
 echo "Smoke test complete! Temp database removed."

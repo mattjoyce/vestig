@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 """Phase 2 validation: Test event pipeline integration"""
 
+import os
 import sys
 import tempfile
 from pathlib import Path
 
+# Ensure tests run offline if the model is already cached
+os.environ.setdefault("HF_HUB_OFFLINE", "1")
+os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+
 # Add src to path
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from vestig.core.models import MemoryNode
 from vestig.core.storage import MemoryStorage
@@ -27,7 +32,7 @@ def test_phase2():
     print(f"Using temp database: {db_path}\n")
 
     # Load config and setup
-    config = load_config("config.yaml")
+    config = load_config("config_test.yaml")
     storage = MemoryStorage(db_path)
     event_storage = MemoryEventStorage(storage.conn)
     embedding_engine = EmbeddingEngine(

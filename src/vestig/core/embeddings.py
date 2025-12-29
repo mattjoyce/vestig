@@ -18,7 +18,8 @@ class EmbeddingEngine:
         self.model_name = model_name
         self.expected_dimension = expected_dimension
         self.normalize = normalize
-        self.model = SentenceTransformer(model_name)
+        # Some models (e.g., BAAI/bge-m3) do not ship safetensors; disable to avoid load errors.
+        self.model = SentenceTransformer(model_name, model_kwargs={"use_safetensors": False})
 
         # Validate dimension on initialization
         test_embedding = self.model.encode("test", normalize_embeddings=self.normalize)

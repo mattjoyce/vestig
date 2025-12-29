@@ -18,6 +18,7 @@ from vestig.core.ingest_sources import (
     extract_claude_session_chunks,
     normalize_document_text,
 )
+from vestig.core.models import MemoryNode
 from vestig.core.storage import MemoryStorage
 
 
@@ -34,7 +35,7 @@ class TemporalHints:
     t_valid: str | None = None  # ISO 8601 timestamp
 
     # Temporal classification
-    stability: str = "unknown"  # "static" | "dynamic" | "unknown"
+    stability: str = "unknown"  # "static" | "dynamic" | "ephemeral" | "unknown"
 
     # Evidence for debugging
     extraction_method: str = "default"  # "jsonl_timestamp" | "file_mtime" | "filename_pattern" | "default"
@@ -115,7 +116,7 @@ class MemorySchema(BaseModel):
     rationale: str = Field(description="Brief explanation of why this is worth remembering")
     temporal_stability: str = Field(
         default="unknown",
-        description="Temporal stability: static (permanent facts), dynamic (changing state), or unknown"
+        description="Temporal stability: static (permanent), dynamic (changing), ephemeral (expected to change soon), or unknown"
     )
     entities: list[EntitySchema] = Field(
         default_factory=list,
@@ -127,6 +128,32 @@ class MemoryExtractionResult(BaseModel):
     """Schema for memory extraction response"""
 
     memories: list[MemorySchema] = Field(description="List of extracted memories")
+
+
+class SummaryBullet(BaseModel):
+    """A single bullet point in a summary with citations"""
+
+    text: str = Field(description="The bullet point text")
+    memory_ids: list[str] = Field(description="Memory IDs supporting this bullet (1-4 IDs)")
+
+
+class SummaryData(BaseModel):
+    """The summary content"""
+
+    title: str = Field(description="Short descriptive title")
+    scope: str = Field(description="Summary scope - typically INGEST_RUN")
+    overview: str = Field(description="2-4 sentence overview in plain language")
+    bullets: list[SummaryBullet] = Field(description="6-12 key insights with citations")
+    themes: list[str] = Field(description="3-8 short theme tags")
+    open_questions: list[str] = Field(
+        default_factory=list, description="Genuine gaps or ambiguities"
+    )
+
+
+class SummaryResult(BaseModel):
+    """Schema for summary generation response (M4)"""
+
+    summary: SummaryData = Field(description="The generated summary")
 
 
 @dataclass
@@ -313,6 +340,203 @@ def extract_memories_from_chunk(
         )
 
     return memories
+
+
+def generate_summary(
+    memories: list[MemoryNode],
+    model: str,
+    source_label: str,
+    ingest_run_id: str,
+) -> SummaryResult:
+    """
+    Generate summary from extracted memories using LLM (M4).
+
+    Args:
+        memories: List of MemoryNode objects to summarize
+        model: LLM model to use
+        source_label: Human-readable source label (filename/session name)
+        ingest_run_id: Ingest run identifier (artifact_ref)
+
+    Returns:
+        SummaryResult with structured summary data
+
+    Raises:
+        ValueError: If LLM returns invalid response or prompts not found
+    """
+    from vestig.core.entity_extraction import call_llm, load_prompts, substitute_tokens
+
+    # Load and get prompt
+    prompts = load_prompts()
+    summary_prompt = prompts.get("summary_v1")
+
+    if not summary_prompt:
+        raise ValueError("'summary_v1' prompt not found in prompts.yaml")
+
+    # Format memories list for prompt
+    memory_items_list = []
+    for mem in memories:
+        # Truncate long memories for prompt efficiency (keep under 500 chars)
+        content = mem.content[:500] + "..." if len(mem.content) > 500 else mem.content
+        memory_items_list.append(f"[{mem.id}] {content}")
+
+    memory_items_text = "\n\n".join(memory_items_list)
+
+    # Substitute tokens in prompt
+    prompt = substitute_tokens(
+        summary_prompt,
+        source_label=source_label,
+        ingest_run_id=ingest_run_id,
+        memory_items=memory_items_text,
+    )
+
+    # Call LLM with schema
+    try:
+        result = call_llm(prompt, model=model, schema=SummaryResult)
+        return result
+    except Exception as e:
+        raise ValueError(f"Summary generation failed: {e}")
+
+
+def commit_summary(
+    summary_result: SummaryResult,
+    memory_ids: list[str],
+    artifact_ref: str,
+    source_label: str,
+    storage: MemoryStorage,
+    embedding_engine: EmbeddingEngine,
+    event_storage: MemoryEventStorage | None = None,
+) -> str | None:
+    """
+    Commit summary node and create SUMMARIZES edges (M4).
+
+    Idempotency: Uses deterministic lookup by (artifact_ref in metadata)
+    to prevent duplicate summaries on re-runs.
+
+    Args:
+        summary_result: Generated summary from LLM
+        memory_ids: List of memory IDs being summarized
+        artifact_ref: Source artifact reference (filename/session ID)
+        source_label: Human-readable source label
+        storage: Storage instance
+        embedding_engine: Embedding engine
+        event_storage: Optional event storage
+
+    Returns:
+        Summary memory ID if created/found, None if skipped
+    """
+    from datetime import datetime, timezone
+    import hashlib
+    import uuid
+    from vestig.core.models import MemoryNode, EdgeNode, EventNode
+
+    # M4: Check if summary already exists for this artifact (idempotency)
+    existing_summary = storage.get_summary_for_artifact(artifact_ref)
+    if existing_summary:
+        print(f"  Summary already exists: {existing_summary.id} (idempotent)")
+        return existing_summary.id
+
+    # Format summary content from bullets
+    summary_data = summary_result.summary
+    content_lines = [
+        f"# {summary_data.title}",
+        "",
+        f"**Overview:** {summary_data.overview}",
+        "",
+        "**Key Insights:**",
+    ]
+
+    for bullet in summary_data.bullets:
+        # Format citations
+        citations = ", ".join(bullet.memory_ids)
+        content_lines.append(f"- {bullet.text} (refs: {citations})")
+
+    if summary_data.themes:
+        content_lines.append("")
+        content_lines.append(f"**Themes:** {', '.join(summary_data.themes)}")
+
+    if summary_data.open_questions:
+        content_lines.append("")
+        content_lines.append("**Open Questions:**")
+        for q in summary_data.open_questions:
+            content_lines.append(f"- {q}")
+
+    summary_content = "\n".join(content_lines)
+
+    # Create summary memory node
+    summary_id = f"mem_{uuid.uuid4()}"
+
+    # Generate embedding for summary
+    embedding = embedding_engine.embed_text(summary_content)
+
+    # Compute content hash
+    content_hash = hashlib.sha256(summary_content.encode("utf-8")).hexdigest()
+
+    # Build metadata
+    metadata = {
+        "source": "summary_generation",
+        "artifact_ref": artifact_ref,
+        "source_label": source_label,
+        "scope": summary_data.scope,
+        "title": summary_data.title,
+        "themes": summary_data.themes,
+        "memory_count": len(memory_ids),
+        "summarized_ids": memory_ids,
+    }
+
+    now = datetime.now(timezone.utc).isoformat()
+
+    # Create MemoryNode with kind=SUMMARY
+    summary_node = MemoryNode(
+        id=summary_id,
+        content=summary_content,
+        content_embedding=embedding,
+        content_hash=content_hash,
+        created_at=now,
+        metadata=metadata,
+        t_valid=now,
+        t_invalid=None,
+        t_created=now,
+        t_expired=None,
+        temporal_stability="static",  # Summaries are snapshots
+        last_seen_at=None,
+        reinforce_count=0,
+    )
+
+    # Atomic transaction for summary + edges + event
+    with storage.conn:
+        # Store summary with kind=SUMMARY
+        storage.store_memory(summary_node, kind="SUMMARY")
+
+        # Create SUMMARIZES edges (Summary → Memory)
+        for memory_id in memory_ids:
+            edge = EdgeNode.create(
+                from_node=summary_id,
+                to_node=memory_id,
+                edge_type="SUMMARIZES",
+                weight=1.0,
+                confidence=None,  # Summaries don't have confidence scores
+                evidence=f"summary_of_{len(memory_ids)}_memories",
+            )
+            storage.store_edge(edge)
+
+        # Log SUMMARY_CREATED event
+        if event_storage:
+            event = EventNode.create(
+                memory_id=summary_id,
+                event_type="SUMMARY_CREATED",
+                source="summary_generation",
+                artifact_ref=artifact_ref,
+                payload={
+                    "memory_count": len(memory_ids),
+                    "summarized_ids": memory_ids,
+                    "title": summary_data.title,
+                    "themes": summary_data.themes,
+                },
+            )
+            event_storage.add_event(event)
+
+    print(f"  Summary created: {summary_id} (summarizes {len(memory_ids)} memories)")
+    return summary_id
 
 
 def ingest_document(
@@ -520,6 +744,80 @@ def ingest_document(
     # Track entities created
     entities_after = len(storage.get_all_entities())
     entities_created = entities_after - entities_before
+
+    # M4: Generate summary if ≥5 memories committed
+    if memories_committed >= 5 and extraction_model:
+        print(f"\nGenerating summary ({memories_committed} memories extracted)...")
+
+        try:
+            # Get all memories committed during this ingest (by artifact_ref)
+            # Query events to find memories from this ingest run
+            cursor = storage.conn.execute(
+                """
+                SELECT DISTINCT m.id, m.content, m.content_embedding, m.content_hash,
+                       m.created_at, m.metadata, m.t_valid, m.t_invalid,
+                       m.t_created, m.t_expired, m.temporal_stability,
+                       m.last_seen_at, m.reinforce_count
+                FROM memories m
+                JOIN memory_events e ON e.memory_id = m.id
+                WHERE e.artifact_ref = ?
+                  AND e.event_type = 'ADD'
+                  AND m.kind = 'MEMORY'
+                ORDER BY m.created_at ASC
+                """,
+                (path.name,),
+            )
+
+            import json
+
+            committed_memories = []
+            for row in cursor.fetchall():
+                committed_memories.append(
+                    MemoryNode(
+                        id=row[0],
+                        content=row[1],
+                        content_embedding=json.loads(row[2]),
+                        content_hash=row[3],
+                        created_at=row[4],
+                        metadata=json.loads(row[5]),
+                        t_valid=row[6],
+                        t_invalid=row[7],
+                        t_created=row[8],
+                        t_expired=row[9],
+                        temporal_stability=row[10] or "unknown",
+                        last_seen_at=row[11],
+                        reinforce_count=row[12] or 0,
+                    )
+                )
+
+            if len(committed_memories) >= 5:
+                # Generate summary
+                summary_result = generate_summary(
+                    memories=committed_memories,
+                    model=extraction_model,
+                    source_label=path.name,
+                    ingest_run_id=path.name,
+                )
+
+                # Commit summary with edges
+                summary_id = commit_summary(
+                    summary_result=summary_result,
+                    memory_ids=[m.id for m in committed_memories],
+                    artifact_ref=path.name,
+                    source_label=path.name,
+                    storage=storage,
+                    embedding_engine=embedding_engine,
+                    event_storage=event_storage,
+                )
+
+                if verbose and summary_id:
+                    print(f"\n  Summary title: {summary_result.summary.title}")
+                    print(f"  Themes: {', '.join(summary_result.summary.themes)}")
+
+        except Exception as e:
+            error_msg = f"Summary generation failed: {e}"
+            errors.append(error_msg)
+            print(f"  Warning: {error_msg}")
 
     return IngestionResult(
         document_path=document_path,

@@ -8,10 +8,14 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
-# Add src to path
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+# Ensure tests run offline if the model is already cached
+os.environ.setdefault("HF_HUB_OFFLINE", "1")
+os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
 
-from vestig.core.ingestion import ingest_document
+# Add src to path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+from vestig.core.ingestion import ingest_document, MemoryExtractionResult
 from vestig.core.embeddings import EmbeddingEngine
 from vestig.core.storage import MemoryStorage
 from vestig.core.event_storage import MemoryEventStorage
@@ -28,7 +32,7 @@ def test_ingestion():
 
     try:
         # Load config and setup
-        config = load_config("config.yaml")
+        config = load_config("config_test.yaml")
         storage = MemoryStorage(db_path)
         event_storage = MemoryEventStorage(storage.conn)
         embedding_engine = EmbeddingEngine(
@@ -37,33 +41,38 @@ def test_ingestion():
         )
 
         # Mock LLM response - extract memories from conversation
-        mock_response = json.dumps(
+        mock_response = MemoryExtractionResult.model_validate(
             {
                 "memories": [
                     {
                         "content": "PostgreSQL queries on user_events table were experiencing performance issues, with some queries taking over 5 seconds according to slow query log",
                         "confidence": 0.9,
                         "rationale": "Clear technical problem statement with metrics",
+                        "entities": [],
                     },
                     {
                         "content": "The slow PostgreSQL queries were caused by missing index on event_timestamp column, leading to full table scans",
                         "confidence": 0.95,
                         "rationale": "Root cause identified with specific solution",
+                        "entities": [],
                     },
                     {
                         "content": "Bob recommended creating B-tree index on (user_id, event_timestamp) for PostgreSQL optimization",
                         "confidence": 0.9,
                         "rationale": "Specific technical decision with person attribution",
+                        "entities": [],
                     },
                     {
                         "content": "PgBouncer should be configured with pool size of 20 connections to reduce connection overhead",
                         "confidence": 0.85,
                         "rationale": "Configuration recommendation with specific value",
+                        "entities": [],
                     },
                     {
                         "content": "Redis caching strategy should include event queries with 5-minute TTL to prevent stale reads",
                         "confidence": 0.85,
                         "rationale": "Caching strategy decision with time parameter",
+                        "entities": [],
                     },
                 ]
             }
@@ -72,7 +81,7 @@ def test_ingestion():
         # Test with mocked LLM
         with patch("vestig.core.ingestion.call_llm", return_value=mock_response):
             result = ingest_document(
-                document_path="test_session_sample.txt",
+                document_path=str(Path(__file__).resolve().parents[1] / "test_session_sample.txt"),
                 storage=storage,
                 embedding_engine=embedding_engine,
                 event_storage=event_storage,

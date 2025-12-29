@@ -24,7 +24,7 @@ class MemoryNode:
     t_invalid: str | None = None  # When fact stopped being true (event time)
     t_created: str | None = None  # When we learned it (transaction time)
     t_expired: str | None = None  # When deprecated/superseded
-    temporal_stability: str = "unknown"  # "static" | "dynamic" | "unknown"
+    temporal_stability: str = "unknown"  # "static" | "dynamic" | "ephemeral" | "unknown"
 
     # M3: Reinforcement tracking (cached from events)
     last_seen_at: str | None = None  # Most recent reinforcement
@@ -39,6 +39,8 @@ class MemoryNode:
         source: str = "manual",
         tags: list[str] = None,
         content_hash: str | None = None,  # M3 FIX: Allow passing pre-computed hash
+        t_valid_hint: str | None = None,  # Temporal hint: when fact became true
+        temporal_stability_hint: str | None = None,  # Temporal hint: static/dynamic/ephemeral/unknown
     ) -> "MemoryNode":
         """
         Create a new memory node with M3 temporal initialization.
@@ -50,6 +52,8 @@ class MemoryNode:
             source: Source of the memory (manual, hook, batch)
             tags: Optional tags for filtering
             content_hash: Pre-computed content hash (optional, computed if not provided)
+            t_valid_hint: Optional temporal hint for when fact became true
+            temporal_stability_hint: Optional stability classification (static/dynamic/ephemeral/unknown)
 
         Returns:
             MemoryNode instance
@@ -66,6 +70,10 @@ class MemoryNode:
         # M3: Initialize temporal fields
         now = datetime.now(timezone.utc).isoformat()
 
+        # Use temporal hints if provided, otherwise default to now
+        t_valid = t_valid_hint if t_valid_hint else now
+        temporal_stability = temporal_stability_hint if temporal_stability_hint else "unknown"
+
         return cls(
             id=memory_id,
             content=content,
@@ -73,12 +81,12 @@ class MemoryNode:
             content_hash=content_hash,
             created_at=now,
             metadata=metadata,
-            # M3: Bi-temporal initialization
-            t_valid=now,  # Assume valid from creation
+            # M3: Bi-temporal initialization with hints
+            t_valid=t_valid,  # Use hint or fallback to now
             t_invalid=None,  # Not yet invalidated
-            t_created=now,  # Transaction time = creation time
+            t_created=now,  # Transaction time is always now (when we learned it)
             t_expired=None,  # Not deprecated
-            temporal_stability="unknown",  # Default stability
+            temporal_stability=temporal_stability,  # Use hint or fallback to "unknown"
             last_seen_at=None,  # No reinforcement yet
             reinforce_count=0,  # No reinforcement yet
         )
@@ -191,7 +199,7 @@ class EdgeNode:
             ValueError: If edge_type is invalid
         """
         # Enforce edge type constraints
-        allowed_edge_types = {"MENTIONS", "RELATED"}
+        allowed_edge_types = {"MENTIONS", "RELATED", "SUMMARIZES"}
         if edge_type not in allowed_edge_types:
             raise ValueError(f"Invalid edge_type: {edge_type}. Allowed: {allowed_edge_types}")
 
@@ -227,10 +235,10 @@ class EventNode:
     event_id: str  # evt_<uuid>
     memory_id: str  # FK to memories table
     event_type: (
-        str  # ADD | REINFORCE_EXACT | REINFORCE_NEAR | DEPRECATE | SUPERSEDE | ENTITY_EXTRACTED
+        str  # ADD | REINFORCE_EXACT | REINFORCE_NEAR | DEPRECATE | SUPERSEDE | ENTITY_EXTRACTED | SUMMARY_CREATED
     )
     occurred_at: str  # UTC timestamp (ISO 8601)
-    source: str  # manual | hook | import | batch | llm
+    source: str  # manual | hook | import | batch | llm | summary_generation
     actor: str | None = None  # User/agent identifier
     artifact_ref: str | None = None  # Session ID, filename, etc.
     payload: dict[str, Any] = field(default_factory=dict)  # Event details

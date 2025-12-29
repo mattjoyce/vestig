@@ -25,9 +25,50 @@ class MemoryStorage:
         self.conn.execute("PRAGMA foreign_keys = ON")
 
         self._init_schema()
+        self._validate_schema()
+
+    def _is_fresh_database(self) -> bool:
+        """Check if database is empty (no tables exist)
+
+        Returns:
+            True if this is a fresh database with no memories table
+        """
+        cursor = self.conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='memories'"
+        )
+        return cursor.fetchone() is None
+
+    def _apply_schema_file(self) -> None:
+        """Apply schema.sql for fresh database creation
+
+        Raises:
+            FileNotFoundError: If schema.sql is not found
+        """
+        schema_path = Path(__file__).parent / "schema.sql"
+        if not schema_path.exists():
+            raise FileNotFoundError(f"schema.sql not found at {schema_path}")
+
+        schema_sql = schema_path.read_text()
+        self.conn.executescript(schema_sql)
+        self.conn.commit()
+        # Note: Using logger here would require import at top
+        # logger.info("Applied schema.sql for fresh database creation")
 
     def _init_schema(self):
-        """Create tables if they don't exist (additive migrations)"""
+        """Initialize or migrate database schema
+
+        Fresh databases: Apply schema.sql as single source of truth
+        Existing databases: Use migration logic for backward compatibility
+        """
+        if self._is_fresh_database():
+            # Fresh DB: Apply schema.sql as single source of truth
+            self._apply_schema_file()
+        else:
+            # Existing DB: Keep migration logic for backward compatibility
+            self._migrate_existing_database()
+
+    def _migrate_existing_database(self):
+        """Legacy migration path for pre-M0 databases (additive migrations)"""
         # Create base table
         self.conn.execute(
             """
@@ -78,6 +119,10 @@ class MemoryStorage:
         if "reinforce_count" not in columns:
             self.conn.execute("ALTER TABLE memories ADD COLUMN reinforce_count INTEGER DEFAULT 0")
 
+        # M4: Add kind column for MEMORY vs SUMMARY nodes
+        if "kind" not in columns:
+            self.conn.execute("ALTER TABLE memories ADD COLUMN kind TEXT DEFAULT 'MEMORY'")
+
         # Backfill t_created from created_at for existing memories
         self.conn.execute("UPDATE memories SET t_created = created_at WHERE t_created IS NULL")
 
@@ -115,6 +160,13 @@ class MemoryStorage:
             """
             CREATE INDEX IF NOT EXISTS idx_memories_expired
             ON memories(t_expired) WHERE t_expired IS NOT NULL
+            """
+        )
+        # M4: Create index for kind column (for summary queries)
+        self.conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_memories_kind
+            ON memories(kind)
             """
         )
 
@@ -214,12 +266,60 @@ class MemoryStorage:
 
         self.conn.commit()
 
-    def store_memory(self, node: MemoryNode) -> str:
+    def _validate_schema(self) -> None:
+        """Validate database schema matches expectations (fail loudly on mismatch)
+
+        Raises:
+            RuntimeError: If required tables or columns are missing
         """
-        Persist a memory node (M2: handles exact duplicates).
+        # Check critical columns exist in memories table
+        cursor = self.conn.execute("PRAGMA table_info(memories)")
+        columns = {row[1] for row in cursor.fetchall()}
+
+        required_columns = {
+            "id",
+            "content",
+            "content_embedding",
+            "content_hash",
+            "created_at",
+            "metadata",
+            "t_valid",
+            "t_invalid",
+            "t_created",
+            "t_expired",
+            "temporal_stability",
+            "last_seen_at",
+            "reinforce_count",
+            "kind",
+        }
+
+        missing = required_columns - columns
+        if missing:
+            raise RuntimeError(
+                f"Schema validation failed: Missing columns in memories table: {missing}. "
+                f"Database schema is incompatible with this version of Vestig. "
+                f"Expected schema from M4 (Summary Nodes)."
+            )
+
+        # Check critical tables exist
+        cursor = self.conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        tables = {row[0] for row in cursor.fetchall()}
+
+        required_tables = {"memories", "memory_events", "entities", "edges"}
+        missing_tables = required_tables - tables
+        if missing_tables:
+            raise RuntimeError(f"Schema validation failed: Missing tables: {missing_tables}")
+
+        # Note: Using logger here would require import at top
+        # logger.debug("Schema validation passed")
+
+    def store_memory(self, node: MemoryNode, kind: str = "MEMORY") -> str:
+        """
+        Persist a memory node (M2: handles exact duplicates, M4: supports kind).
 
         Args:
             node: MemoryNode to store
+            kind: Memory kind - "MEMORY" (default) or "SUMMARY"
 
         Returns:
             Memory ID (existing ID if duplicate detected)
@@ -241,9 +341,9 @@ class MemoryStorage:
             INSERT INTO memories (
                 id, content, content_embedding, content_hash, created_at, metadata,
                 t_valid, t_invalid, t_created, t_expired, temporal_stability,
-                last_seen_at, reinforce_count
+                last_seen_at, reinforce_count, kind
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 node.id,
@@ -259,6 +359,7 @@ class MemoryStorage:
                 node.temporal_stability,
                 node.last_seen_at,
                 node.reinforce_count,
+                kind,
             ),
         )
         # NOTE: Caller manages transaction commit
@@ -410,6 +511,48 @@ class MemoryStorage:
                 )
             )
         return memories
+
+    def get_summary_for_artifact(self, artifact_ref: str) -> MemoryNode | None:
+        """
+        Get summary node for a specific artifact (M4).
+
+        Args:
+            artifact_ref: Artifact reference (filename/session ID)
+
+        Returns:
+            MemoryNode if summary exists, None otherwise
+        """
+        cursor = self.conn.execute(
+            """
+            SELECT id, content, content_embedding, content_hash, created_at, metadata,
+                   t_valid, t_invalid, t_created, t_expired, temporal_stability,
+                   last_seen_at, reinforce_count
+            FROM memories
+            WHERE kind = 'SUMMARY' AND t_expired IS NULL
+            ORDER BY created_at DESC
+            """
+        )
+
+        for row in cursor.fetchall():
+            metadata = json.loads(row[5])
+            if metadata.get("artifact_ref") == artifact_ref:
+                return MemoryNode(
+                    id=row[0],
+                    content=row[1],
+                    content_embedding=json.loads(row[2]),
+                    content_hash=row[3],
+                    created_at=row[4],
+                    metadata=metadata,
+                    t_valid=row[6],
+                    t_invalid=row[7],
+                    t_created=row[8],
+                    t_expired=row[9],
+                    temporal_stability=row[10] or "unknown",
+                    last_seen_at=row[11],
+                    reinforce_count=row[12] or 0,
+                )
+
+        return None
 
     # M4: Entity operations
 
@@ -799,6 +942,87 @@ class MemoryStorage:
             """
 
         cursor = self.conn.execute(query, (entity_id, min_confidence))
+        edges = []
+
+        for row in cursor.fetchall():
+            edges.append(
+                EdgeNode(
+                    edge_id=row[0],
+                    from_node=row[1],
+                    to_node=row[2],
+                    edge_type=row[3],
+                    weight=row[4],
+                    confidence=row[5],
+                    evidence=row[6],
+                    t_valid=row[7],
+                    t_invalid=row[8],
+                    t_created=row[9],
+                    t_expired=row[10],
+                )
+            )
+
+        return edges
+
+    def get_edges_to_memory(
+        self,
+        memory_id: str,
+        edge_type: str | None = None,
+        include_expired: bool = False,
+        min_confidence: float = 0.0,
+    ) -> list[EdgeNode]:
+        """
+        Get all incoming edges to a memory node.
+
+        Args:
+            memory_id: Target memory ID
+            edge_type: Optional edge type filter (RELATED)
+            include_expired: Include expired edges
+            min_confidence: Minimum confidence threshold
+
+        Returns:
+            List of EdgeNode objects
+        """
+        # Build query based on filters
+        if edge_type:
+            if include_expired:
+                query = """
+                    SELECT edge_id, from_node, to_node, edge_type, weight,
+                           confidence, evidence, t_valid, t_invalid, t_created, t_expired
+                    FROM edges
+                    WHERE to_node = ? AND edge_type = ? AND (confidence IS NULL OR confidence >= ?)
+                    ORDER BY t_created DESC
+                """
+                params = (memory_id, edge_type, min_confidence)
+            else:
+                query = """
+                    SELECT edge_id, from_node, to_node, edge_type, weight,
+                           confidence, evidence, t_valid, t_invalid, t_created, t_expired
+                    FROM edges
+                    WHERE to_node = ? AND edge_type = ? AND t_expired IS NULL AND (confidence IS NULL OR confidence >= ?)
+                    ORDER BY t_created DESC
+                """
+                params = (memory_id, edge_type, min_confidence)
+        else:
+            if include_expired:
+                query = """
+                    SELECT edge_id, from_node, to_node, edge_type, weight,
+                           confidence, evidence, t_valid, t_invalid, t_created, t_expired
+                    FROM edges
+                    WHERE to_node = ? AND (confidence IS NULL OR confidence >= ?)
+                    ORDER BY t_created DESC
+                """
+                params = (memory_id, min_confidence)
+            else:
+                query = """
+                    SELECT edge_id, from_node, to_node, edge_type, weight,
+                           confidence, evidence, t_valid, t_invalid, t_created, t_expired
+                    FROM edges
+                    WHERE to_node = ? AND t_expired IS NULL AND (confidence IS NULL OR confidence >= ?)
+                    ORDER BY t_created DESC
+                """
+                params = (memory_id, min_confidence)
+
+        cursor = self.conn.execute(query, params)
         edges = []
 
         for row in cursor.fetchall():

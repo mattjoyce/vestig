@@ -3,12 +3,15 @@
 
 import os
 import sys
-import json
 import tempfile
 from unittest.mock import patch
 
+# Ensure tests run offline if the model is already cached
+os.environ.setdefault("HF_HUB_OFFLINE", "1")
+os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from vestig.core.commitment import commit_memory
 from vestig.core.embeddings import EmbeddingEngine
@@ -16,6 +19,7 @@ from vestig.core.storage import MemoryStorage
 from vestig.core.event_storage import MemoryEventStorage
 from vestig.core.config import load_config
 from vestig.core.graph import expand_via_entities, expand_via_related, expand_with_graph
+from vestig.core.ingestion import MemoryExtractionResult
 
 
 def test_graph_traversal():
@@ -28,7 +32,7 @@ def test_graph_traversal():
 
     try:
         # Load config and initialize storage
-        config = load_config("config.yaml")
+        config = load_config("config_test.yaml")
         storage = MemoryStorage(db_path)
         event_storage = MemoryEventStorage(storage.conn)
         embedding_engine = EmbeddingEngine(
@@ -43,7 +47,7 @@ def test_graph_traversal():
             },
             "entity_extraction": {
                 "enabled": True,
-                "llm": {"min_confidence": 0.75},
+                "llm": {"model": "claude-sonnet-4.5", "min_confidence": 0.75},
             },
             "edge_creation": {
                 "mentions": {"enabled": True},
@@ -59,67 +63,86 @@ def test_graph_traversal():
         print("Setup: Creating test memories with graph structure\n")
 
         # Mock LLM for entity extraction
-        mock_response_alice_pg = json.dumps(
+        mock_response_alice_pg = MemoryExtractionResult.model_validate(
             {
-                "entities": [
+                "memories": [
                     {
-                        "name": "Alice",
-                        "type": "PERSON",
+                        "content": "Alice fixed the PostgreSQL replication bug",
                         "confidence": 0.92,
-                        "evidence": "developer",
-                    },
-                    {
-                        "name": "PostgreSQL",
-                        "type": "SYSTEM",
-                        "confidence": 0.95,
-                        "evidence": "database",
-                    },
+                        "rationale": "test",
+                        "entities": [
+                            {
+                                "name": "Alice",
+                                "type": "PERSON",
+                                "confidence": 0.92,
+                                "evidence": "developer",
+                            },
+                            {
+                                "name": "PostgreSQL",
+                                "type": "SYSTEM",
+                                "confidence": 0.95,
+                                "evidence": "database",
+                            },
+                        ],
+                    }
                 ]
             }
         )
 
-        mock_response_alice_redis = json.dumps(
+        mock_response_alice_redis = MemoryExtractionResult.model_validate(
             {
-                "entities": [
+                "memories": [
                     {
-                        "name": "Alice",
-                        "type": "PERSON",
+                        "content": "Alice deployed the new Redis caching layer",
                         "confidence": 0.90,
-                        "evidence": "developer",
-                    },
-                    {
-                        "name": "Redis",
-                        "type": "SYSTEM",
-                        "confidence": 0.93,
-                        "evidence": "cache",
-                    },
+                        "rationale": "test",
+                        "entities": [
+                            {
+                                "name": "Alice",
+                                "type": "PERSON",
+                                "confidence": 0.90,
+                                "evidence": "developer",
+                            },
+                            {
+                                "name": "Redis",
+                                "type": "SYSTEM",
+                                "confidence": 0.93,
+                                "evidence": "cache",
+                            },
+                        ],
+                    }
                 ]
             }
         )
 
-        mock_response_bob_pg = json.dumps(
+        mock_response_bob_pg = MemoryExtractionResult.model_validate(
             {
-                "entities": [
+                "memories": [
                     {
-                        "name": "Bob",
-                        "type": "PERSON",
+                        "content": "Bob optimized PostgreSQL query performance",
                         "confidence": 0.88,
-                        "evidence": "developer",
-                    },
-                    {
-                        "name": "PostgreSQL",
-                        "type": "SYSTEM",
-                        "confidence": 0.94,
-                        "evidence": "database",
-                    },
+                        "rationale": "test",
+                        "entities": [
+                            {
+                                "name": "Bob",
+                                "type": "PERSON",
+                                "confidence": 0.88,
+                                "evidence": "developer",
+                            },
+                            {
+                                "name": "PostgreSQL",
+                                "type": "SYSTEM",
+                                "confidence": 0.94,
+                                "evidence": "database",
+                            },
+                        ],
+                    }
                 ]
             }
         )
 
         # Memory 1: Alice fixed PostgreSQL bug
-        with patch(
-            "vestig.core.entity_extraction.call_llm", return_value=mock_response_alice_pg
-        ):
+        with patch("vestig.core.ingestion.call_llm", return_value=mock_response_alice_pg):
             outcome1 = commit_memory(
                 content="Alice fixed the PostgreSQL replication bug",
                 storage=storage,
@@ -132,10 +155,7 @@ def test_graph_traversal():
             print(f"✓ Memory 1 (Alice + PostgreSQL): {mem1_id}")
 
         # Memory 2: Alice deployed Redis
-        with patch(
-            "vestig.core.entity_extraction.call_llm",
-            return_value=mock_response_alice_redis,
-        ):
+        with patch("vestig.core.ingestion.call_llm", return_value=mock_response_alice_redis):
             outcome2 = commit_memory(
                 content="Alice deployed the new Redis caching layer",
                 storage=storage,
@@ -148,9 +168,7 @@ def test_graph_traversal():
             print(f"✓ Memory 2 (Alice + Redis): {mem2_id}")
 
         # Memory 3: Bob optimized PostgreSQL
-        with patch(
-            "vestig.core.entity_extraction.call_llm", return_value=mock_response_bob_pg
-        ):
+        with patch("vestig.core.ingestion.call_llm", return_value=mock_response_bob_pg):
             outcome3 = commit_memory(
                 content="Bob optimized PostgreSQL query performance",
                 storage=storage,

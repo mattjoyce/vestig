@@ -13,16 +13,17 @@ We build Vestig in **progressive maturation** steps. Each maturity level is a *c
 
 - **M1 — Core Loop (Complete):** add → embed → persist → recall (top‑K). Fail fast. Minimal scaffolding. ✓
 - **M2 — Quality Firewall (Complete):** de-duplication, content hygiene, basic ranking improvements, and controlled recall formatting. ✓
-- **M3 — Time & Truth (Next):** temporal awareness, decay/refresh, provenance, and "is this still true?" mechanics.
-- **M4 — Structure:** entities/edges (light graph), relationships, and richer retrieval.
-- **M5 — Operations:** import pipelines, observability, performance, backup/restore, and automation hooks.
+- **M3 — Time & Truth (Complete):** bi-temporal tracking (t_valid, t_created), temporal stability classification, event storage, and decay mechanics. ✓
+- **M4 — Graph Layer (Complete):** entity extraction, entity/edge nodes, MENTIONS relationships, graph operations, and knowledge graph foundation. ✓
+- **M5 — Advanced Retrieval (In Progress):** TraceRank, graph-based retrieval, hybrid scoring, and sophisticated recall strategies.
 - **M6 — Productisation:** stable interfaces, hardening, packaging, and clean integration patterns for agent ecosystems.
 
 See:
 - `PLAN.md` — the maturation roadmap (M1→M6) + guiding preamble and principles
 - `SPEC.md` — target design and technical contract (what we are building toward)
+- `M4_Completion_Report.md` — detailed M4 milestone report
 
-**Current Status:** M1 and M2 are complete. **M3 is next** (awaiting green light). Anything not required for the current milestone is intentionally deferred.
+**Current Status:** M1–M4 are complete and operational. **M5 is in progress** (TraceRank implemented, hybrid retrieval underway). Anything not required for the current milestone is intentionally deferred.
 
 ---
 
@@ -113,8 +114,8 @@ M1 can use brute-force retrieval over a modest corpus. We optimise later.
 
 Typical structure (may evolve slightly as we implement):
 
-- `src/vestig/` — implementation package
-- `test/` — test configuration files (config.yaml, prompts.yaml)
+- `src/vestig/` — implementation package (includes core/prompts.yaml)
+- `test/` — test configuration files (config.yaml, test-specific prompts.yaml)
 - `tests/` — test scripts and smoke tests
 - `demos/` — demo scripts (demo_m1.sh, demo_m4.sh, etc.)
 - `benchmarks/` — performance benchmarking scripts
@@ -134,6 +135,35 @@ Vestig is designed to be **local-first** and configurable. Typical config includ
 If configuration is present in the repo, prefer:
 - `config.yaml` checked in as an **example**
 - `config.local.yaml` for developer overrides (gitignored)
+
+---
+
+## Schema Management (M0)
+
+Vestig's SQLite schema is managed via **schema.sql** as the **sovereign interface**.
+
+**For Fresh Databases:**
+- New databases are created from `src/vestig/core/schema.sql`
+- This file is the single source of truth for the schema structure
+- Schema changes are explicit and reviewable as SQL diffs in PRs
+
+**For Existing Databases:**
+- Legacy migration logic in `storage.py` handles backward compatibility
+- Additive migrations (ALTER TABLE) automatically upgrade old databases
+- Validation runs after migration to ensure schema correctness
+
+**Making Schema Changes:**
+1. Update `src/vestig/core/schema.sql` with new DDL
+2. Add migration logic to `storage.py:_migrate_existing_database()` for backward compatibility
+3. Update `_validate_schema()` to check new requirements
+4. Test both fresh and migrated databases
+5. Schema changes appear as SQL diffs in PRs for easy review
+
+**Files:**
+- `src/vestig/core/schema.sql` — Authoritative DDL for fresh databases
+- `src/vestig/core/storage.py` — Migration logic + validation
+
+This approach establishes schema as a reviewable contract while maintaining backward compatibility for existing users.
 
 ---
 

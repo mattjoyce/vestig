@@ -1,5 +1,6 @@
 # Vestig LLM Prompts
 # Use {{token}} for variable substitution
+# Supports both string format (legacy) and dict format with system/user keys (M4+)
 
 # Session Ingestion: Extract memories from conversation transcripts
 extract_memories_from_session: |
@@ -28,6 +29,9 @@ extract_memories_from_session: |
   - "dynamic": Current state that may change in the future
     Examples: job titles, system configurations, project status, current locations, version numbers
     Indicators: "is currently", "status:", "works as", "configured to", "running on"
+  - "ephemeral": Expected to change soon (hours/days), only when explicitly indicated
+    Examples: incident ongoing, temporary workaround, on-call this week, today's deployment status
+    Indicators: "today", "this week", "temporary", "incident ongoing", "until Friday"
   - "unknown": Mixed content or uncertain classification
     Examples: memories with both static and dynamic elements, or unclear permanence
 
@@ -41,7 +45,7 @@ extract_memories_from_session: |
         "content": "self-contained memory with context",
         "confidence": 0.0-1.0,
         "rationale": "why this matters",
-        "temporal_stability": "static|dynamic|unknown",
+        "temporal_stability": "static|dynamic|ephemeral|unknown",
         "entities": [
           {
             "name": "entity name",
@@ -55,3 +59,48 @@ extract_memories_from_session: |
   }
 
   Return {"memories": []} if none found.
+
+# M4: Document/Session Summary Generation
+# Create grounded summaries from extracted MEMORY nodes
+summary_v1:
+  description: >
+    Create a grounded document/session summary from extracted MEMORY nodes.
+    The summary MUST ONLY use provided memory items. Each bullet must cite memory_ids.
+  system: |
+    You are a careful summarization engine for a memory graph.
+    You must ONLY use the provided MEMORY items as evidence.
+    Do NOT introduce new facts, names, numbers, or claims.
+    If information is missing, say so in "open_questions" rather than guessing.
+    Output MUST be valid JSON matching the schema.
+  user: |
+    Create a SUMMARY node for this ingest run.
+
+    Source label: {{source_label}}
+    Ingest run id: {{ingest_run_id}}
+
+    MEMORY items (each is atomic; treat them as ground truth):
+    {{memory_items}}
+
+    OUTPUT JSON SCHEMA (must match exactly):
+    {
+      "summary": {
+        "title": "string - short descriptive title for this document/session",
+        "scope": "INGEST_RUN",
+        "overview": "string - 2-4 sentences in plain language",
+        "bullets": [
+          {
+            "text": "string - one key insight or fact",
+            "memory_ids": ["mem_xxx", "mem_yyy"]
+          }
+        ],
+        "themes": ["string - short tags, single words or short phrases"],
+        "open_questions": ["string - genuine gaps or ambiguities if any"]
+      }
+    }
+
+    CONSTRAINTS:
+    - overview: 2–4 sentences, plain language.
+    - bullets: 6–12 bullets. Each bullet must cite 1–4 memory_ids that support it.
+    - themes: 3–8 short tags (single words or short phrases).
+    - open_questions: empty list unless there are genuine gaps/ambiguities.
+    - Do not quote long passages. Do not add commentary about your process.

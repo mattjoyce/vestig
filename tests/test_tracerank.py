@@ -5,9 +5,13 @@ import sys
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from vestig.core.tracerank import TraceRankConfig, compute_tracerank_multiplier
+from vestig.core.tracerank import (
+    TraceRankConfig,
+    compute_temporal_confidence,
+    compute_tracerank_multiplier,
+)
 from vestig.core.models import EventNode
 
 
@@ -109,6 +113,27 @@ def test_tracerank():
     multiplier_disabled = compute_tracerank_multiplier(events_spaced, config_disabled, query_time)
     print(f"  Multiplier: {multiplier_disabled:.4f}")
     assert multiplier_disabled == 1.0, "Disabled config should return 1.0"
+    print("  ✓ PASS\n")
+
+    # Test 7: EPHEMERAL decays faster than dynamic
+    print("Test 7: EPHEMERAL stability decays faster")
+    stability_config = TraceRankConfig(
+        temporal_decay_enabled=True,
+        dynamic_tau_days=20.0,
+    )
+    t_valid = (query_time - timedelta(days=10)).isoformat()
+    dynamic_conf = compute_temporal_confidence(
+        t_valid, "dynamic", stability_config, query_time
+    )
+    ephemeral_conf = compute_temporal_confidence(
+        t_valid, "ephemeral", stability_config, query_time
+    )
+    unknown_conf = compute_temporal_confidence(
+        t_valid, "unknown", stability_config, query_time
+    )
+    print(f"  dynamic={dynamic_conf:.4f}, ephemeral={ephemeral_conf:.4f}, unknown={unknown_conf:.4f}")
+    assert ephemeral_conf < dynamic_conf, "EPHEMERAL should decay faster than dynamic"
+    assert dynamic_conf < unknown_conf, "Dynamic should decay more than unknown"
     print("  ✓ PASS\n")
 
     print("=== All TraceRank Tests Passed! ===\n")

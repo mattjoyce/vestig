@@ -814,6 +814,7 @@ vestig/
 │   ├── temporal.py           # Decay/boost functions
 │   ├── models.py             # Node/relationship schemas
 │   ├── graph.py              # Graph operations
+│   ├── prompts.yaml          # LLM prompts (versioned with code)
 │   ├── working_set.py        # Working set management
 │   ├── lateral.py            # Lateral thinking logic
 │   └── daydream.py           # Daydream mode synthesis
@@ -824,7 +825,6 @@ vestig/
 │   ├── design_learnings_mnemosyne.md
 │   └── 2310.08560v2.pdf      # MemGPT paper
 ├── config.yaml               # Configuration
-├── prompts.yaml              # All LLM prompts with token substitution
 ├── requirements.txt
 ├── setup.py                  # pip install -e . → `memory` command
 ├── README.md
@@ -1026,8 +1026,9 @@ pruning:
   threshold: 0.01           # Min recall probability to keep
 ```
 
-### prompts.yaml
-All LLM prompts stored here with token substitution ({{1}}, {{2}}, etc.)
+### src/vestig/core/prompts.yaml
+All LLM prompts stored here with token substitution ({{content}}, etc.)
+Versioned with code to track prompt changes alongside implementation.
 
 ```yaml
 # Stage 1: Substance Filter

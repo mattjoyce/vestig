@@ -9,14 +9,25 @@ source ~/Environments/vestig/bin/activate
 echo "=== M2 Smoke Test: Quality Firewall ==="
 echo ""
 
-# Clean slate
-rm -f data/memory.db
-echo "✓ Clean database"
+# Resolve repo root for config access
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+TMP_DIR="$REPO_ROOT/tests/tmp"
+mkdir -p "$TMP_DIR"
+VENV_PYTHON="$HOME/Environments/vestig/bin/python3"
+VESTIG_CMD=(env HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONPATH="$REPO_ROOT/src" "$VENV_PYTHON" -m vestig.core.cli)
+
+# Use temp database + config
+DB=$(mktemp "$TMP_DIR/vestig-m2.XXXXXX")
+CONFIG=$(mktemp "$TMP_DIR/vestig-m2-config.XXXXXX")
+sed "s|db_path:.*|db_path: \"$DB\"|g" "$REPO_ROOT/config_test.yaml" > "$CONFIG"
+echo "✓ Using temp database: $DB"
+echo "✓ Using config: $CONFIG"
+trap 'rm -f "$DB" "$CONFIG"' EXIT
 echo ""
 
 # Test 1: Content hygiene - reject too short
 echo "Test 1: Content hygiene - reject too short"
-if vestig memory add "ok" 2>&1 | grep -q "too short"; then
+if "${VESTIG_CMD[@]}" --config "$CONFIG" memory add "ok" 2>&1 | grep -q "too short"; then
     echo "✓ Rejected short content"
 else
     echo "✗ FAIL: Should reject short content"
@@ -28,7 +39,7 @@ echo ""
 echo "Test 2: Content hygiene - normalize whitespace"
 # This test verifies whitespace normalization happens before length check
 # (normalized "okay" is 4 chars, should fail min_chars)
-if vestig memory add "okay" 2>&1 | grep -q "too short"; then
+if "${VESTIG_CMD[@]}" --config "$CONFIG" memory add "okay" 2>&1 | grep -q "too short"; then
     echo "✓ Normalized and rejected short content"
 else
     echo "✗ FAIL: Should normalize and reject short content"
@@ -38,13 +49,13 @@ echo ""
 
 # Test 3: Add valid memory
 echo "Test 3: Add valid memory"
-ID1=$(vestig memory add "Learned how to fix authentication bugs by checking token expiry" | grep -oE 'mem_[a-f0-9-]+')
+ID1=$("${VESTIG_CMD[@]}" --config "$CONFIG" memory add "Learned how to fix authentication bugs by checking token expiry" | grep -oE 'mem_[a-f0-9-]+')
 echo "✓ Added memory: $ID1"
 echo ""
 
 # Test 4: Add exact duplicate - should return same ID
 echo "Test 4: Add exact duplicate"
-ID2=$(vestig memory add "Learned how to fix authentication bugs by checking token expiry" | grep -oE 'mem_[a-f0-9-]+')
+ID2=$("${VESTIG_CMD[@]}" --config "$CONFIG" memory add "Learned how to fix authentication bugs by checking token expiry" | grep -oE 'mem_[a-f0-9-]+')
 if [ "$ID1" == "$ID2" ]; then
     echo "✓ Exact duplicate returned same ID: $ID2"
 else
@@ -55,11 +66,11 @@ echo ""
 
 # Test 5: Add near-duplicate - should mark in metadata
 echo "Test 5: Add near-duplicate (semantic similarity)"
-ID3=$(vestig memory add "Learned to fix auth bugs by verifying token expiry" | grep -oE 'mem_[a-f0-9-]+')
+ID3=$("${VESTIG_CMD[@]}" --config "$CONFIG" memory add "Learned to fix auth bugs by verifying token expiry" | grep -oE 'mem_[a-f0-9-]+')
 echo "✓ Added near-duplicate: $ID3"
 
 # Check if marked as duplicate in metadata
-if vestig memory show "$ID3" | grep -q "duplicate_of"; then
+if "${VESTIG_CMD[@]}" --config "$CONFIG" memory show "$ID3" | grep -q "duplicate_of"; then
     echo "✓ Near-duplicate marked in metadata"
 else
     echo "⚠ Near-duplicate not marked (may be below threshold)"
@@ -68,18 +79,18 @@ echo ""
 
 # Test 6: Add memory with tags and source
 echo "Test 6: Add memory with metadata (--source, --tags)"
-ID4=$(vestig memory add "Fixed database performance issue with indexing" --source hook --tags "database,performance,fix" | grep -oE 'mem_[a-f0-9-]+')
+ID4=$("${VESTIG_CMD[@]}" --config "$CONFIG" memory add "Fixed database performance issue with indexing" --source hook --tags "database,performance,fix" | grep -oE 'mem_[a-f0-9-]+')
 echo "✓ Added memory with metadata: $ID4"
 
 # Verify metadata
-if vestig memory show "$ID4" | grep -q "hook"; then
+if "${VESTIG_CMD[@]}" --config "$CONFIG" memory show "$ID4" | grep -q "hook"; then
     echo "✓ Source metadata correct"
 else
     echo "✗ FAIL: Source metadata not found"
     exit 1
 fi
 
-if vestig memory show "$ID4" | grep -q "database"; then
+if "${VESTIG_CMD[@]}" --config "$CONFIG" memory show "$ID4" | grep -q "database"; then
     echo "✓ Tags metadata correct"
 else
     echo "✗ FAIL: Tags metadata not found"
@@ -89,7 +100,7 @@ echo ""
 
 # Test 7: Search returns deterministic structure
 echo "Test 7: Search returns deterministic structure"
-vestig memory search "authentication" --limit 2 > /tmp/search_output.txt
+"${VESTIG_CMD[@]}" --config "$CONFIG" memory search "authentication" --limit 2 > /tmp/search_output.txt
 if grep -q "ID:" /tmp/search_output.txt && grep -q "Score:" /tmp/search_output.txt; then
     echo "✓ Search output has expected structure"
 else
@@ -100,7 +111,7 @@ echo ""
 
 # Test 8: Recall formatting matches contract
 echo "Test 8: Recall formatting matches M2 contract"
-vestig memory recall "auth" --limit 1 > /tmp/recall_output.txt
+"${VESTIG_CMD[@]}" --config "$CONFIG" memory recall "auth" --limit 1 > /tmp/recall_output.txt
 
 # Check for format: [mem_...] (source=..., created=..., score=...) - with optional M3 hints
 if grep -qE '\[mem_[a-f0-9-]+\] \(source=.*, created=.*, score=[0-9.]+.*\)' /tmp/recall_output.txt; then
@@ -116,11 +127,11 @@ echo ""
 
 # Test 9: Whitespace normalization
 echo "Test 9: Whitespace normalization"
-ID5=$(vestig memory add "Multiple    spaces    and
+ID5=$("${VESTIG_CMD[@]}" --config "$CONFIG" memory add "Multiple    spaces    and
 
 
 newlines get normalized" | grep -oE 'mem_[a-f0-9-]+')
-CONTENT=$(vestig memory show "$ID5" | grep -A 1 "^Content:" | tail -1)
+CONTENT=$("${VESTIG_CMD[@]}" --config "$CONFIG" memory show "$ID5" | grep -A 1 "^Content:" | tail -1)
 if echo "$CONTENT" | grep -qE "Multiple spaces and newlines"; then
     echo "✓ Whitespace normalized"
 else

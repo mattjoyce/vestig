@@ -5,8 +5,12 @@ import os
 import sys
 import tempfile
 
+# Ensure tests run offline if the model is already cached
+os.environ.setdefault("HF_HUB_OFFLINE", "1")
+os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from vestig.core.commitment import commit_memory
 from vestig.core.embeddings import EmbeddingEngine
@@ -25,7 +29,7 @@ def test_related_edge_creation():
 
     try:
         # Load config and initialize storage
-        config = load_config("config.yaml")
+        config = load_config("config_test.yaml")
         storage = MemoryStorage(db_path)
         event_storage = MemoryEventStorage(storage.conn)
         embedding_engine = EmbeddingEngine(
