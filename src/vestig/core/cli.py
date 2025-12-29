@@ -167,7 +167,11 @@ def cmd_search(args):
 
 def cmd_recall(args):
     """Handle 'vestig memory recall' command"""
-    from vestig.core.retrieval import format_recall_results, search_memories
+    from vestig.core.retrieval import (
+        format_recall_results,
+        format_recall_results_with_explanation,
+        search_memories,
+    )
 
     config = args.config_dict
     storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)
@@ -181,7 +185,16 @@ def cmd_recall(args):
             event_storage=event_storage,
             tracerank_config=tracerank_config,
         )
-        print(format_recall_results(results))
+
+        # Format with or without explanation
+        if args.explain:
+            output = format_recall_results_with_explanation(
+                results, event_storage, storage, tracerank_config
+            )
+        else:
+            output = format_recall_results(results)
+
+        print(output)
     finally:
         storage.close()
 
@@ -252,10 +265,7 @@ def cmd_memory_list(args):
     storage = MemoryStorage(config["storage"]["db_path"])
 
     try:
-        query = (
-            "SELECT id, content, created_at, t_expired, metadata "
-            "FROM memories "
-        )
+        query = "SELECT id, content, created_at, t_expired, metadata FROM memories "
         params = []
         if not args.include_expired:
             query += "WHERE t_expired IS NULL "
@@ -373,9 +383,7 @@ def cmd_edge_list(args):
         cursor = storage.conn.execute(query, params)
         rows = cursor.fetchall()
         for row in rows:
-            edge_id, from_node, to_node, edge_type, weight, confidence, t_created, t_expired = (
-                row
-            )
+            edge_id, from_node, to_node, edge_type, weight, confidence, t_created, t_expired = row
             from_label = _resolve_node_label(storage, from_node, args.snippet_len)
             to_label = _resolve_node_label(storage, to_node, args.snippet_len)
             conf = f"{confidence:.2f}" if confidence is not None else "n/a"
@@ -691,6 +699,11 @@ def main():
     parser_recall.add_argument("query", help="Recall query")
     parser_recall.add_argument(
         "--limit", type=int, default=5, help="Number of results (default: 5)"
+    )
+    parser_recall.add_argument(
+        "--explain",
+        action="store_true",
+        help="Show explanation for why each memory was retrieved",
     )
     parser_recall.set_defaults(func=cmd_recall)
 

@@ -38,32 +38,36 @@ class TemporalHints:
     stability: str = "unknown"  # "static" | "dynamic" | "ephemeral" | "unknown"
 
     # Evidence for debugging
-    extraction_method: str = "default"  # "jsonl_timestamp" | "file_mtime" | "filename_pattern" | "default"
+    extraction_method: str = (
+        "default"  # "jsonl_timestamp" | "file_mtime" | "filename_pattern" | "default"
+    )
     evidence: str | None = None  # Human-readable explanation
 
     @classmethod
     def from_now(cls) -> "TemporalHints":
         """Create hints with current time (fallback)."""
         from datetime import datetime, timezone
+
         now = datetime.now(timezone.utc).isoformat()
         return cls(
             t_valid=now,
             stability="unknown",
             extraction_method="default",
-            evidence="No temporal metadata available; using current time"
+            evidence="No temporal metadata available; using current time",
         )
 
     @classmethod
     def from_file_mtime(cls, path: Path) -> "TemporalHints":
         """Extract temporal hints from file modification time."""
         from datetime import datetime, timezone
+
         mtime = path.stat().st_mtime
         dt = datetime.fromtimestamp(mtime, tz=timezone.utc)
         return cls(
             t_valid=dt.isoformat(),
             stability="unknown",
             extraction_method="file_mtime",
-            evidence=f"Extracted from file modification time: {path.name}"
+            evidence=f"Extracted from file modification time: {path.name}",
         )
 
     @classmethod
@@ -73,7 +77,7 @@ class TemporalHints:
             t_valid=timestamp,
             stability="unknown",
             extraction_method="jsonl_timestamp",
-            evidence=evidence
+            evidence=evidence,
         )
 
 
@@ -87,9 +91,9 @@ class ExtractedMemory:
     entities: list[tuple[str, str, float, str]]  # (name, type, confidence, evidence)
 
     # Temporal hints (optional, None = use defaults)
-    t_valid_hint: str | None = None           # When fact became true (ISO 8601)
-    temporal_stability_hint: str | None = None # "static" | "dynamic" | "unknown"
-    temporal_evidence: str | None = None       # Brief explanation of temporal extraction
+    t_valid_hint: str | None = None  # When fact became true (ISO 8601)
+    temporal_stability_hint: str | None = None  # "static" | "dynamic" | "unknown"
+    temporal_evidence: str | None = None  # Brief explanation of temporal extraction
 
 
 # Pydantic schemas for LLM structured output
@@ -101,9 +105,7 @@ class EntitySchema(BaseModel):
         description="Entity type: PERSON, ORG, SYSTEM, PROJECT, PLACE, SKILL, TOOL, FILE, or CONCEPT"
     )
     confidence: float = Field(ge=0.0, le=1.0, description="Confidence score 0.0-1.0")
-    evidence: str = Field(
-        description="Text snippet from memory that supports this entity"
-    )
+    evidence: str = Field(description="Text snippet from memory that supports this entity")
 
 
 class MemorySchema(BaseModel):
@@ -116,7 +118,7 @@ class MemorySchema(BaseModel):
     rationale: str = Field(description="Brief explanation of why this is worth remembering")
     temporal_stability: str = Field(
         default="unknown",
-        description="Temporal stability: static (permanent), dynamic (changing), ephemeral (expected to change soon), or unknown"
+        description="Temporal stability: static (permanent), dynamic (changing), ephemeral (expected to change soon), or unknown",
     )
     entities: list[EntitySchema] = Field(
         default_factory=list,
@@ -446,9 +448,8 @@ def commit_summary(
     ]
 
     for bullet in summary_data.bullets:
-        # Format citations
-        citations = ", ".join(bullet.memory_ids)
-        content_lines.append(f"- {bullet.text} (refs: {citations})")
+        # Citations are stored as SUMMARIZES edges, not in content
+        content_lines.append(f"- {bullet.text}")
 
     if summary_data.themes:
         content_lines.append("")
@@ -664,7 +665,9 @@ def ingest_document(
                                 if len(evidence) > 50
                                 else f', evidence="{evidence}"'
                             )
-                            print(f"        - {name} ({entity_type}, confidence={conf:.2f}{evid_str})")
+                            print(
+                                f"        - {name} ({entity_type}, confidence={conf:.2f}{evid_str})"
+                            )
 
             # Commit each memory
             for idx, memory in enumerate(extracted, 1):
@@ -682,9 +685,7 @@ def ingest_document(
                             if key in seen_entities:
                                 continue
                             seen_entities.add(key)
-                            deduped_entities.append(
-                                (name, entity_type, confidence, evidence)
-                            )
+                            deduped_entities.append((name, entity_type, confidence, evidence))
                         combined_entities = deduped_entities
 
                     outcome = commit_memory(

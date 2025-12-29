@@ -1,6 +1,6 @@
 """Retrieval logic for M1 (brute-force cosine similarity) with M3 TraceRank"""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -146,9 +146,58 @@ def format_search_results(results: list[tuple[MemoryNode, float]]) -> str:
     return "\n".join(lines)
 
 
+def _format_age(timestamp_str: str) -> str:
+    """
+    Format timestamp as human-readable age.
+
+    Args:
+        timestamp_str: ISO 8601 timestamp string
+
+    Returns:
+        Human-readable age (e.g., "3d", "2h", "45m", "just now")
+    """
+    try:
+        timestamp = datetime.fromisoformat(timestamp_str)
+        now = datetime.now(timezone.utc)
+
+        # Ensure both are timezone-aware
+        if timestamp.tzinfo is None:
+            timestamp = timestamp.replace(tzinfo=timezone.utc)
+
+        delta = now - timestamp
+
+        # Format as compact age
+        total_seconds = delta.total_seconds()
+
+        if total_seconds < 60:
+            return "just now"
+        elif total_seconds < 3600:  # < 1 hour
+            minutes = int(total_seconds / 60)
+            return f"{minutes}m"
+        elif total_seconds < 86400:  # < 1 day
+            hours = int(total_seconds / 3600)
+            return f"{hours}h"
+        elif total_seconds < 604800:  # < 1 week
+            days = int(total_seconds / 86400)
+            return f"{days}d"
+        elif total_seconds < 2592000:  # < 30 days
+            weeks = int(total_seconds / 604800)
+            return f"{weeks}w"
+        else:
+            months = int(total_seconds / 2592000)
+            return f"{months}mo"
+    except Exception:
+        return "unknown"
+
+
 def format_recall_results(results: list[tuple[MemoryNode, float]]) -> str:
     """
-    Format recall results for agent context (M2: stable contract, M3: temporal hints).
+    Format recall results for agent context.
+
+    Optimized for AI consumption with minimal metadata:
+    - score (confidence)
+    - age (temporal context/freshness)
+    - stability (trust/reliability)
 
     Args:
         results: List of (MemoryNode, similarity_score) tuples
@@ -157,7 +206,7 @@ def format_recall_results(results: list[tuple[MemoryNode, float]]) -> str:
         Formatted string suitable for LLM context
 
     Format:
-        [mem_...] (source=manual, created=2025-12-26T08:12:00Z, score=0.8123, reinforced=3x, last_seen=..., status=EXPIRED)
+        (score=0.82, age=3d, stability=static)
         <content>
     """
     if not results:
@@ -165,24 +214,112 @@ def format_recall_results(results: list[tuple[MemoryNode, float]]) -> str:
 
     blocks = []
     for memory, score in results:
-        # Extract source from metadata
-        source = memory.metadata.get("source", "unknown")
+        # Compute age from created_at
+        age = _format_age(memory.created_at)
 
-        # Format: [id] (source=..., created=..., score=...)
-        header = f"[{memory.id}] (source={source}, created={memory.created_at}, score={score:.4f}"
+        # Get stability (default to unknown if not present)
+        stability = getattr(memory, "temporal_stability", "unknown")
 
-        # M3: Add reinforcement + validity hints
-        if hasattr(memory, "reinforce_count") and memory.reinforce_count > 0:
-            header += f", reinforced={memory.reinforce_count}x"
-        if hasattr(memory, "last_seen_at") and memory.last_seen_at:
-            header += f", last_seen={memory.last_seen_at}"
-        if hasattr(memory, "temporal_stability") and memory.temporal_stability:
-            header += f", stability={memory.temporal_stability}"
-        if hasattr(memory, "t_expired") and memory.t_expired:
-            header += ", status=EXPIRED"
-
-        header += ")"
+        # Minimal header: score, age, stability (no ID - not useful for AI)
+        header = f"(score={score:.4f}, age={age}, stability={stability})"
 
         blocks.append(f"{header}\n{memory.content}")
+
+    return "\n\n---\n\n".join(blocks)
+
+
+def format_recall_results_with_explanation(
+    results: list[tuple[MemoryNode, float]],
+    event_storage: "MemoryEventStorage",
+    storage: "MemoryStorage",
+    tracerank_config: "TraceRankConfig",
+) -> str:
+    """
+    Format recall results with explanations for why each memory was retrieved.
+
+    Args:
+        results: List of (MemoryNode, final_score) tuples
+        event_storage: Event storage for TraceRank analysis
+        storage: Memory storage for graph queries
+        tracerank_config: TraceRank configuration
+
+    Returns:
+        Formatted string with explanations
+
+    Format:
+        [META] (score=0.82, age=3d, stability=static)
+        Semantic match. TraceRank: 1.42x (3x reinforced, 2 conn). Static.
+        [MEMORY]
+        <content>
+    """
+    if not results:
+        return "No memories found."
+
+    blocks = []
+    for memory, final_score in results:
+        # Compute age from created_at
+        age = _format_age(memory.created_at)
+
+        # Get stability (default to unknown if not present)
+        stability = getattr(memory, "temporal_stability", "unknown")
+
+        # Header (same as standard format, no ID)
+        header = f"(score={final_score:.4f}, age={age}, stability={stability})"
+
+        # Generate explanation
+        explanation_parts = []
+
+        # TraceRank analysis
+        try:
+            from vestig.core.tracerank import compute_enhanced_multiplier
+
+            # Get reinforcement events
+            events = event_storage.get_reinforcement_events(memory.id)
+            reinforcement_count = len(events)
+
+            # Get graph connectivity (inbound edges)
+            inbound_edges = storage.get_edges_to_memory(memory.id)
+            edge_count = len(inbound_edges)
+
+            # Compute TraceRank multiplier
+            tracerank_mult = compute_enhanced_multiplier(
+                memory_id=memory.id,
+                temporal_stability=stability,
+                t_valid=getattr(memory, "t_valid", None) or memory.created_at,
+                inbound_edge_count=edge_count,
+                reinforcement_events=events,
+                config=tracerank_config,
+            )
+
+            # Build explanation (token-efficient)
+            explanation_parts.append("Semantic match.")
+
+            # Show TraceRank boost if significant
+            if tracerank_mult > 1.0:
+                tracerank_details = []
+                if reinforcement_count > 0:
+                    tracerank_details.append(f"{reinforcement_count}x reinforced")
+                if edge_count > 0:
+                    tracerank_details.append(f"{edge_count} conn")
+
+                if tracerank_details:
+                    details_str = ", ".join(tracerank_details)
+                    explanation_parts.append(f"TraceRank: {tracerank_mult:.2f}x ({details_str}).")
+                else:
+                    explanation_parts.append(f"TraceRank: {tracerank_mult:.2f}x.")
+
+            # Temporal stability note (compact)
+            if stability == "dynamic":
+                explanation_parts.append("Dynamic (may decay).")
+            elif stability == "static":
+                explanation_parts.append("Static.")
+
+        except Exception as e:
+            explanation_parts.append(f"Semantic match. (Analysis error: {e})")
+
+        explanation = " ".join(explanation_parts)
+
+        # Combine header, explanation, and content with clear labels
+        blocks.append(f"[META] {header}\n{explanation}\n[MEMORY]\n{memory.content}")
 
     return "\n\n---\n\n".join(blocks)

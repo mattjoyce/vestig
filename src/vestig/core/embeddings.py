@@ -1,5 +1,11 @@
 """Embedding generation using sentence-transformers"""
 
+import os
+
+# Suppress HuggingFace progress bars
+os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
 from sentence_transformers import SentenceTransformer
 
 
@@ -40,7 +46,9 @@ class EmbeddingEngine:
         Returns:
             Normalized embedding vector as list of floats
         """
-        embedding = self.model.encode(text, normalize_embeddings=self.normalize)
+        embedding = self.model.encode(
+            text, normalize_embeddings=self.normalize, show_progress_bar=False
+        )
         return embedding.tolist()
 
     def embed_batch(self, texts: list[str]) -> list[list[float]]:
@@ -53,5 +61,7 @@ class EmbeddingEngine:
         Returns:
             List of normalized embedding vectors
         """
-        embeddings = self.model.encode(texts, normalize_embeddings=self.normalize)
+        embeddings = self.model.encode(
+            texts, normalize_embeddings=self.normalize, show_progress_bar=False
+        )
         return embeddings.tolist()
