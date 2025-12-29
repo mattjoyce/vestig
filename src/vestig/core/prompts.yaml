@@ -3,62 +3,72 @@
 # Supports both string format (legacy) and dict format with system/user keys (M4+)
 
 # Session Ingestion: Extract memories from conversation transcripts
-extract_memories_from_session: |
-  Extract discrete, factual memories from this conversation transcript, along with entities and temporal stability classification.
+extract_memories_from_session:
+  description: >
+    Extract discrete, factual memories from conversation transcripts with entity extraction
+    and temporal stability classification. Memories should be self-contained and substantive.
+  system: |
+    You are a memory extraction engine for an agent memory system.
+    Your task is to extract discrete, factual memories from conversation transcripts.
+    Each memory must be self-contained and include entity extraction and temporal classification.
+    Output MUST be valid JSON matching the schema exactly.
+    Do NOT extract greetings, small talk, or procedural exchanges - only substantive content.
+  user: |
+    Extract memories from this conversation chunk.
 
-  GUIDELINES FOR MEMORIES:
-  - One clear fact, decision, insight, or knowledge point per memory
-  - Self-contained with sufficient context for standalone understanding
-  - Substantive content only: technical details, decisions, learnings
-  - Skip greetings, small talk, procedural exchanges
-  - Preserve key context (who, what, when relevant)
-  - Confidence reflects clarity and factuality
+    GUIDELINES FOR MEMORIES:
+    - One clear fact, decision, insight, or knowledge point per memory
+    - Self-contained with sufficient context for standalone understanding
+    - Substantive content only: technical details, decisions, learnings
+    - Skip greetings, small talk, procedural exchanges
+    - Preserve key context (who, what, when relevant)
+    - Confidence reflects clarity and factuality
 
-  GUIDELINES FOR ENTITIES:
-  - Extract entities mentioned in each memory
-  - Entity types: PERSON, ORG, SYSTEM, PROJECT, PLACE, SKILL, TOOL, FILE, CONCEPT
-  - Only extract entities that are clearly mentioned in the memory
-  - Provide text evidence supporting each entity
-  - Confidence reflects certainty this is the correct entity type
+    GUIDELINES FOR ENTITIES:
+    - Extract entities mentioned in each memory
+    - Entity types: PERSON, ORG, SYSTEM, PROJECT, PLACE, SKILL, TOOL, FILE, CONCEPT
+    - Only extract entities that are clearly mentioned in the memory
+    - Provide text evidence supporting each entity
+    - Confidence reflects certainty this is the correct entity type
 
-  GUIDELINES FOR TEMPORAL STABILITY:
-  Classify each memory's temporal stability (how it changes over time):
-  - "static": Permanent facts that never change
-    Examples: dates of birth, historical events, past actions/decisions, completed migrations
-    Indicators: "was born", "happened on", "decided to", "renamed", "created in"
-  - "dynamic": Current state that may change in the future
-    Examples: job titles, system configurations, project status, current locations, version numbers
-    Indicators: "is currently", "status:", "works as", "configured to", "running on"
-  - "ephemeral": Expected to change soon (hours/days), only when explicitly indicated
-    Examples: incident ongoing, temporary workaround, on-call this week, today's deployment status
-    Indicators: "today", "this week", "temporary", "incident ongoing", "until Friday"
-  - "unknown": Mixed content or uncertain classification
-    Examples: memories with both static and dynamic elements, or unclear permanence
+    GUIDELINES FOR TEMPORAL STABILITY:
+    Classify each memory's temporal stability (how it changes over time):
+    - "static": Permanent facts that never change
+      Examples: dates of birth, historical events, past actions/decisions, completed migrations
+      Indicators: "was born", "happened on", "decided to", "renamed", "created in"
+    - "dynamic": Current state that may change in the future
+      Examples: job titles, system configurations, project status, current locations, version numbers
+      Indicators: "is currently", "status:", "works as", "configured to", "running on"
+    - "ephemeral": Expected to change soon (hours/days), only when explicitly indicated
+      Examples: incident ongoing, temporary workaround, on-call this week, today's deployment status
+      Indicators: "today", "this week", "temporary", "incident ongoing", "until Friday"
+    - "unknown": Mixed content or uncertain classification
+      Examples: memories with both static and dynamic elements, or unclear permanence
 
-  CONVERSATION CHUNK:
-  {{content}}
+    CONVERSATION CHUNK:
+    {{content}}
 
-  OUTPUT (valid JSON only):
-  {
-    "memories": [
-      {
-        "content": "self-contained memory with context",
-        "confidence": 0.0-1.0,
-        "rationale": "why this matters",
-        "temporal_stability": "static|dynamic|ephemeral|unknown",
-        "entities": [
-          {
-            "name": "entity name",
-            "type": "PERSON|ORG|SYSTEM|PROJECT|PLACE|SKILL|TOOL|FILE|CONCEPT",
-            "confidence": 0.0-1.0,
-            "evidence": "text snippet supporting this entity"
-          }
-        ]
-      }
-    ]
-  }
+    OUTPUT JSON SCHEMA (must match exactly):
+    {
+      "memories": [
+        {
+          "content": "self-contained memory with context",
+          "confidence": 0.0-1.0,
+          "rationale": "why this matters",
+          "temporal_stability": "static|dynamic|ephemeral|unknown",
+          "entities": [
+            {
+              "name": "entity name",
+              "type": "PERSON|ORG|SYSTEM|PROJECT|PLACE|SKILL|TOOL|FILE|CONCEPT",
+              "confidence": 0.0-1.0,
+              "evidence": "text snippet supporting this entity"
+            }
+          ]
+        }
+      ]
+    }
 
-  Return {"memories": []} if none found.
+    Return {"memories": []} if none found.
 
 # M4: Document/Session Summary Generation
 # Create grounded summaries from extracted MEMORY nodes
