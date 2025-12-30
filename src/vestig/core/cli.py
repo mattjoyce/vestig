@@ -5,6 +5,7 @@ import glob
 import json
 import os
 import sys
+from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
 from vestig.core.commitment import commit_memory
@@ -13,6 +14,14 @@ from vestig.core.embeddings import EmbeddingEngine
 from vestig.core.event_storage import MemoryEventStorage
 from vestig.core.storage import MemoryStorage
 from vestig.core.tracerank import TraceRankConfig
+
+
+def get_version() -> str:
+    """Get the installed version of vestig."""
+    try:
+        return version("vestig")
+    except PackageNotFoundError:
+        return "dev"
 
 
 def validate_config(config: dict[str, Any]) -> None:
@@ -60,11 +69,19 @@ def _resolve_node_label(storage: MemoryStorage, node_id: str, length: int = 80) 
     return node_id
 
 
-def expand_ingest_paths(pattern: str) -> list[str]:
-    """Expand glob patterns for ingest paths."""
+def expand_ingest_paths(pattern: str, recursive: bool = False) -> list[str]:
+    """Expand glob patterns for ingest paths.
+
+    Args:
+        pattern: File path or glob pattern (e.g., "*.txt", "**/*.md")
+        recursive: Enable recursive globbing (allows ** to match subdirectories)
+
+    Returns:
+        List of matching file paths
+    """
     expanded = os.path.expanduser(pattern)
     if glob.has_magic(expanded):
-        return sorted(glob.glob(expanded))
+        return sorted(glob.glob(expanded, recursive=recursive))
     return [expanded]
 
 
@@ -526,7 +543,7 @@ def cmd_ingest(args):
             "Model must be specified in config (ingestion.model) or via --model argument"
         )
 
-    paths = expand_ingest_paths(args.document)
+    paths = expand_ingest_paths(args.document, recursive=args.recurse)
     if not paths:
         print(f"No files match: {args.document}", file=sys.stderr)
         sys.exit(1)
@@ -638,7 +655,13 @@ def main():
     parser_ingest = subparsers.add_parser(
         "ingest", help="Ingest document by extracting memories with LLM"
     )
-    parser_ingest.add_argument("document", help="Path to document file")
+    parser_ingest.add_argument("document", help="Path to document file or glob pattern")
+    parser_ingest.add_argument(
+        "-r",
+        "--recurse",
+        action="store_true",
+        help="Enable recursive globbing (allows ** to match subdirectories)",
+    )
     parser_ingest.add_argument(
         "--format",
         choices=["auto", "plain", "claude-session"],
@@ -851,6 +874,11 @@ def main():
     except ValueError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
+
+    # Display version if not suppressed
+    display_config = config.get("display", {})
+    if display_config.get("show_version", True):
+        print(f"vestig v{get_version()}")
 
     # Dispatch to subcommand handler
     args.func(args)

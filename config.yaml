@@ -1,5 +1,9 @@
 # Vestig Configuration
 
+# Display settings
+display:
+  show_version: true  # Set to false to suppress version output on startup
+
 # Embedding configuration
 embedding:
   model: "BAAI/bge-m3"
