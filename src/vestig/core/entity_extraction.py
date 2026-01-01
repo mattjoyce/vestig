@@ -356,7 +356,7 @@ def process_memories_for_entities(
             WHERE m.kind = 'MEMORY'
               AND NOT EXISTS (
                   SELECT 1 FROM edges e
-                  WHERE e.source_id = m.id AND e.edge_type = 'MENTIONS'
+                  WHERE e.from_node = m.id AND e.edge_type = 'MENTIONS'
               )
             ORDER BY m.created_at
         """)
@@ -390,7 +390,7 @@ def process_memories_for_entities(
             # If reprocessing, delete existing MENTIONS edges for this memory
             if reprocess:
                 storage.conn.execute(
-                    "DELETE FROM edges WHERE source_id = ? AND edge_type = 'MENTIONS'",
+                    "DELETE FROM edges WHERE from_node = ? AND edge_type = 'MENTIONS'",
                     (memory_id,)
                 )
 
