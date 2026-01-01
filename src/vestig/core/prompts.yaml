@@ -360,3 +360,180 @@ summary_v2:
     - gaps: Empty unless critical information missing
 
     Output JSON only.
+# Two-Pass Extraction: Phase 1 - Memory Extraction (No Entities)
+# Simplified prompt focused solely on extracting factual memories with temporal classification
+extract_memories_simple:
+  description: >
+    Extract discrete, factual memories from conversation transcripts with temporal stability classification.
+    Memories should be self-contained and substantive. Entity extraction is handled separately.
+  system: |
+    You are a memory extraction engine for an agent memory system.
+    Your task is to extract discrete, factual memories from conversation transcripts.
+    Each memory must be self-contained with temporal classification.
+    Output MUST be valid JSON matching the schema exactly.
+    Do NOT extract greetings, small talk, or procedural exchanges - only substantive content.
+  user: |
+    Extract memories from this conversation chunk.
+
+    GUIDELINES FOR MEMORIES:
+    - One clear fact, decision, insight, or knowledge point per memory
+    - Self-contained with sufficient context for standalone understanding
+    - Substantive content only: technical details, decisions, learnings, outcomes
+    - Skip greetings, small talk, procedural exchanges, meta-discussion
+    - Preserve key context (who, what, when, where, why relevant)
+    - Confidence reflects clarity and factuality of the statement
+
+    GUIDELINES FOR TEMPORAL STABILITY:
+    Classify each memory's temporal stability (how it changes over time):
+    
+    - "static": Permanent facts that never change
+      Examples: dates of birth, historical events, past actions/decisions, completed migrations
+      Indicators: "was born", "happened on", "decided to", "renamed", "created in", "graduated"
+      Test: Will this fact remain true indefinitely regardless of future changes?
+    
+    - "dynamic": Current state that may change in the future
+      Examples: job titles, system configurations, project status, current locations, version numbers
+      Indicators: "is currently", "status:", "works as", "configured to", "running on", "reports to"
+      Test: Is this describing a current state that could plausibly change?
+    
+    - "ephemeral": Expected to change soon (hours/days), only when explicitly indicated
+      Examples: incident ongoing, temporary workaround, on-call this week, today's deployment
+      Indicators: "today", "this week", "temporary", "incident ongoing", "until Friday", "right now"
+      Test: Is there explicit indication this is short-term or time-bounded?
+    
+    - "unknown": Mixed content or uncertain classification
+      Examples: memories combining static and dynamic elements, unclear permanence
+      Use when: memory contains both historical facts and current state, or temporal nature is ambiguous
+
+    CONVERSATION CHUNK:
+    {{content}}
+
+    OUTPUT JSON SCHEMA (must match exactly):
+    {
+      "memories": [
+        {
+          "content": "self-contained memory with context",
+          "confidence": 0.0-1.0,
+          "rationale": "why this matters and why this confidence level",
+          "temporal_stability": "static|dynamic|ephemeral|unknown"
+        }
+      ]
+    }
+
+    Return {"memories": []} if no substantive memories found.
+
+# Two-Pass Extraction: Phase 2 - Entity Extraction (Reusable)
+# Specialized prompt for extracting named entities from ANY text (memories, queries, documents)
+extract_entities:
+  description: >
+    Extract named entities from any text using tiered hierarchy and quality gates.
+    Reusable for memory content, user queries, or arbitrary text snippets.
+  system: |
+    You are an entity extraction engine for a semantic memory system.
+    Your task is to extract named entities that enable semantic search and contextual retrieval.
+    Apply strict quality gates to ensure only high-value entities are extracted.
+    Output MUST be valid JSON matching the schema exactly.
+  user: |
+    Extract named entities from the following text.
+
+    EXTRACTION PRIORITY TIERS:
+    Entities are organized in priority tiers - higher tiers have lower extraction thresholds.
+
+    TIER 1 (always extract when present):
+    - PERSON: Named individuals with full names when possible
+      Examples: "Matt Joyce", "Anthony Waddle", "Dr. Smith"
+      Normalize: "Matt" → "Matt Joyce" (use full name if available in context)
+      Skip: generic references like "the user", "a colleague", "someone"
+    
+    - ORG: Specific organizations, vendors, institutions, companies
+      Examples: "Calvary Health Care", "Macquarie University", "Heidi Health", "NSW Ports"
+      Normalize: "Calvary" → "Calvary Health Care" (use full canonical name)
+      Skip: generic terms like "the organization", "a vendor", "the company"
+    
+    - SYSTEM: Named software/hardware platforms, clinical systems, technical infrastructure
+      Examples: "AudioMoth", "Veeam", "Unraid", "Heidi Health AI Scribe", "Corporate Memory RAG"
+      Include version if specified: "Claude Sonnet 4.5", "Docker 24.0"
+      Skip: generic terms like "the system", "a database", "the platform"
+    
+    - PROJECT: Named initiatives, codenames, programs, research efforts
+      Examples: "Project Bronte", "BiophonyAI", "Vestig", "ChangeOfMind", "AI Adoption Survey"
+      Include internal codenames and formal project names
+      Skip: generic phrases like "the project", "an initiative", "the pilot"
+
+    TIER 2 (extract when contextually significant):
+    - TOOL: Specific software, hardware, instruments, applications
+      Examples: "Zoom 3DVR", "Docker", "Obsidian", "MPPT solar charging module", "Datalog"
+      Include both brand names and technical designations
+      Skip: generic categories like "a tool", "software", "equipment"
+    
+    - PLACE: Specific locations, sites, facilities, geographic entities
+      Examples: "Enfield Intermodal", "NSW", "Bay Ridge", "Macquarie University breeding pens"
+      Include both facility names and geographic locations
+      Skip: vague references like "the site", "a location", "the facility"
+    
+    - SKILL: Specialized capabilities, methodologies, technical approaches
+      Examples: "acoustic monitoring", "GPU-accelerated spectrogram generation", "M&A due diligence"
+      Must be multi-word technical/domain-specific phrases
+      Skip: single-word generic skills like "programming", "analysis", "management"
+    
+    - FILE: Named documents, artifacts, repositories with specific identifiers
+      Examples: "prompts.yaml", "SKILL.md", "SOW Number: 2", "Q3 Report"
+      Include file extensions and version identifiers when present
+      Skip: generic references like "the document", "a file", "the report"
+
+    TIER 3 (use sparingly - high bar for inclusion):
+    - CONCEPT: Domain-specific compound terms representing specialized knowledge
+      Must be multi-word phrases (typically 2+ words) from specialized domain vocabulary
+      
+      YES - Extract these:
+      * "ambient voice AI" (specialized AI application domain)
+      * "AI governance framework" (specific methodological construct)
+      * "GGBF acoustic detection" (domain-specific technique + species)
+      * "clinical AI scribe" (specialized healthcare AI category)
+      * "therapeutic robotics" (specific technology domain)
+      * "bioacoustic analysis" (scientific methodology)
+      
+      NO - Do NOT extract these:
+      * "AI", "governance", "framework" (too generic, single words)
+      * "detection", "analysis", "monitoring" (common verbs/nouns)
+      * "storage", "legal", "backup", "network" (generic IT terms)
+      * "training", "documentation", "management" (generic processes)
+      * "technology", "system", "solution" (abstract categories)
+
+    ENTITY QUALITY GATES (entity must pass ALL criteria):
+    1. Specificity: Is this a proper noun OR a multi-word specialized term?
+    2. Discriminability: Does it distinguish this specific context from generic discussion?
+    3. Retrievability: Would searching for this term help find relevant memories?
+    4. Consistency: Is the entity name stable across contexts (can be normalized)?
+
+    DO NOT EXTRACT AS ENTITIES:
+    - Dates or times (handled separately via temporal metadata)
+    - Generic roles without names: "vendor", "GP", "stakeholders", "executive"
+    - Common nouns: "storage", "legal", "backup", "network", "meeting"
+    - Document structure: "Section 3.1", "Appendix B", "Chapter 2"
+    - Abstract qualities: "emotional connection", "technical depth"
+    - Single-word generic terms unless they are proper nouns
+
+    NORMALIZATION RULES:
+    - Use full names for people: "Matt" → "Matt Joyce"
+    - Use canonical forms for organizations: "Calvary" → "Calvary Health Care"
+    - Merge variants: "AI Survey" + "AI Adoption Survey" → "AI Adoption Survey"
+    - Preserve specificity: "Heidi Health AI Scribe" not just "Heidi"
+
+    TEXT TO ANALYZE:
+    {{text}}
+
+    OUTPUT JSON SCHEMA (must match exactly):
+    {
+      "entities": [
+        {
+          "name": "canonical entity name",
+          "type": "PERSON|ORG|SYSTEM|PROJECT|TOOL|PLACE|SKILL|FILE|CONCEPT",
+          "confidence": 0.0-1.0,
+          "evidence": "exact text snippet supporting this extraction",
+          "normalization_notes": "optional: why this canonical form was chosen"
+        }
+      ]
+    }
+
+    Return {"entities": []} if no entities pass the quality gates.

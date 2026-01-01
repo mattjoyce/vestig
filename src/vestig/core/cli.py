@@ -384,6 +384,43 @@ def cmd_entity_show(args):
         storage.close()
 
 
+def cmd_entity_extract(args):
+    """Handle 'vestig entity extract' command"""
+    from vestig.core.entity_extraction import process_memories_for_entities
+
+    config = args.config_dict
+    storage = MemoryStorage(config["storage"]["db_path"])
+
+    try:
+        print(f"vestig v{get_version()}")
+        print("Extracting entities from memories...")
+        print(f"Reprocess: {args.reprocess}")
+        print(f"Batch size: {args.batch_size}")
+        print()
+
+        # Process memories for entity extraction
+        stats = process_memories_for_entities(
+            storage=storage,
+            config=config,
+            reprocess=args.reprocess,
+            batch_size=args.batch_size,
+            verbose=True
+        )
+
+        print("\n✓ Entity extraction completed successfully")
+
+    except KeyboardInterrupt:
+        print("\n\nEntity extraction interrupted by user", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"\nError during entity extraction: {e}", file=sys.stderr)
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
+    finally:
+        storage.close()
+
+
 def cmd_edge_list(args):
     """Handle 'vestig edge list' command"""
     config = args.config_dict
@@ -941,6 +978,23 @@ def main():
         help="Include expired edges in expansion",
     )
     parser_entity_show.set_defaults(func=cmd_entity_show)
+
+    # vestig entity extract
+    parser_entity_extract = entity_subparsers.add_parser(
+        "extract", help="Extract entities from memories"
+    )
+    parser_entity_extract.add_argument(
+        "--reprocess",
+        action="store_true",
+        help="Re-extract entities for all memories (not just unprocessed ones)",
+    )
+    parser_entity_extract.add_argument(
+        "--batch-size",
+        type=int,
+        default=1,
+        help="Number of memories per batch (default: 1)",
+    )
+    parser_entity_extract.set_defaults(func=cmd_entity_extract)
 
     parser_entity.set_defaults(func=cmd_memory, noun_parser=parser_entity)
 

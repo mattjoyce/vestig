@@ -2,11 +2,12 @@
 
 import hashlib
 import json
+import time
 from pathlib import Path
 from typing import Any
 
 import yaml
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 
 def load_prompts(prompts_path: str | None = None) -> dict[str, Any]:
@@ -81,15 +82,19 @@ def substitute_tokens(template: str | dict[str, str], **kwargs) -> str | dict[st
 def call_llm(
     prompt: str | dict[str, str],
     model: str,
-    schema: type[BaseModel] | None = None
+    schema: type[BaseModel] | None = None,
+    max_retries: int = 3,
+    backoff_seconds: float = 1.0
 ):
     """
-    Call LLM with prompt using llm module.
+    Call LLM with prompt using llm module, with retry logic for JSON parsing failures.
 
     Args:
         prompt: Full prompt text (string) or dict with 'system'/'user' keys (M4+)
         model: Model name (e.g., "claude-haiku-4.5")
         schema: Optional Pydantic model for structured output
+        max_retries: Maximum number of retry attempts on JSON/validation failures (default: 3)
+        backoff_seconds: Initial backoff delay in seconds, doubles on each retry (default: 1.0)
 
     Returns:
         If schema provided: Pydantic model instance
@@ -97,55 +102,149 @@ def call_llm(
 
     Raises:
         ImportError: If llm module not installed
-        Exception: If LLM call fails
+        Exception: If LLM call fails after all retries
     """
     try:
         import llm
     except ImportError:
         raise ImportError("llm module not installed. Install with: pip install llm")
 
-    try:
-        # Get model and call it
-        llm_model = llm.get_model(model)
+    attempt = 0
+    last_error = None
 
-        # Handle both string and dict formats
-        if isinstance(prompt, dict):
-            # M4+: Dict format with system/user prompts
-            system_text = prompt.get("system", "")
-            user_text = prompt.get("user", "")
+    while attempt < max_retries:
+        try:
+            # Get model and call it
+            llm_model = llm.get_model(model)
 
-            if schema:
-                # Use structured output with schema
-                response = llm_model.prompt(user_text, system=system_text, schema=schema)
-                # Parse JSON response and validate with schema
-                json_text = response.text()
-                data = json.loads(json_text)
-                return schema.model_validate(data)
+            # Handle both string and dict formats
+            if isinstance(prompt, dict):
+                # M4+: Dict format with system/user prompts
+                system_text = prompt.get("system", "")
+                user_text = prompt.get("user", "")
+
+                if schema:
+                    # Use structured output with schema
+                    response = llm_model.prompt(user_text, system=system_text, schema=schema)
+                    # Parse JSON response and validate with schema
+                    json_text = response.text()
+                    data = json.loads(json_text)
+                    return schema.model_validate(data)
+                else:
+                    # Return raw text
+                    response = llm_model.prompt(user_text, system=system_text)
+                    return response.text()
             else:
-                # Return raw text
-                response = llm_model.prompt(user_text, system=system_text)
-                return response.text()
-        else:
-            # Legacy: String format (no system prompt)
-            if schema:
-                # Use structured output with schema
-                response = llm_model.prompt(prompt, schema=schema)
-                # Parse JSON response and validate with schema
-                json_text = response.text()
-                data = json.loads(json_text)
-                return schema.model_validate(data)
-            else:
-                # Return raw text
-                response = llm_model.prompt(prompt)
-                return response.text()
+                # Legacy: String format (no system prompt)
+                if schema:
+                    # Use structured output with schema
+                    response = llm_model.prompt(prompt, schema=schema)
+                    # Parse JSON response and validate with schema
+                    json_text = response.text()
+                    data = json.loads(json_text)
+                    return schema.model_validate(data)
+                else:
+                    # Return raw text
+                    response = llm_model.prompt(prompt)
+                    return response.text()
 
-    except Exception as e:
-        raise Exception(f"LLM call failed: {e}")
+        except (json.JSONDecodeError, ValidationError) as e:
+            # JSON parsing or Pydantic validation failed
+            attempt += 1
+            last_error = e
+
+            if attempt < max_retries:
+                # Calculate backoff with exponential increase
+                delay = backoff_seconds * (2 ** (attempt - 1))
+                print(f"JSON parsing/validation failed (attempt {attempt}/{max_retries}). "
+                      f"Retrying in {delay:.1f}s... Error: {e}")
+                time.sleep(delay)
+            else:
+                # All retries exhausted
+                raise Exception(
+                    f"LLM call failed after {max_retries} attempts. "
+                    f"Last error: {last_error}"
+                )
+
+        except Exception as e:
+            # Non-retryable error (API failure, connection issues, etc.)
+            raise Exception(f"LLM call failed: {e}")
+
+    # Should never reach here, but satisfy type checker
+    raise Exception(f"LLM call failed after {max_retries} attempts. Last error: {last_error}")
 
 
 def compute_prompt_hash(template: str) -> str:
     """Compute stable hash for prompt template tracking."""
     return hashlib.sha256(template.encode("utf-8")).hexdigest()[:16]
+
+
+class EntityExtractionResult(BaseModel):
+    """Schema for entity extraction response"""
+    entities: list[dict[str, Any]]
+
+
+def extract_entities_from_text(
+    text: str,
+    model: str,
+    prompt_name: str = "extract_entities",
+    max_retries: int = 3,
+    backoff_seconds: float = 1.0,
+) -> list[tuple[str, str, float, str]]:
+    """
+    Extract entities from any text using the extract_entities prompt.
+
+    Reusable for memory content, user queries, or arbitrary text.
+
+    Args:
+        text: Text to extract entities from
+        model: LLM model to use
+        prompt_name: Name of prompt template in prompts.yaml (default: extract_entities)
+        max_retries: Maximum retry attempts on JSON failures
+        backoff_seconds: Initial backoff delay for retries
+
+    Returns:
+        List of (name, type, confidence, evidence) tuples
+
+    Raises:
+        ValueError: If prompt not found or LLM call fails
+    """
+    # Load and substitute prompt
+    prompts = load_prompts()
+    template = prompts.get(prompt_name)
+
+    if not template:
+        raise ValueError(f"'{prompt_name}' prompt not found in prompts.yaml")
+
+    prompt = substitute_tokens(template, text=text)
+
+    # Call LLM with retry logic
+    try:
+        result = call_llm(
+            prompt,
+            model=model,
+            schema=EntityExtractionResult,
+            max_retries=max_retries,
+            backoff_seconds=backoff_seconds
+        )
+    except Exception as e:
+        raise ValueError(f"Entity extraction failed: {e}")
+
+    # Convert to tuple format
+    entities = []
+    for entity_dict in result.entities:
+        name = entity_dict.get("name", "").strip()
+        entity_type = entity_dict.get("type", "").strip().upper()
+        confidence = entity_dict.get("confidence", 0.0)
+        evidence = entity_dict.get("evidence", "").strip()
+
+        # Skip empty or invalid entities
+        if not name or not entity_type:
+            continue
+
+        entities.append((name, entity_type, confidence, evidence))
+
+    return entities
 
 
 def store_entities(
@@ -203,3 +302,135 @@ def store_entities(
         stored_entities.append((entity_id, entity_type, confidence, evidence))
 
     return stored_entities
+
+
+def process_memories_for_entities(
+    storage,
+    config: dict[str, Any],
+    reprocess: bool = False,
+    batch_size: int = 1,
+    verbose: bool = True,
+) -> dict[str, int]:
+    """
+    Extract entities from memories that don't have entities yet.
+
+    Args:
+        storage: MemoryStorage instance
+        config: Full config dict with m4 settings
+        reprocess: If True, re-extract entities for ALL memories
+        batch_size: Number of memories to process per batch (future: batch extraction)
+        verbose: Print progress messages
+
+    Returns:
+        Dict with stats: {"memories_processed", "entities_created", "edges_created"}
+    """
+    # Get config
+    m4_config = config.get("m4", {})
+    entity_config = m4_config.get("entity_extraction", {})
+    llm_config = entity_config.get("llm", {})
+    
+    model = llm_config.get("model", "claude-haiku-4.5")
+    max_retries = config.get("ingestion", {}).get("retry", {}).get("max_attempts", 3)
+    backoff = config.get("ingestion", {}).get("retry", {}).get("backoff_seconds", 1.0)
+    min_confidence = llm_config.get("min_confidence", 0.75)
+
+    # Find memories to process
+    if reprocess:
+        # Process all memories
+        if verbose:
+            print("Finding all memories for entity re-extraction...")
+        
+        # Query all memories
+        cursor = storage.conn.execute(
+            "SELECT id, content FROM memories WHERE kind = 'MEMORY' ORDER BY created_at"
+        )
+    else:
+        # Process only memories without entity links
+        if verbose:
+            print("Finding memories without entities...")
+        
+        # Find memories with no MENTIONS edges
+        cursor = storage.conn.execute("""
+            SELECT m.id, m.content
+            FROM memories m
+            WHERE m.kind = 'MEMORY'
+              AND NOT EXISTS (
+                  SELECT 1 FROM edges e
+                  WHERE e.source_id = m.id AND e.edge_type = 'MENTIONS'
+              )
+            ORDER BY m.created_at
+        """)
+
+    memories = cursor.fetchall()
+    
+    if verbose:
+        print(f"Found {len(memories)} memories to process")
+
+    # Process each memory
+    stats = {"memories_processed": 0, "entities_created": 0, "edges_created": 0}
+    entities_before = storage.conn.execute("SELECT COUNT(*) FROM entities").fetchone()[0]
+
+    for memory_id, content in memories:
+        try:
+            if verbose and stats["memories_processed"] % 10 == 0:
+                print(f"Processing memory {stats['memories_processed'] + 1}/{len(memories)}...")
+
+            # Extract entities from memory content
+            entities = extract_entities_from_text(
+                text=content,
+                model=model,
+                max_retries=max_retries,
+                backoff_seconds=backoff
+            )
+
+            if not entities:
+                stats["memories_processed"] += 1
+                continue
+
+            # If reprocessing, delete existing MENTIONS edges for this memory
+            if reprocess:
+                storage.conn.execute(
+                    "DELETE FROM edges WHERE source_id = ? AND edge_type = 'MENTIONS'",
+                    (memory_id,)
+                )
+
+            # Store entities and create MENTIONS edges
+            stored_entities = store_entities(
+                entities=entities,
+                memory_id=memory_id,
+                storage=storage,
+                config=m4_config
+            )
+
+            # Create MENTIONS edges
+            from vestig.core.models import EdgeNode
+            
+            for entity_id, entity_type, confidence, evidence in stored_entities:
+                if confidence >= min_confidence:
+                    edge = EdgeNode.create_mentions(
+                        source_id=memory_id,
+                        target_id=entity_id,
+                        confidence=confidence,
+                        evidence=evidence
+                    )
+                    storage.store_edge(edge)
+                    stats["edges_created"] += 1
+
+            stats["memories_processed"] += 1
+
+        except Exception as e:
+            if verbose:
+                print(f"Error processing memory {memory_id}: {e}")
+            continue
+
+    # Count new entities
+    entities_after = storage.conn.execute("SELECT COUNT(*) FROM entities").fetchone()[0]
+    stats["entities_created"] = entities_after - entities_before
+
+    if verbose:
+        print(f"\nEntity extraction complete:")
+        print(f"  Memories processed: {stats['memories_processed']}")
+        print(f"  Entities created: {stats['entities_created']}")
+        print(f"  Edges created: {stats['edges_created']}")
+
+    return stats

@@ -255,6 +255,8 @@ def extract_memories_from_chunk(
     model: str,
     min_confidence: float = 0.6,
     temporal_hints: TemporalHints | None = None,
+    max_retries: int = 3,
+    backoff_seconds: float = 1.0,
 ) -> list[ExtractedMemory]:
     """
     Extract memories from a text chunk using LLM.
@@ -280,9 +282,15 @@ def extract_memories_from_chunk(
 
     prompt = substitute_tokens(template, content=chunk)
 
-    # Call LLM with schema for structured output
+    # Call LLM with schema for structured output and retry logic
     try:
-        result = call_llm(prompt, model=model, schema=MemoryExtractionResult)
+        result = call_llm(
+            prompt,
+            model=model,
+            schema=MemoryExtractionResult,
+            max_retries=max_retries,
+            backoff_seconds=backoff_seconds
+        )
     except Exception as e:
         raise ValueError(f"LLM call failed: {e}")
 
@@ -350,6 +358,8 @@ def generate_summary(
     source_label: str,
     ingest_run_id: str,
     prompt_name: str = "summary_v1",
+    max_retries: int = 3,
+    backoff_seconds: float = 1.0,
 ) -> SummaryResult:
     """
     Generate summary from extracted memories using LLM (M4).
@@ -393,9 +403,15 @@ def generate_summary(
         memory_items=memory_items_text,
     )
 
-    # Call LLM with schema
+    # Call LLM with schema and retry logic
     try:
-        result = call_llm(prompt, model=model, schema=SummaryResult)
+        result = call_llm(
+            prompt,
+            model=model,
+            schema=SummaryResult,
+            max_retries=max_retries,
+            backoff_seconds=backoff_seconds
+        )
         return result
     except Exception as e:
         raise ValueError(f"Summary generation failed: {e}")

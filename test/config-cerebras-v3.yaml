@@ -36,6 +36,19 @@ ingestion:
   format: auto
   force_entities: []
 
+  # Two-pass extraction: separate memory and entity extraction
+  two_pass_extraction:
+    enabled: true                # Use two-pass (extract_memories_simple + extract_entities)
+    memory_prompt: "extract_memories_simple"
+    entity_prompt: "extract_entities"
+    batch_entity_extraction: true  # Batch multiple memories for entity extraction
+    batch_size: 50                 # Memories per batch
+
+  # JSON parsing retry logic (handles malformed LLM responses)
+  retry:
+    max_attempts: 3               # Retry up to 3 times on JSON parse failures
+    backoff_seconds: 1.0          # Wait between retries (exponential: 1s, 2s, 4s)
+
   # Rate limiting for Cerebras API
   # Tier 1: 30 RPM / 60k TPM
   # Tier 2: 900 RPM / 1M TPM
