@@ -404,12 +404,14 @@ def process_memories_for_entities(
 
             # Create MENTIONS edges
             from vestig.core.models import EdgeNode
-            
+
             for entity_id, entity_type, confidence, evidence in stored_entities:
                 if confidence >= min_confidence:
-                    edge = EdgeNode.create_mentions(
-                        source_id=memory_id,
-                        target_id=entity_id,
+                    edge = EdgeNode.create(
+                        from_node=memory_id,
+                        to_node=entity_id,
+                        edge_type="MENTIONS",
+                        weight=1.0,
                         confidence=confidence,
                         evidence=evidence
                     )
