@@ -6,6 +6,7 @@ import json
 import os
 import sys
 from importlib.metadata import PackageNotFoundError, version
+from pathlib import Path
 from typing import Any
 
 from vestig.core.commitment import commit_memory
@@ -384,18 +385,78 @@ def cmd_entity_show(args):
         storage.close()
 
 
+def cmd_entity_purge(args):
+    """Handle 'vestig entity purge --force' command"""
+    config = args.config_dict
+    db_path = config["storage"]["db_path"]
+    storage = MemoryStorage(db_path)
+
+    try:
+        if not args.force:
+            print("Error: --force flag is required to purge all entities", file=sys.stderr)
+            sys.exit(1)
+
+        print(f"vestig v{get_version()}")
+        print("Purging all entities and edges...")
+        print(f"Database: {Path(db_path).absolute()}")
+        print()
+
+        # Count before deletion
+        entity_count = storage.conn.execute("SELECT COUNT(*) FROM entities").fetchone()[0]
+        mentions_count = storage.conn.execute(
+            "SELECT COUNT(*) FROM edges WHERE edge_type = 'MENTIONS'"
+        ).fetchone()[0]
+
+        print(f"  Entities to delete: {entity_count}")
+        print(f"  MENTIONS edges to delete: {mentions_count}")
+        print()
+
+        # Delete all MENTIONS edges first (referential integrity)
+        storage.conn.execute("DELETE FROM edges WHERE edge_type = 'MENTIONS'")
+
+        # Delete all entities
+        storage.conn.execute("DELETE FROM entities")
+
+        storage.conn.commit()
+
+        print("✓ Purge completed successfully")
+        print(f"  Deleted {entity_count} entities")
+        print(f"  Deleted {mentions_count} MENTIONS edges")
+
+    except KeyboardInterrupt:
+        print("\n\nPurge interrupted by user", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"\nError during purge: {e}", file=sys.stderr)
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
+    finally:
+        storage.close()
+
+
 def cmd_entity_extract(args):
     """Handle 'vestig entity extract' command"""
     from vestig.core.entity_extraction import process_memories_for_entities
 
     config = args.config_dict
-    storage = MemoryStorage(config["storage"]["db_path"])
+    db_path = config["storage"]["db_path"]
+    storage = MemoryStorage(db_path)
+
+    # Get model from config
+    m4_config = config.get("m4", {})
+    entity_config = m4_config.get("entity_extraction", {})
+    llm_config = entity_config.get("llm", {})
+    model = llm_config.get("model", "claude-haiku-4.5")
 
     try:
         print(f"vestig v{get_version()}")
         print("Extracting entities from memories...")
+        print(f"Database: {Path(db_path).absolute()}")
+        print(f"Model: {model}")
         print(f"Reprocess: {args.reprocess}")
         print(f"Batch size: {args.batch_size}")
+        print(f"Verbose: {args.verbose}")
         print()
 
         # Process memories for entity extraction
@@ -404,7 +465,7 @@ def cmd_entity_extract(args):
             config=config,
             reprocess=args.reprocess,
             batch_size=args.batch_size,
-            verbose=True
+            verbose=args.verbose
         )
 
         print("\n✓ Entity extraction completed successfully")
@@ -994,7 +1055,24 @@ def main():
         default=1,
         help="Number of memories per batch (default: 1)",
     )
+    parser_entity_extract.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Show detailed output including memories and extracted entities",
+    )
     parser_entity_extract.set_defaults(func=cmd_entity_extract)
+
+    # vestig entity purge
+    parser_entity_purge = entity_subparsers.add_parser(
+        "purge", help="Delete all entities and their edges"
+    )
+    parser_entity_purge.add_argument(
+        "--force",
+        action="store_true",
+        required=True,
+        help="Required: confirm deletion of all entities and edges",
+    )
+    parser_entity_purge.set_defaults(func=cmd_entity_purge)
 
     parser_entity.set_defaults(func=cmd_memory, noun_parser=parser_entity)
 

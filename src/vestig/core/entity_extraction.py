@@ -372,8 +372,13 @@ def process_memories_for_entities(
 
     for memory_id, content in memories:
         try:
-            if verbose and stats["memories_processed"] % 10 == 0:
-                print(f"Processing memory {stats['memories_processed'] + 1}/{len(memories)}...")
+            if verbose:
+                # Show progress periodically, or always if extracting entities
+                if stats["memories_processed"] % 10 == 0 or True:
+                    print(f"\n[{stats['memories_processed'] + 1}/{len(memories)}] Memory {memory_id}")
+                    # Truncate content for display
+                    display_content = content[:200] + "..." if len(content) > 200 else content
+                    print(f"  Content: {display_content}")
 
             # Extract entities from memory content
             entities = extract_entities_from_text(
@@ -382,6 +387,18 @@ def process_memories_for_entities(
                 max_retries=max_retries,
                 backoff_seconds=backoff
             )
+
+            if verbose:
+                if entities:
+                    print(f"  Extracted {len(entities)} entities:")
+                    for name, entity_type, confidence, evidence in entities:
+                        print(f"    • {name} ({entity_type}) - confidence: {confidence:.2f}")
+                        if evidence:
+                            # Truncate evidence for display
+                            display_evidence = evidence[:100] + "..." if len(evidence) > 100 else evidence
+                            print(f"      Evidence: \"{display_evidence}\"")
+                else:
+                    print(f"  No entities extracted")
 
             if not entities:
                 stats["memories_processed"] += 1
@@ -418,11 +435,14 @@ def process_memories_for_entities(
                     storage.store_edge(edge)
                     stats["edges_created"] += 1
 
+            if verbose and stored_entities:
+                print(f"  Stored {len(stored_entities)} entities, created {len(stored_entities)} edges")
+
             stats["memories_processed"] += 1
 
         except Exception as e:
             if verbose:
-                print(f"Error processing memory {memory_id}: {e}")
+                print(f"  ✗ Error processing memory {memory_id}: {e}")
             continue
 
     # Count new entities
