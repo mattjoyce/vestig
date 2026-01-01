@@ -10,8 +10,14 @@ source ~/Environments/vestig/bin/activate
 # Model now comes from config (config_test.yaml: ingestion.model)
 python -m vestig.core.cli --config config_test.yaml ingest your_session.txt
 
+# 3b. Ingest recursively with a glob
+python -m vestig.core.cli --config config_test.yaml ingest "sessions/**/*.jsonl" --recurse
+
 # 4. Search memories
 python -m vestig.core.cli --config config_test.yaml memory search "your query here"
+
+# 4b. Recall memories with explanation
+python -m vestig.core.cli --config config_test.yaml memory recall "your query here" --explain
 
 # 5. Quick stats
 sqlite3 test_vestig.db "SELECT COUNT(*) as memories FROM memories;"

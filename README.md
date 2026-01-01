@@ -14,7 +14,7 @@ We build Vestig in **progressive maturation** steps. Each maturity level is a *c
 - **M1 — Core Loop (Complete):** add → embed → persist → recall (top‑K). Fail fast. Minimal scaffolding. ✓
 - **M2 — Quality Firewall (Complete):** de-duplication, content hygiene, basic ranking improvements, and controlled recall formatting. ✓
 - **M3 — Time & Truth (Complete):** bi-temporal tracking (t_valid, t_created), temporal stability classification, event storage, and decay mechanics. ✓
-- **M4 — Graph Layer (Complete):** entity extraction, entity/edge nodes, MENTIONS relationships, graph operations, and knowledge graph foundation. ✓
+- **M4 — Graph Layer (Complete):** entity extraction, entity/edge nodes, MENTIONS relationships, SUMMARY nodes with SUMMARIZES edges, graph operations, and knowledge graph foundation. ✓
 - **M5 — Advanced Retrieval (In Progress):** TraceRank, graph-based retrieval, hybrid scoring, and sophisticated recall strategies.
 - **M6 — Productisation:** stable interfaces, hardening, packaging, and clean integration patterns for agent ecosystems.
 
@@ -80,15 +80,34 @@ bash demos/demo_m1.sh
 
 ---
 
-## Core Commands (M1)
+## CLI Reference
 
-Expected CLI surface (subject to small refinements as M1 lands):
+Top-level:
+- `vestig --config <path>` (default: `config.yaml`)
 
-- `vestig memory add "<text>" [--tags ...] [--source ...]`
-- `vestig memory search "<query>" --limit N`
-- `vestig memory recall "<query>" --limit N` (LLM-ready formatting)
-- `vestig memory show <id>`
-- `vestig memory list [--recent N]`
+Ingest:
+- `vestig ingest <document>`
+- Options: `--format auto|plain|claude-session`, `--force-entity TYPE:Name` (repeatable),
+  `--chunk-size N`, `--chunk-overlap N`, `--model <name>`, `--min-confidence F`,
+  `--verbose`, `--recurse` (or `-r`) for recursive globbing (enables `**` patterns)
+
+Memory:
+- `vestig memory add "<text>"` with `--source <label>`, `--tags a,b,c`
+- `vestig memory search "<query>"` with `--limit N`
+- `vestig memory recall "<query>"` with `--limit N`, `--explain`
+- `vestig memory show <id>` with `--expand 0|1`, `--include-expired`
+- `vestig memory list` with `--limit N`, `--snippet-len N`, `--include-expired`
+- `vestig memory deprecate <id>` with `--reason "<text>"`, `--t-invalid <ISO8601>`
+  - Tip: add `--explain` to include per-result scoring and TraceRank details.
+
+Entity:
+- `vestig entity list` with `--limit N`, `--include-expired`
+- `vestig entity show <id>` with `--expand 0|1`, `--include-expired`
+
+Edge:
+- `vestig edge list` with `--limit N`, `--type ALL|MENTIONS|RELATED`, `--snippet-len N`,
+  `--include-expired`
+- `vestig edge show <id>`
 
 ---
 
@@ -198,6 +217,7 @@ These are the rules we use to move quickly without creating chaos:
 ## Project Vocabulary
 
 - **Memory**: a stored item (text + metadata + embedding)
+- **Summary**: a derived memory node (kind=SUMMARY) created after an ingest run (currently when >=5 memories are committed) and linked to source memories via SUMMARIZES edges
 - **Recall**: retrieval + formatting suitable for agent context
 - **Artifact**: a source input (session transcript, JSONL, note file, etc.)
 - **Maturity level (M1–M6)**: a bounded capability slice in the roadmap
