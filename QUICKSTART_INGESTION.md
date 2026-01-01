@@ -88,6 +88,11 @@ python -m vestig.core.cli --config config_test.yaml ingest session.jsonl \
 python -m vestig.core.cli --config config_test.yaml ingest "session*.jsonl" \
   --format claude-session
 
+# Ingest recursively with a glob
+python -m vestig.core.cli --config config_test.yaml ingest "sessions/**/*.jsonl" \
+  --format claude-session \
+  --recurse
+
 # Force a project entity onto every memory
 python -m vestig.core.cli --config config_test.yaml ingest session.jsonl \
   --format claude-session \
@@ -111,6 +116,12 @@ python -m vestig.core.cli --config config_test.yaml ingest your_session.txt \
 ```bash
 # Search by semantic similarity
 python -m vestig.core.cli --config config_test.yaml memory search "PostgreSQL optimization"
+
+# Recall with LLM-ready formatting
+python -m vestig.core.cli --config config_test.yaml memory recall "PostgreSQL optimization"
+
+# Recall with explanation for each result
+python -m vestig.core.cli --config config_test.yaml memory recall "PostgreSQL optimization" --explain
 
 # Show specific memory
 python -m vestig.core.cli --config config_test.yaml memory show mem_<id>

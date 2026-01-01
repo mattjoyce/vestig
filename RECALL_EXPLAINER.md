@@ -17,6 +17,7 @@ Recall is designed to be:
 The CLI uses:
 - `vestig memory search` → raw ranked list
 - `vestig memory recall` → formatted context blocks
+- `vestig memory recall --explain` → formatted blocks with per-result explanations
 
 Both routes call `search_memories()` with:
 - `query` (string)
@@ -122,6 +123,7 @@ Graph is not used directly in baseline recall yet, but supports:
 ### `memory recall`
 - Returns text blocks separated by `---`.
 - Each memory includes content and created timestamp.
+- Add `--explain` to include an explanation section per result (scores + TraceRank details).
 
 ---
 
@@ -129,4 +131,3 @@ Graph is not used directly in baseline recall yet, but supports:
 - `src/vestig/core/retrieval.py` — similarity search + formatting
 - `src/vestig/core/tracerank.py` — TraceRank implementation
 - `src/vestig/core/storage.py` — memory/event persistence
-

@@ -23,7 +23,7 @@ A concise glossary of core terms, mechanics, and maturity concepts used in Vesti
 - **Edge invalidation**: Marking a prior edge as expired when contradicted by new info.
 - **Embedding**: Vector representation of text used for semantic retrieval.
 - **Entity**: Typed node extracted from memories (PERSON, ORG, SYSTEM, PROJECT, PLACE, SKILL, TOOL, FILE, CONCEPT).
-- **Event node**: Append-only record of memory events (ADD, REINFORCE, IMPORT, DEPRECATE, etc.).
+- **Event node**: Append-only record of memory events (ADD, REINFORCE, IMPORT, DEPRECATE, SUMMARY_CREATED, etc.).
 
 ## G
 - **Graph expansion**: Traversing edges (MENTIONS/RELATED) to find related nodes.
@@ -34,6 +34,9 @@ A concise glossary of core terms, mechanics, and maturity concepts used in Vesti
 
 ## I
 - **Ingestion**: Pipeline that reads an artifact, extracts memories, and commits them.
+
+## K
+- **Kind (MEMORY / SUMMARY)**: Discriminator on memory nodes that separates primary memories from derived summary nodes.
 
 ## L
 - **Learning lag**: Time between when a fact was true (t_valid) and when we learned it (t_created).
@@ -61,6 +64,9 @@ A concise glossary of core terms, mechanics, and maturity concepts used in Vesti
 ## S
 - **Source**: Metadata describing how a memory was created (manual, hook, import, ingest).
 - **Substance filter**: LLM gate that rejects low-signal content before storage (M2+).
+- **Summary generation**: LLM step that produces a SUMMARY node after an ingest run (currently when >=5 memories are committed).
+- **Summary node**: Derived memory node (kind=SUMMARY) that synthesizes an ingest run and links to its source memories.
+- **SUMMARIZES**: Edge type from Summary → Memory that records which memories were summarized.
 
 ## T
 - **Temporal decay**: Recency weighting for memory relevance (M3).
