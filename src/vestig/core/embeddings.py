@@ -1,40 +1,120 @@
-"""Embedding generation using sentence-transformers"""
+"""Embedding generation using llm or sentence-transformers"""
 
+import json
 import os
+import subprocess
 
 # Suppress HuggingFace progress bars
 os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
-from sentence_transformers import SentenceTransformer
-
 
 class EmbeddingEngine:
-    """Wrapper for embedding generation with dimension validation"""
+    """Wrapper for embedding generation with dimension validation
 
-    def __init__(self, model_name: str, expected_dimension: int, normalize: bool = True):
+    Supports two providers:
+    - llm: Uses llm CLI (fast, 762ms with ollama)
+    - sentence-transformers: Direct model loading (slow, 19s load time)
+    """
+
+    def __init__(
+        self,
+        model_name: str,
+        expected_dimension: int,
+        normalize: bool = True,
+        provider: str = "llm",
+        max_length: int | None = None,
+    ):
         """
         Initialize embedding engine.
 
         Args:
-            model_name: Name of the sentence-transformers model
+            model_name: Model name (format depends on provider)
+                - llm: "ollama/nomic-embed-text", "ada-002", etc.
+                - sentence-transformers: "BAAI/bge-m3", etc.
             expected_dimension: Expected embedding dimension from config
             normalize: Whether to normalize embeddings for cosine similarity
+            provider: "llm" or "sentence-transformers"
+            max_length: Maximum character length before truncation (None = no limit)
         """
         self.model_name = model_name
         self.expected_dimension = expected_dimension
         self.normalize = normalize
-        # Some models (e.g., BAAI/bge-m3) do not ship safetensors; disable to avoid load errors.
-        self.model = SentenceTransformer(model_name, model_kwargs={"use_safetensors": False})
+        self.provider = provider
+        self.max_length = max_length
 
-        # Validate dimension on initialization
-        test_embedding = self.model.encode("test", normalize_embeddings=self.normalize)
-        actual_dimension = len(test_embedding)
-        if actual_dimension != expected_dimension:
-            raise ValueError(
-                f"Embedding dimension mismatch: expected {expected_dimension}, "
-                f"got {actual_dimension}"
+        if provider == "llm":
+            # No model loading - llm CLI handles it
+            # Validate that llm is available
+            try:
+                subprocess.run(
+                    ["llm", "--version"], capture_output=True, check=True, timeout=5
+                )
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                raise RuntimeError(
+                    "llm CLI not found. Install with: pip install llm\n"
+                    "See: https://llm.datasette.io/"
+                )
+
+            # Validate dimension with a test embedding
+            test_embedding = self._embed_with_llm("test")
+            if len(test_embedding) != expected_dimension:
+                raise ValueError(
+                    f"Embedding dimension mismatch: expected {expected_dimension}, "
+                    f"got {len(test_embedding)} for model {model_name}"
+                )
+
+        elif provider == "sentence-transformers":
+            # Legacy: Load model directly (slow)
+            from sentence_transformers import SentenceTransformer
+
+            # Some models (e.g., BAAI/bge-m3) do not ship safetensors
+            self.model = SentenceTransformer(
+                model_name, model_kwargs={"use_safetensors": False}
             )
+
+            # Validate dimension on initialization
+            test_embedding = self.model.encode("test", normalize_embeddings=self.normalize)
+            actual_dimension = len(test_embedding)
+            if actual_dimension != expected_dimension:
+                raise ValueError(
+                    f"Embedding dimension mismatch: expected {expected_dimension}, "
+                    f"got {actual_dimension}"
+                )
+        else:
+            raise ValueError(f"Unknown provider: {provider}. Use 'llm' or 'sentence-transformers'")
+
+    def _truncate_text(self, text: str) -> str:
+        """Truncate text to max_length if configured"""
+        if self.max_length and len(text) > self.max_length:
+            return text[: self.max_length]
+        return text
+
+    def _embed_with_llm(self, text: str) -> list[float]:
+        """
+        Generate embedding using llm CLI.
+
+        Args:
+            text: Input text to embed
+
+        Returns:
+            Embedding vector as list of floats
+        """
+        text = self._truncate_text(text)
+        try:
+            result = subprocess.run(
+                ["llm", "embed", "-c", text, "-m", self.model_name, "-f", "json"],
+                capture_output=True,
+                text=True,
+                check=True,
+                timeout=30,
+            )
+            embedding = json.loads(result.stdout)
+            return embedding
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError(f"llm embed failed: {e.stderr}")
+        except json.JSONDecodeError as e:
+            raise RuntimeError(f"Failed to parse llm output: {e}")
 
     def embed_text(self, text: str) -> list[float]:
         """
@@ -46,10 +126,14 @@ class EmbeddingEngine:
         Returns:
             Normalized embedding vector as list of floats
         """
-        embedding = self.model.encode(
-            text, normalize_embeddings=self.normalize, show_progress_bar=False
-        )
-        return embedding.tolist()
+        if self.provider == "llm":
+            return self._embed_with_llm(text)
+        else:  # sentence-transformers
+            text = self._truncate_text(text)
+            embedding = self.model.encode(
+                text, normalize_embeddings=self.normalize, show_progress_bar=False
+            )
+            return embedding.tolist()
 
     def embed_batch(self, texts: list[str]) -> list[list[float]]:
         """
@@ -61,7 +145,12 @@ class EmbeddingEngine:
         Returns:
             List of normalized embedding vectors
         """
-        embeddings = self.model.encode(
-            texts, normalize_embeddings=self.normalize, show_progress_bar=False
-        )
-        return embeddings.tolist()
+        if self.provider == "llm":
+            # llm doesn't have native batch support, so process one by one
+            # Could optimize with parallel processing if needed
+            return [self._embed_with_llm(text) for text in texts]
+        else:  # sentence-transformers
+            embeddings = self.model.encode(
+                texts, normalize_embeddings=self.normalize, show_progress_bar=False
+            )
+            return embeddings.tolist()

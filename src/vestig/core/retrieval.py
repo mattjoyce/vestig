@@ -1,5 +1,6 @@
 """Retrieval logic for M1 (brute-force cosine similarity) with M3 TraceRank"""
 
+import time
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
@@ -46,6 +47,7 @@ def search_memories(
     event_storage: MemoryEventStorage | None = None,  # M3
     tracerank_config: TraceRankConfig | None = None,  # M3
     include_expired: bool = False,  # M3
+    show_timing: bool = False,  # Performance instrumentation
 ) -> list[tuple[MemoryNode, float]]:
     """
     Search memories by semantic similarity (brute-force) with M3 TraceRank.
@@ -58,43 +60,63 @@ def search_memories(
         event_storage: Optional event storage for TraceRank (M3)
         tracerank_config: Optional TraceRank configuration (M3)
         include_expired: Include deprecated/expired memories (M3)
+        show_timing: Display performance timing breakdown
 
     Returns:
         List of (MemoryNode, final_score) tuples, sorted by score descending
         final_score = semantic_score * tracerank_multiplier
     """
+    t_start = time.perf_counter()
+    timings = {}
+
     # Generate query embedding
+    t0 = time.perf_counter()
     query_embedding = embedding_engine.embed_text(query)
+    timings['1_embedding_generation'] = time.perf_counter() - t0
 
     # Load memories (active only or all) - M3
+    t0 = time.perf_counter()
     if include_expired or event_storage is None:
         all_memories = storage.get_all_memories()
     else:
         all_memories = storage.get_active_memories()
+    timings['2_load_memories'] = time.perf_counter() - t0
 
     if not all_memories:
+        if show_timing:
+            print(f"\n[TIMING] Total: {(time.perf_counter() - t_start)*1000:.0f}ms (no memories)")
         return []
 
     # Compute semantic scores
+    t0 = time.perf_counter()
     scored_memories = []
     for memory in all_memories:
         semantic_score = cosine_similarity(query_embedding, memory.content_embedding)
         scored_memories.append((memory, semantic_score))
+    timings['3_semantic_scoring'] = time.perf_counter() - t0
 
     # M3: Apply Enhanced TraceRank if enabled
     if event_storage and tracerank_config and tracerank_config.enabled:
         from vestig.core.tracerank import compute_enhanced_multiplier
 
         # Compute Enhanced TraceRank for all memories
+        t0 = time.perf_counter()
+        tracerank_timings = {'events': 0, 'edges': 0, 'compute': 0}
+
         for i, (memory, semantic_score) in enumerate(scored_memories):
             # Get reinforcement events
+            t1 = time.perf_counter()
             events = event_storage.get_reinforcement_events(memory.id)
+            tracerank_timings['events'] += time.perf_counter() - t1
 
             # Get inbound edge count (graph connectivity)
+            t1 = time.perf_counter()
             inbound_edges = storage.get_edges_to_memory(memory.id, include_expired=False)
             edge_count = len(inbound_edges)
+            tracerank_timings['edges'] += time.perf_counter() - t1
 
             # Compute comprehensive multiplier
+            t1 = time.perf_counter()
             multiplier = compute_enhanced_multiplier(
                 memory_id=memory.id,
                 temporal_stability=memory.temporal_stability,
@@ -103,13 +125,36 @@ def search_memories(
                 reinforcement_events=events,
                 config=tracerank_config,
             )
+            tracerank_timings['compute'] += time.perf_counter() - t1
 
             # Multiply semantic score by enhanced multiplier
             scored_memories[i] = (memory, semantic_score * multiplier)
 
+        timings['4_tracerank_total'] = time.perf_counter() - t0
+        timings['4a_tracerank_events'] = tracerank_timings['events']
+        timings['4b_tracerank_edges'] = tracerank_timings['edges']
+        timings['4c_tracerank_compute'] = tracerank_timings['compute']
+
     # Sort by final score descending and return top-K
+    t0 = time.perf_counter()
     scored_memories.sort(key=lambda x: x[1], reverse=True)
-    return scored_memories[:limit]
+    result = scored_memories[:limit]
+    timings['5_sort_and_slice'] = time.perf_counter() - t0
+
+    timings['TOTAL'] = time.perf_counter() - t_start
+
+    if show_timing:
+        print("\n" + "="*60)
+        print("PERFORMANCE BREAKDOWN")
+        print("="*60)
+        for key, duration in timings.items():
+            ms = duration * 1000
+            pct = (duration / timings['TOTAL'] * 100) if timings['TOTAL'] > 0 else 0
+            indent = "  " if key.startswith(('4a', '4b', '4c')) else ""
+            print(f"{indent}{key:30s} {ms:8.0f}ms  ({pct:5.1f}%)")
+        print("="*60 + "\n")
+
+    return result
 
 
 def format_search_results(results: list[tuple[MemoryNode, float]]) -> str:

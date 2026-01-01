@@ -101,6 +101,8 @@ def build_runtime(
         model_name=config["embedding"]["model"],
         expected_dimension=config["embedding"]["dimension"],
         normalize=config["embedding"]["normalize"],
+        provider=config["embedding"].get("provider", "llm"),  # Default to llm
+        max_length=config["embedding"].get("max_length"),  # Optional truncation
     )
     storage = MemoryStorage(config["storage"]["db_path"])
     event_storage = MemoryEventStorage(storage.conn)  # M3: Share DB connection
@@ -114,7 +116,12 @@ def build_runtime(
         cooldown_hours=tracerank_cfg.get("cooldown_hours", 24.0),
         burst_discount=tracerank_cfg.get("burst_discount", 0.2),
         k=tracerank_cfg.get("k", 0.35),
+        graph_connectivity_enabled=tracerank_cfg.get("graph_connectivity_enabled", True),
+        graph_k=tracerank_cfg.get("graph_k", 0.15),
+        temporal_decay_enabled=tracerank_cfg.get("temporal_decay_enabled", True),
+        dynamic_tau_days=tracerank_cfg.get("dynamic_tau_days", 90.0),
         ephemeral_tau_days=tracerank_cfg.get("ephemeral_tau_days"),
+        static_boost=tracerank_cfg.get("static_boost", 1.0),
     )
 
     return storage, embedding_engine, event_storage, tracerank_config
@@ -176,6 +183,7 @@ def cmd_search(args):
             limit=args.limit,
             event_storage=event_storage,
             tracerank_config=tracerank_config,
+            show_timing=getattr(args, 'timing', False),
         )
         print(format_search_results(results))
     finally:
@@ -201,6 +209,7 @@ def cmd_recall(args):
             limit=args.limit,
             event_storage=event_storage,
             tracerank_config=tracerank_config,
+            show_timing=getattr(args, 'timing', False),
         )
 
         # Format with or without explanation
@@ -496,6 +505,90 @@ def cmd_deprecate(args):
         storage.close()
 
 
+def cmd_regen_embeddings(args):
+    """Handle 'vestig memory regen-embeddings' command"""
+    import json
+
+    config = args.config_dict
+
+    # Override embedding config with new model if specified
+    if args.model:
+        config["embedding"]["model"] = args.model
+        print(f"Using model: {args.model}")
+
+    # Build runtime with new embedding engine
+    storage, embedding_engine, _, _ = build_runtime(config)
+
+    try:
+        # Get all memories (includes both MEMORY and SUMMARY kinds)
+        print("Loading all memories from database...")
+        all_memories = storage.get_all_memories()
+
+        # Apply limit if specified (for testing)
+        if args.limit:
+            all_memories = all_memories[:args.limit]
+            print(f"Processing first {len(all_memories)} memories (--limit {args.limit})")
+        else:
+            print(f"Processing {len(all_memories)} memories")
+
+        if not all_memories:
+            print("No memories found in database")
+            return
+
+        # Process memories in batches
+        batch_size = args.batch_size
+        total_processed = 0
+        total_errors = 0
+
+        for i in range(0, len(all_memories), batch_size):
+            batch = all_memories[i:i + batch_size]
+            batch_num = (i // batch_size) + 1
+            total_batches = (len(all_memories) + batch_size - 1) // batch_size
+
+            print(f"\nProcessing batch {batch_num}/{total_batches} ({len(batch)} memories)...")
+
+            # Generate embeddings for batch
+            texts = [m.content for m in batch]
+            try:
+                embeddings = embedding_engine.embed_batch(texts)
+            except Exception as e:
+                print(f"Error generating embeddings for batch {batch_num}: {e}", file=sys.stderr)
+                total_errors += len(batch)
+                continue
+
+            # Update database with new embeddings
+            with storage.conn:
+                for memory, embedding in zip(batch, embeddings):
+                    try:
+                        embedding_json = json.dumps(embedding)
+                        storage.conn.execute(
+                            "UPDATE memories SET content_embedding = ? WHERE id = ?",
+                            (embedding_json, memory.id)
+                        )
+                        total_processed += 1
+                    except Exception as e:
+                        print(f"Error updating memory {memory.id}: {e}", file=sys.stderr)
+                        total_errors += 1
+
+            # Show progress
+            progress_pct = (i + len(batch)) / len(all_memories) * 100
+            print(f"Progress: {total_processed}/{len(all_memories)} ({progress_pct:.1f}%)")
+
+        print(f"\n{'='*60}")
+        print("REGENERATION COMPLETE")
+        print(f"{'='*60}")
+        print(f"Total processed: {total_processed}")
+        print(f"Total errors: {total_errors}")
+        print(f"Model: {config['embedding']['model']}")
+        print(f"Dimension: {config['embedding']['dimension']}")
+
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    finally:
+        storage.close()
+
+
 def cmd_memory(args):
     """Handle noun subcommand routing"""
     # If we get here without a subcommand, show help
@@ -717,6 +810,11 @@ def main():
     parser_search.add_argument(
         "--limit", type=int, default=5, help="Number of results (default: 5)"
     )
+    parser_search.add_argument(
+        "--timing",
+        action="store_true",
+        help="Show performance timing breakdown",
+    )
     parser_search.set_defaults(func=cmd_search)
 
     # vestig memory recall
@@ -731,6 +829,11 @@ def main():
         "--explain",
         action="store_true",
         help="Show explanation for why each memory was retrieved",
+    )
+    parser_recall.add_argument(
+        "--timing",
+        action="store_true",
+        help="Show performance timing breakdown",
     )
     parser_recall.set_defaults(func=cmd_recall)
 
@@ -781,6 +884,27 @@ def main():
         "--t-invalid", help="When fact became invalid (ISO 8601 timestamp)"
     )
     parser_deprecate.set_defaults(func=cmd_deprecate)
+
+    # vestig memory regen-embeddings
+    parser_regen = memory_subparsers.add_parser(
+        "regen-embeddings", help="Regenerate all embeddings with a new model"
+    )
+    parser_regen.add_argument(
+        "--model",
+        help="New embedding model to use (overrides config, e.g., 'ollama/nomic-embed-text')",
+    )
+    parser_regen.add_argument(
+        "--batch-size",
+        type=int,
+        default=100,
+        help="Number of memories to process per batch (default: 100)",
+    )
+    parser_regen.add_argument(
+        "--limit",
+        type=int,
+        help="Only regenerate first N memories (for testing)",
+    )
+    parser_regen.set_defaults(func=cmd_regen_embeddings)
 
     # Set default for memory command (show help if no subcommand)
     parser_memory.set_defaults(func=cmd_memory, noun_parser=parser_memory)
