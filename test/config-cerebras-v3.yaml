@@ -102,6 +102,7 @@ m4:
       - PROJECT
       - PLACE
       - SKILL
+      - CAPABILITY
       - TOOL
       - FILE
       - CONCEPT     # v3: Use sparingly, domain-specific only
@@ -111,7 +112,7 @@ m4:
     mode: llm
 
     llm:
-      model: claude-haiku-4.5
+      model: gpt-5-nano
       max_entities_per_memory: 10
       min_confidence: 0.80           # v3: Slightly higher threshold
       store_low_confidence: false

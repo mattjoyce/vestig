@@ -101,7 +101,7 @@ class EntityNode:
     """
 
     id: str  # ent_<uuid>
-    entity_type: str  # PERSON | ORG | SYSTEM | PROJECT | PLACE (from config)
+    entity_type: str  # PERSON | ORG | SYSTEM | PROJECT | PLACE | SKILL | CAPABILITY | TOOL | FILE | CONCEPT (from config)
     canonical_name: str  # Canonical form of entity name
     norm_key: str  # Normalization key for deduplication (type:normalized_name)
     created_at: str  # ISO 8601 timestamp

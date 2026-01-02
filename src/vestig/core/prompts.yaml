@@ -172,7 +172,7 @@ extract_memories_v4:
           "entities": [
             {
               "name": "canonical entity name",
-              "type": "PERSON|ORG|SYSTEM|PROJECT|TOOL|PLACE|SKILL|FILE|CONCEPT",
+              "type": "PERSON|ORG|SYSTEM|PROJECT|TOOL|PLACE|SKILL|CAPABILITY|FILE|CONCEPT",
               "confidence": 0.0-1.0,
               "evidence": "exact text snippet supporting this entity extraction"
             }
@@ -263,7 +263,7 @@ extract_memories_from_session:
           "entities": [
             {
               "name": "entity name",
-              "type": "PERSON|ORG|SYSTEM|PROJECT|PLACE|SKILL|TOOL|FILE|CONCEPT",
+              "type": "PERSON|ORG|SYSTEM|PROJECT|PLACE|SKILL|CAPABILITY|TOOL|FILE|CONCEPT",
               "confidence": 0.0-1.0,
               "evidence": "text snippet supporting this entity"
             }
@@ -528,7 +528,7 @@ extract_entities:
       "entities": [
         {
           "name": "canonical entity name",
-          "type": "PERSON|ORG|SYSTEM|PROJECT|TOOL|PLACE|SKILL|FILE|CONCEPT",
+          "type": "PERSON|ORG|SYSTEM|PROJECT|TOOL|PLACE|SKILL|CAPABILITY|FILE|CONCEPT",
           "confidence": 0.0-1.0,
           "evidence": "exact text snippet supporting this extraction",
           "normalization_notes": "optional: why this canonical form was chosen"

@@ -62,7 +62,7 @@ CREATE TABLE memory_events (
 -- entities: Canonical entity nodes (PERSON, ORG, SYSTEM, etc.)
 CREATE TABLE entities (
     id TEXT PRIMARY KEY,
-    entity_type TEXT NOT NULL,        -- PERSON | ORG | SYSTEM | PROJECT | PLACE | SKILL | TOOL | FILE | CONCEPT
+    entity_type TEXT NOT NULL,        -- PERSON | ORG | SYSTEM | PROJECT | PLACE | SKILL | CAPABILITY | TOOL | FILE | CONCEPT
     canonical_name TEXT NOT NULL,     -- Canonical form of entity name
     norm_key TEXT NOT NULL,           -- Normalization key for deduplication (type:normalized_name)
     created_at TEXT NOT NULL,         -- ISO 8601 timestamp
