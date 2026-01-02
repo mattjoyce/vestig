@@ -292,7 +292,14 @@ def store_entities(
     # Import embedding engine if needed
     if embedding_engine is None:
         from vestig.core.embeddings import EmbeddingEngine
-        embedding_engine = EmbeddingEngine(config["embedding"])
+        embedding_config = config.get("embedding", {})
+        embedding_engine = EmbeddingEngine(
+            model_name=embedding_config["model"],
+            expected_dimension=embedding_config["dimension"],
+            normalize=embedding_config["normalize"],
+            provider=embedding_config.get("provider", "llm"),
+            max_length=embedding_config.get("max_length"),
+        )
 
     # Store entities with deduplication
     stored_entities = []

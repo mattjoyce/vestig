@@ -495,7 +495,13 @@ def cmd_entity_regen_embeddings(args):
 
     # Build embedding engine
     from vestig.core.embeddings import EmbeddingEngine
-    embedding_engine = EmbeddingEngine(config["embedding"])
+    embedding_engine = EmbeddingEngine(
+        model_name=config["embedding"]["model"],
+        expected_dimension=config["embedding"]["dimension"],
+        normalize=config["embedding"]["normalize"],
+        provider=config["embedding"].get("provider", "llm"),
+        max_length=config["embedding"].get("max_length"),
+    )
     storage = MemoryStorage(config["storage"]["db_path"])
 
     try:
