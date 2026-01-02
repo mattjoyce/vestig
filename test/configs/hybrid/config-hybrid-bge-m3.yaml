@@ -1,0 +1,153 @@
+# Vestig v3 Config - Hybrid retrieval with bge-m3
+# Testing entity embeddings: bge-m3 (1024d, 50% accuracy)
+
+# Embedding configuration
+embedding:
+  provider: "llm"
+  model: "bge-m3:latest"
+  dimension: 1024
+  normalize: true
+
+# Storage
+storage:
+  db_path: "cerebras_v3.db"
+
+# Retrieval
+retrieval:
+  default_limit: 5
+
+  # M5: Entity-based retrieval (hybrid semantic + entity matching)
+  entity_path:
+    enabled: true                    # Enable hybrid retrieval
+    entity_weight: 0.5               # Balance: 0.5 semantic + 0.5 entity
+    similarity_threshold: 0.7        # Min similarity for entity matching
+
+# M2: Content hygiene (quality firewall)
+hygiene:
+  min_chars: 12
+  max_chars: 4000
+  normalize_whitespace: true
+  reject_exact_duplicates: true
+  near_duplicate:
+    enabled: true
+    threshold: 0.92
+    skip_manual_source: true
+
+# Document ingestion (LLM-based memory extraction)
+ingestion:
+  model: phi3:latest
+  chunk_size: 4000
+  chunk_overlap: 400
+  min_confidence: 0.8
+  format: auto
+  force_entities: []
+
+  # Two-pass extraction: separate memory and entity extraction
+  two_pass_extraction:
+    enabled: true                # Use two-pass (extract_memories_simple + extract_entities)
+    memory_prompt: "extract_memories_simple"
+    entity_prompt: "extract_entities"
+    batch_entity_extraction: true  # Batch multiple memories for entity extraction
+    batch_size: 50                 # Memories per batch
+
+  # JSON parsing retry logic (handles malformed LLM responses)
+  retry:
+    max_attempts: 3               # Retry up to 3 times on JSON parse failures
+    backoff_seconds: 1.0          # Wait between retries (exponential: 1s, 2s, 4s)
+
+  # Rate limiting for Cerebras API
+  # Tier 1: 30 RPM / 60k TPM
+  # Tier 2: 900 RPM / 1M TPM
+  rate_limits:
+    requests_per_minute: 30      # Conservative limit for tier 1
+    tokens_per_minute: 60000     # 60k tokens per minute
+    # If you have tier 2 access, increase to:
+    # requests_per_minute: 900
+    # tokens_per_minute: 1000000
+
+  claude_session:
+    include_roles:
+      - user
+      - assistant
+    include_message_types:
+      - text
+    drop_thinking: true
+    drop_tool_use: true
+
+# Prompt configuration
+prompts:
+  # v4 extraction prompt with tiered entity hierarchy and quality gates
+  extract_memories: "extract_memories_v4"
+  summary: "summary_v2"
+
+# M3: Time & Truth (TraceRank, temporal ranking)
+m3:
+  event_logging:
+    enabled: true
+
+  tracerank:
+    enabled: true
+    tau_days: 21
+    cooldown_hours: 24
+    burst_discount: 0.2
+    k: 0.35                         # Temporal boost strength
+    graph_connectivity_enabled: false  # Disable graph boost (testing pure temporal)
+    graph_k: 0.0
+
+  retrieval:
+    include_expired: false
+
+# M4: Graph Layer (entities, edges, traversal)
+# v3: Stricter entity extraction to reduce noise
+m4:
+  entity_types:
+    allowed_types:
+      - PERSON
+      - ORG
+      - SYSTEM
+      - PROJECT
+      - PLACE
+      - SKILL
+      - TOOL
+      - FILE
+      - CONCEPT     # v3: Use sparingly, domain-specific only
+
+  entity_extraction:
+    enabled: true
+    mode: llm
+
+    llm:
+      model: claude-haiku-4.5
+      max_entities_per_memory: 10
+      min_confidence: 0.80           # v3: Slightly higher threshold
+      store_low_confidence: false
+      max_evidence_length: 200
+
+      # Rate limiting for entity extraction (uses same Cerebras limits)
+      rate_limits:
+        requests_per_minute: 30
+        tokens_per_minute: 60000
+
+    heuristics:
+      strip_titles: true
+      normalize_org_suffixes: true
+      reject_garbage: true
+      split_lists: false
+
+  edge_creation:
+    mentions:
+      enabled: true
+      default_weight: 1.0
+      confidence_gated: true
+
+    related:
+      enabled: true
+      similarity_threshold: 0.7
+      max_edges_per_memory: 10
+
+  graph_expansion:
+    enabled: true
+    max_expand_via_entities: 3
+    max_expand_via_related: 3
+    include_expired: false
+    min_confidence: 0.75

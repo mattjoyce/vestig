@@ -53,6 +53,33 @@ Type checking stays non-strict.
 - **Config is explicit:** a single config object; no “read env anywhere”.
 - Standard flags: `--config`, `--verbose`, `--debug`, `--dry-run`
 
+## Defaults & required values (fail-fast)
+- Agents and templates MUST NOT silently invent important defaults for values that affect correctness, security, or observability.
+- For any required configuration or parameter, prefer failing fast and loudly over using a guessed default.
+  - Detect missing required values early (configuration loading / validation) and raise a clear, specific exception (e.g. `ValueError`, `ConfigurationError`).
+  - Avoid placeholder defaults like `"TODO"`, `"REPLACE_ME"`, `"dummy"`, or empty strings that let code continue with unsafe assumptions.
+- Safe, well-reasoned defaults are acceptable for non-critical settings (timeouts, retries, verbosity), but document why a default is safe.
+- Use explicit sentinels or validation to make "requiredness" visible in code and tests.
+
+Example pattern:
+```python
+from dataclasses import dataclass
+
+REQUIRED = object()
+
+@dataclass
+class Config:
+    api_key: str = REQUIRED  # required — no safe default
+    timeout: int = 30        # safe default
+
+def validate_config(cfg: Config) -> None:
+    if cfg.api_key is REQUIRED:
+        raise ValueError("config.api_key is required and must be provided via config/env/CLI")
+```
+
+- CI / PR checks: prefer a quick check that flags common placeholder defaults or sentinel values left in committed config templates.
+- For agents: when generating configuration or scaffolding, emit explicit REQUIRED markers and accompanying validation code rather than guessing missing values.
+
 ## Error handling (fail hard by design)
 Default:
 - Let exceptions propagate.
