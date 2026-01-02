@@ -482,6 +482,82 @@ def cmd_entity_extract(args):
         storage.close()
 
 
+def cmd_entity_regen_embeddings(args):
+    """Handle 'vestig entity regen-embeddings' command"""
+    import json
+
+    config = args.config_dict
+
+    # Override embedding config with new model if specified
+    if args.model:
+        config["embedding"]["model"] = args.model
+        print(f"Using model: {args.model}")
+
+    # Build embedding engine
+    from vestig.core.embeddings import EmbeddingEngine
+    embedding_engine = EmbeddingEngine(config["embedding"])
+    storage = MemoryStorage(config["storage"]["db_path"])
+
+    try:
+        print(f"vestig v{get_version()}")
+        print("Regenerating entity embeddings...")
+        print(f"Database: {Path(config['storage']['db_path']).absolute()}")
+        print(f"Model: {config['embedding']['model']}")
+        print()
+
+        # Get all entities (not expired)
+        print("Loading all entities from database...")
+        all_entities = storage.get_all_entities(include_expired=False)
+
+        # Apply limit if specified (for testing)
+        if args.limit:
+            all_entities = all_entities[:args.limit]
+            print(f"Processing first {len(all_entities)} entities (--limit {args.limit})")
+        else:
+            print(f"Processing {len(all_entities)} entities")
+
+        if not all_entities:
+            print("No entities found in database")
+            return
+
+        # Process entities in batches
+        batch_size = args.batch_size
+        total = len(all_entities)
+        updated = 0
+
+        for i in range(0, total, batch_size):
+            batch = all_entities[i:i+batch_size]
+            print(f"Processing batch {i//batch_size + 1} ({i+1}-{min(i+batch_size, total)} of {total})...")
+
+            for entity in batch:
+                # Generate embedding (lowercase for consistency)
+                embedding_text = entity.canonical_name.lower()
+                embedding_vector = embedding_engine.embed(embedding_text)
+                embedding_json = json.dumps(embedding_vector)
+
+                # Update entity embedding
+                storage.conn.execute(
+                    "UPDATE entities SET embedding = ? WHERE id = ?",
+                    (embedding_json, entity.id)
+                )
+                updated += 1
+
+            storage.conn.commit()
+
+        print(f"\n✓ Regenerated embeddings for {updated} entities")
+
+    except KeyboardInterrupt:
+        print("\n\nRegeneration interrupted by user", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"\nError during regeneration: {e}", file=sys.stderr)
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
+    finally:
+        storage.close()
+
+
 def cmd_edge_list(args):
     """Handle 'vestig edge list' command"""
     config = args.config_dict
@@ -1073,6 +1149,27 @@ def main():
         help="Required: confirm deletion of all entities and edges",
     )
     parser_entity_purge.set_defaults(func=cmd_entity_purge)
+
+    # vestig entity regen-embeddings
+    parser_entity_regen = entity_subparsers.add_parser(
+        "regen-embeddings", help="Regenerate entity embeddings with current or new model"
+    )
+    parser_entity_regen.add_argument(
+        "--model",
+        help="New embedding model to use (overrides config, e.g., 'ollama/nomic-embed-text')",
+    )
+    parser_entity_regen.add_argument(
+        "--batch-size",
+        type=int,
+        default=100,
+        help="Number of entities to process per batch (default: 100)",
+    )
+    parser_entity_regen.add_argument(
+        "--limit",
+        type=int,
+        help="Only regenerate first N entities (for testing)",
+    )
+    parser_entity_regen.set_defaults(func=cmd_entity_regen_embeddings)
 
     parser_entity.set_defaults(func=cmd_memory, noun_parser=parser_entity)
 

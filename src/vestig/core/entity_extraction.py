@@ -266,9 +266,10 @@ def store_entities(
     memory_id: str,
     storage,  # MemoryStorage instance
     config: dict[str, Any],
+    embedding_engine=None,  # Optional EmbeddingEngine instance
 ) -> list[tuple]:
     """
-    Store pre-extracted entities with deduplication.
+    Store pre-extracted entities with deduplication and embeddings.
 
     Used when entities are already extracted (e.g., combined extraction during ingestion).
 
@@ -277,6 +278,7 @@ def store_entities(
         memory_id: Memory ID (for event logging)
         storage: MemoryStorage instance
         config: M4 config dict
+        embedding_engine: Optional EmbeddingEngine for generating entity embeddings
 
     Returns:
         List of (entity_id, entity_type, confidence, evidence) tuples
@@ -286,6 +288,11 @@ def store_entities(
 
     # Get config
     min_confidence = config.get("entity_extraction", {}).get("llm", {}).get("min_confidence", 0.75)
+
+    # Import embedding engine if needed
+    if embedding_engine is None:
+        from vestig.core.embeddings import EmbeddingEngine
+        embedding_engine = EmbeddingEngine(config["embedding"])
 
     # Store entities with deduplication
     stored_entities = []
@@ -310,6 +317,12 @@ def store_entities(
                 entity_type=entity_type,
                 canonical_name=name,
             )
+
+            # Generate embedding for entity (lowercase for consistency)
+            embedding_text = name.lower()
+            embedding_vector = embedding_engine.embed(embedding_text)
+            new_entity.embedding = json.dumps(embedding_vector)
+
             entity_id = storage.store_entity(new_entity)
 
         # Return entity info for edge creation

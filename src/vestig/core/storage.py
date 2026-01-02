@@ -584,14 +584,15 @@ class MemoryStorage:
         # No duplicate - insert new entity
         self.conn.execute(
             """
-            INSERT INTO entities (id, entity_type, canonical_name, norm_key, created_at, expired_at, merged_into)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO entities (id, entity_type, canonical_name, norm_key, embedding, created_at, expired_at, merged_into)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 entity.id,
                 entity.entity_type,
                 entity.canonical_name,
                 entity.norm_key,
+                entity.embedding,
                 entity.created_at,
                 entity.expired_at,
                 entity.merged_into,
@@ -612,7 +613,7 @@ class MemoryStorage:
         """
         cursor = self.conn.execute(
             """
-            SELECT id, entity_type, canonical_name, norm_key, created_at, expired_at, merged_into
+            SELECT id, entity_type, canonical_name, norm_key, embedding, created_at, expired_at, merged_into
             FROM entities
             WHERE id = ?
             """,
@@ -628,9 +629,10 @@ class MemoryStorage:
             entity_type=row[1],
             canonical_name=row[2],
             norm_key=row[3],
-            created_at=row[4],
-            expired_at=row[5],
-            merged_into=row[6],
+            embedding=row[4],
+            created_at=row[5],
+            expired_at=row[6],
+            merged_into=row[7],
         )
 
     def find_entity_by_norm_key(
@@ -647,9 +649,9 @@ class MemoryStorage:
             EntityNode if found, None otherwise
         """
         if include_expired:
-            query = "SELECT id, entity_type, canonical_name, norm_key, created_at, expired_at, merged_into FROM entities WHERE norm_key = ?"
+            query = "SELECT id, entity_type, canonical_name, norm_key, embedding, created_at, expired_at, merged_into FROM entities WHERE norm_key = ?"
         else:
-            query = "SELECT id, entity_type, canonical_name, norm_key, created_at, expired_at, merged_into FROM entities WHERE norm_key = ? AND expired_at IS NULL"
+            query = "SELECT id, entity_type, canonical_name, norm_key, embedding, created_at, expired_at, merged_into FROM entities WHERE norm_key = ? AND expired_at IS NULL"
 
         cursor = self.conn.execute(query, (norm_key,))
         row = cursor.fetchone()
@@ -662,9 +664,10 @@ class MemoryStorage:
             entity_type=row[1],
             canonical_name=row[2],
             norm_key=row[3],
-            created_at=row[4],
-            expired_at=row[5],
-            merged_into=row[6],
+            embedding=row[4],
+            created_at=row[5],
+            expired_at=row[6],
+            merged_into=row[7],
         )
 
     def get_all_entities(self, include_expired: bool = False) -> list[EntityNode]:
@@ -679,13 +682,13 @@ class MemoryStorage:
         """
         if include_expired:
             query = """
-                SELECT id, entity_type, canonical_name, norm_key, created_at, expired_at, merged_into
+                SELECT id, entity_type, canonical_name, norm_key, embedding, created_at, expired_at, merged_into
                 FROM entities
                 ORDER BY created_at DESC
             """
         else:
             query = """
-                SELECT id, entity_type, canonical_name, norm_key, created_at, expired_at, merged_into
+                SELECT id, entity_type, canonical_name, norm_key, embedding, created_at, expired_at, merged_into
                 FROM entities
                 WHERE expired_at IS NULL
                 ORDER BY created_at DESC
@@ -724,14 +727,14 @@ class MemoryStorage:
         """
         if include_expired:
             query = """
-                SELECT id, entity_type, canonical_name, norm_key, created_at, expired_at, merged_into
+                SELECT id, entity_type, canonical_name, norm_key, embedding, created_at, expired_at, merged_into
                 FROM entities
                 WHERE entity_type = ?
                 ORDER BY created_at DESC
             """
         else:
             query = """
-                SELECT id, entity_type, canonical_name, norm_key, created_at, expired_at, merged_into
+                SELECT id, entity_type, canonical_name, norm_key, embedding, created_at, expired_at, merged_into
                 FROM entities
                 WHERE entity_type = ? AND expired_at IS NULL
                 ORDER BY created_at DESC
