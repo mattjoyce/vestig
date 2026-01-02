@@ -65,8 +65,8 @@ CREATE TABLE entities (
     entity_type TEXT NOT NULL,        -- PERSON | ORG | SYSTEM | PROJECT | PLACE | SKILL | CAPABILITY | TOOL | FILE | CONCEPT
     canonical_name TEXT NOT NULL,     -- Canonical form of entity name
     norm_key TEXT NOT NULL,           -- Normalization key for deduplication (type:normalized_name)
-    embedding TEXT,                   -- JSON-serialized embedding vector (for semantic matching)
     created_at TEXT NOT NULL,         -- ISO 8601 timestamp
+    embedding TEXT,                   -- JSON-serialized embedding vector (for semantic matching)
     expired_at TEXT,                  -- When entity was merged/deprecated
     merged_into TEXT                  -- ID of entity this was merged into
 );

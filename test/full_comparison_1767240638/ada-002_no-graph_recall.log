@@ -1,0 +1,573 @@
+
+================================================================================
+Running 20 tests using method: recall
+Config: config-ada-002-no-graph.yaml
+================================================================================
+
+================================================================================
+Q1: Who is the project lead for the AI Adoption Survey?
+Expected: Matt Joyce...
+Method: recall
+Duration: 7338ms
+Match ratio: 0.00%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+(score=1.0163, age=1d, stability=static)
+The project lead is Bojan.
+
+---
+
+(score=0.9782, age=1d, stability=static)
+Grace Brown described the Allity pilot as a significant step in Abi’s evolution, yielding important data for AI model refinement and content library improvements.
+
+---
+
+(score=0.9665, age=1d, stability=static)
+Grace Brown, the 25‑year‑old founder and CEO of Andromeda Robotics, is a mechatronics engineer and Forbes 30 Under 30 alumna, recognized for her work on Abi.
+
+--
+
+================================================================================
+Q2: What is the executive sponsor's name for the AI Adoption Survey project?
+Expected: John Sutherland, who is the CIO...
+Method: recall
+Duration: 5371ms
+Match ratio: 0.00%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+(score=0.9869, age=1d, stability=static)
+The project lead is Bojan.
+
+---
+
+(score=0.9520, age=1d, stability=static)
+Grace Brown described the Allity pilot as a significant step in Abi’s evolution, yielding important data for AI model refinement and content library improvements.
+
+---
+
+(score=0.9482, age=1d, stability=static)
+Grace Brown, the 25‑year‑old founder and CEO of Andromeda Robotics, is a mechatronics engineer and Forbes 30 Under 30 alumna, recognized for her work on Abi.
+
+--
+
+================================================================================
+Q3: What are the main barriers preventing people from using AI tools according to the survey?
+Expected: The survey asks about multiple barriers including: trouble accessing technology, lack of time, unsur...
+Method: recall
+Duration: 5055ms
+Match ratio: 46.15%
+Relevant: ✓
+
+Vestig output preview:
+vestig v0.1.0
+(score=0.9799, age=1d, stability=static)
+Abi’s core AI uses the ChatGPT‑4 language model for natural conversation and machine‑vision technology to recognize faces and non‑verbal cues.
+
+---
+
+(score=0.9607, age=1d, stability=static)
+TLH reported that their mix of service robots, including Abi, generated roughly $400,000 per year in staffing cost savings.
+
+---
+
+(score=0.9513, age=1d, stability=static)
+The Robot Companions Research Initiative aims to explore robotic companion pets as t
+
+================================================================================
+Q4: What problem is Heidi Health trying to solve?
+Expected: Current use of internal typists and external transcription services results in delays of up to seven...
+Method: recall
+Duration: 4534ms
+Match ratio: 7.14%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+(score=0.9993, age=1d, stability=static)
+Direct cost for the Heidi Health Team pilot subscription is $9,570 for a 3‑month period.
+
+---
+
+(score=0.9316, age=1d, stability=static)
+TLH reported that their mix of service robots, including Abi, generated roughly $400,000 per year in staffing cost savings.
+
+---
+
+(score=0.9308, age=1d, stability=static)
+SoftBank’s Pepper robot was trialed in a Queensland hospital to greet patients and answer questions, illustrating similar use cases for so
+
+================================================================================
+Q5: What is the status of the Heidi Health AI Scribe project?
+Expected: The status is 'proposal'...
+Method: recall
+Duration: 4539ms
+Match ratio: 0.00%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+(score=0.9723, age=1d, stability=static)
+Direct cost for the Heidi Health Team pilot subscription is $9,570 for a 3‑month period.
+
+---
+
+(score=0.9708, age=1d, stability=static)
+SoftBank’s Pepper robot was trialed in a Queensland hospital to greet patients and answer questions, illustrating similar use cases for social robots in healthcare.
+
+---
+
+(score=0.9596, age=1d, stability=static)
+Grace Brown described the Allity pilot as a significant step in Abi’s evolution, yielding importa
+
+================================================================================
+Q6: Where is the Heidi Health pilot planned to be implemented?
+Expected: Hobart Consulting Suites (or Calvary Hobart Consulting Suites)...
+Method: recall
+Duration: 5092ms
+Match ratio: 0.00%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+(score=1.0349, age=1d, stability=static)
+Direct cost for the Heidi Health Team pilot subscription is $9,570 for a 3‑month period.
+
+---
+
+(score=0.9452, age=1d, stability=static)
+The final consent model approval is scheduled for November 2025.
+
+---
+
+(score=0.9407, age=1d, stability=static)
+SoftBank’s Pepper robot was trialed in a Queensland hospital to greet patients and answer questions, illustrating similar use cases for social robots in healthcare.
+
+---
+
+(score=0.9366, age=1d, sta
+
+================================================================================
+Q7: Who met with Beamtree to discuss the PICQ proposal?
+Expected: John Sutherland (CIO) and Damien Bruce (CEO)...
+Method: recall
+Duration: 5900ms
+Match ratio: 0.00%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+(score=0.9567, age=1d, stability=static)
+The project lead is Bojan.
+
+---
+
+(score=0.9338, age=1d, stability=static)
+SoftBank’s Pepper robot was trialed in a Queensland hospital to greet patients and answer questions, illustrating similar use cases for social robots in healthcare.
+
+---
+
+(score=0.9276, age=1d, stability=static)
+Grace Brown described the Allity pilot as a significant step in Abi’s evolution, yielding important data for AI model refinement and content library improvemen
+
+================================================================================
+Q8: Why is the BeamTree PICQ project considered sensitive?
+Expected: It's sensitive with coders/HIMs (Health Information Management staff) because there has been a histo...
+Method: recall
+Duration: 4829ms
+Match ratio: 17.24%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+(score=0.9206, age=1d, stability=static)
+The project lead is Bojan.
+
+---
+
+(score=0.9171, age=1d, stability=static)
+The project notes were created on September 26, 2025.
+
+---
+
+(score=0.9167, age=1d, stability=static)
+SoftBank’s Pepper robot was trialed in a Queensland hospital to greet patients and answer questions, illustrating similar use cases for social robots in healthcare.
+
+---
+
+(score=0.9051, age=1d, stability=static)
+Grace Brown described the Allity pilot as a significant st
+
+================================================================================
+Q9: What is the relationship between Beamtree and Phoebe mentioned in the project brief?
+Expected: The ideal positioning is that Beamtree would provide upstream quality signal (coding optimization) w...
+Method: recall
+Duration: 11593ms
+Match ratio: 0.00%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+(score=0.9455, age=1d, stability=static)
+The project lead is Bojan.
+
+---
+
+(score=0.9332, age=1d, stability=static)
+The project notes were created on September 26, 2025.
+
+---
+
+(score=0.9213, age=1d, stability=static)
+Abi can lead group activities such as sing‑alongs, dancing, trivia games and Tai Chi, engaging residents and providing therapeutic physical and cognitive stimulation.
+
+---
+
+(score=0.9181, age=1d, stability=static)
+SoftBank’s Pepper robot was trialed in a Queensland hosp
+
+================================================================================
+Q10: What is the recommended option for the BeamTree PICQ project?
+Expected: Option B: Small, Controlled Trial - using 1-2 months of recent data from selected private hospitals ...
+Method: recall
+Duration: 6758ms
+Match ratio: 14.81%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+(score=0.9266, age=1d, stability=static)
+The project lead is Bojan.
+
+---
+
+(score=0.9121, age=1d, stability=static)
+TLH reported that their mix of service robots, including Abi, generated roughly $400,000 per year in staffing cost savings.
+
+---
+
+(score=0.9052, age=1d, stability=static)
+SoftBank’s Pepper robot was trialed in a Queensland hospital to greet patients and answer questions, illustrating similar use cases for social robots in healthcare.
+
+---
+
+(score=0.9016, age=1d, stabil
+
+================================================================================
+Q11: What is Project Bronte?
+Expected: A confidential acquisition project requiring detailed document review and analysis, with an executed...
+Method: recall
+Duration: 4842ms
+Match ratio: 8.33%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+(score=0.9673, age=1d, stability=static)
+The project lead is Bojan.
+
+---
+
+(score=0.9388, age=1d, stability=static)
+The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.
+
+---
+
+(score=0.9367, age=1d, stability=static)
+The project notes were created on September 26, 2025.
+
+---
+
+(score=0.9194, age=1d, stability=static)
+SoftBank’s Peppe
+
+================================================================================
+Q12: What is the status of Robot Companions project?
+Expected: Discovery...
+Method: recall
+Duration: 6061ms
+Match ratio: 0.00%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+(score=1.0646, age=1d, stability=static)
+The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.
+
+---
+
+(score=1.0085, age=1d, stability=static)
+TLH reported that their mix of service robots, including Abi, generated roughly $400,000 per year in staffing cost savings.
+
+---
+
+(score=0.9963, age=1d, stability=static)
+SoftBank’s Pepper ro
+
+================================================================================
+Q13: What is the domain or area of focus for the Robot Companions project?
+Expected: Research initiative exploring robotic companions to combat loneliness in aged care settings...
+Method: recall
+Duration: 5814ms
+Match ratio: 90.00%
+Relevant: ✓
+
+Vestig output preview:
+vestig v0.1.0
+(score=1.0548, age=1d, stability=static)
+The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.
+
+---
+
+(score=0.9848, age=1d, stability=static)
+TLH reported that their mix of service robots, including Abi, generated roughly $400,000 per year in staffing cost savings.
+
+---
+
+(score=0.9776, age=1d, stability=static)
+SoftBank’s Pepper ro
+
+================================================================================
+Q14: How many leaders participated in the AI Adoption Survey?
+Expected: Approximately 250 Calvary Leaders and 130 DHT Staff...
+Method: recall
+Duration: 4556ms
+Match ratio: 14.29%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+(score=0.9663, age=1d, stability=static)
+Grace Brown described the Allity pilot as a significant step in Abi’s evolution, yielding important data for AI model refinement and content library improvements.
+
+---
+
+(score=0.9598, age=1d, stability=static)
+TLH reported that their mix of service robots, including Abi, generated roughly $400,000 per year in staffing cost savings.
+
+---
+
+(score=0.9524, age=1d, stability=static)
+Abi’s core AI uses the ChatGPT‑4 language model for natural conv
+
+================================================================================
+Q15: What types of support does the AI Adoption Survey ask about?
+Expected: The survey asks about multiple types: technical support and troubleshooting, examples of healthcare ...
+Method: recall
+Duration: 6155ms
+Match ratio: 14.81%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+(score=0.9571, age=1d, stability=static)
+Abi’s core AI uses the ChatGPT‑4 language model for natural conversation and machine‑vision technology to recognize faces and non‑verbal cues.
+
+---
+
+(score=0.9508, age=1d, stability=static)
+Grace Brown described the Allity pilot as a significant step in Abi’s evolution, yielding important data for AI model refinement and content library improvements.
+
+---
+
+(score=0.9437, age=1d, stability=static)
+The Robot Companions Research Initiative aims
+
+================================================================================
+Q16: What are the key risks identified for the BeamTree PICQ project?
+Expected: Four main risk categories: 1) Workforce/political risks (HIM/coder perception issues, professional a...
+Method: recall
+Duration: 6701ms
+Match ratio: 0.00%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+(score=0.9433, age=1d, stability=static)
+The project lead is Bojan.
+
+---
+
+(score=0.9277, age=1d, stability=static)
+The project notes were created on September 26, 2025.
+
+---
+
+(score=0.9159, age=1d, stability=static)
+TLH reported that their mix of service robots, including Abi, generated roughly $400,000 per year in staffing cost savings.
+
+---
+
+(score=0.9074, age=1d, stability=static)
+SoftBank’s Pepper robot was trialed in a Queensland hospital to greet patients and answer questions
+
+================================================================================
+Q17: What happened with Beamtree's previous engagement with Calvary?
+Expected: There was a prior interaction via Richard and Martin that did not progress due to technical/data con...
+Method: recall
+Duration: 6592ms
+Match ratio: 75.00%
+Relevant: ✓
+
+Vestig output preview:
+vestig v0.1.0
+(score=0.9115, age=1d, stability=static)
+The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.
+
+---
+
+(score=0.9021, age=1d, stability=static)
+A prior Beamtree engagement with Calvary, facilitated through Richard and Martin, did not progress because of technical/data constraints and differing opinions on approach.
+
+---
+
+(score=0.900
+
+================================================================================
+Q18: Who is transitioning the Heidi Health project from initial to ongoing leadership?
+Expected: Matt Joyce was the initial project lead, with Liam taking over for ongoing management...
+Method: recall
+Duration: 6979ms
+Match ratio: 10.00%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+(score=0.9752, age=1d, stability=static)
+Direct cost for the Heidi Health Team pilot subscription is $9,570 for a 3‑month period.
+
+---
+
+(score=0.9632, age=1d, stability=static)
+The project lead is Bojan.
+
+---
+
+(score=0.9336, age=1d, stability=static)
+The project notes were created on September 26, 2025.
+
+---
+
+(score=0.9320, age=1d, stability=static)
+The final consent model approval is scheduled for November 2025.
+
+---
+
+(score=0.9282, age=1d, stability=static)
+Grace Brown, the 25‑ye
+
+================================================================================
+Q19: What service areas does the AI Adoption Survey cover?
+Expected: Private Hospitals, Home Care, Residential Aged Care, Retirement Living, Public Hospitals, Corporate/...
+Method: recall
+Duration: 7588ms
+Match ratio: 8.33%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+(score=0.9475, age=1d, stability=static)
+Grace Brown described the Allity pilot as a significant step in Abi’s evolution, yielding important data for AI model refinement and content library improvements.
+
+---
+
+(score=0.9453, age=1d, stability=static)
+The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.
+
+---
+
+(score=0.9448, age=1d,
+
+================================================================================
+Q20: Which project mentions integration with Phoebe?
+Expected: The BeamTree PICQ project mentions Phoebe as a proven success at Calvary for downstream claim-checki...
+Method: recall
+Duration: 6949ms
+Match ratio: 11.76%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+(score=0.9591, age=1d, stability=static)
+The project lead is Bojan.
+
+---
+
+(score=0.9572, age=1d, stability=static)
+The project notes were created on September 26, 2025.
+
+---
+
+(score=0.9329, age=1d, stability=static)
+Grace Brown described the Allity pilot as a significant step in Abi’s evolution, yielding important data for AI model refinement and content library improvements.
+
+---
+
+(score=0.9304, age=1d, stability=static)
+SoftBank’s Pepper robot was trialed in a Queensland hospital
+
+================================================================================
+TEST SUMMARY
+================================================================================
+
+Total questions: 20
+Successful queries: 20/20 (100.0%)
+Relevant answers: 3/20 (15.0%)
+Average duration: 6162ms
+
+BREAKDOWN BY CATEGORY:
+
+  basic_fact: 1/10 relevant (10.0%)
+    ✗ Q1: 0.0% match - Who is the project lead for the AI Adoption Survey?...
+    ✗ Q2: 0.0% match - What is the executive sponsor's name for the AI Adoption Sur...
+    ✗ Q5: 0.0% match - What is the status of the Heidi Health AI Scribe project?...
+    ✗ Q6: 0.0% match - Where is the Heidi Health pilot planned to be implemented?...
+    ✗ Q7: 0.0% match - Who met with Beamtree to discuss the PICQ proposal?...
+    ✗ Q11: 8.3% match - What is Project Bronte?...
+    ✗ Q12: 0.0% match - What is the status of Robot Companions project?...
+    ✓ Q13: 90.0% match - What is the domain or area of focus for the Robot Companions...
+    ✗ Q14: 14.3% match - How many leaders participated in the AI Adoption Survey?...
+    ✗ Q18: 10.0% match - Who is transitioning the Heidi Health project from initial t...
+
+  contextual_understanding: 0/1 relevant (0.0%)
+    ✗ Q8: 17.2% match - Why is the BeamTree PICQ project considered sensitive?...
+
+  cross_project: 0/1 relevant (0.0%)
+    ✗ Q20: 11.8% match - Which project mentions integration with Phoebe?...
+
+  detailed_content: 1/5 relevant (20.0%)
+    ✓ Q3: 46.2% match - What are the main barriers preventing people from using AI t...
+    ✗ Q10: 14.8% match - What is the recommended option for the BeamTree PICQ project...
+    ✗ Q15: 14.8% match - What types of support does the AI Adoption Survey ask about?...
+    ✗ Q16: 0.0% match - What are the key risks identified for the BeamTree PICQ proj...
+    ✗ Q19: 8.3% match - What service areas does the AI Adoption Survey cover?...
+
+  historical_context: 1/1 relevant (100.0%)
+    ✓ Q17: 75.0% match - What happened with Beamtree's previous engagement with Calva...
+
+  problem_analysis: 0/1 relevant (0.0%)
+    ✗ Q4: 7.1% match - What problem is Heidi Health trying to solve?...
+
+  relationship_analysis: 0/1 relevant (0.0%)
+    ✗ Q9: 0.0% match - What is the relationship between Beamtree and Phoebe mention...
+
+================================================================================
+PERFORMANCE ANALYSIS:
+================================================================================
+
+  Fast (<1s):     0/20
+  Medium (1-5s):  5/20
+  Slow (>5s):     15/20
+
+  Slowest queries:
+    11593ms - Q9: What is the relationship between Beamtree and Phoebe mention...
+    7588ms - Q19: What service areas does the AI Adoption Survey cover?...
+    7338ms - Q1: Who is the project lead for the AI Adoption Survey?...
+    6979ms - Q18: Who is transitioning the Heidi Health project from initial t...
+    6949ms - Q20: Which project mentions integration with Phoebe?...
+
+
+✓ Detailed results saved to: qa_results_recall_1767242873.json

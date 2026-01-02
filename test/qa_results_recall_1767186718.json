@@ -1,0 +1,222 @@
+[
+  {
+    "qa_id": 1,
+    "question": "Who is the project lead for the AI Adoption Survey?",
+    "expected_answer": "Matt Joyce",
+    "category": "basic_fact",
+    "project": "ai_adoption_survey",
+    "method": "recall",
+    "success": false,
+    "error": "Traceback (most recent call last):\n  File \"/Users/mattjoyce/Environments/vestig/bin/vestig\", line 7, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 1003, in main\n    args.func(args)\n    ~~~~~~~~~^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 197, in cmd_recall\n    storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)\n                                                                 ~~~~~~~~~~~~~^^^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 100, in build_runtime\n    embedding_engine = EmbeddingEngine(\n        model_name=config[\"embedding\"][\"model\"],\n    ...<3 lines>...\n        max_length=config[\"embedding\"].get(\"max_length\"),  # Optional truncation\n    )\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py\", line 62, in __init__\n    raise ValueError(\n    ...<2 lines>...\n    )\nValueError: Embedding dimension mismatch: expected 768, got 384 for model granite-embedding:latest\n",
+    "duration_ms": 1461.8674999801442
+  },
+  {
+    "qa_id": 2,
+    "question": "What is the executive sponsor's name for the AI Adoption Survey project?",
+    "expected_answer": "John Sutherland, who is the CIO",
+    "category": "basic_fact",
+    "project": "ai_adoption_survey",
+    "method": "recall",
+    "success": false,
+    "error": "Traceback (most recent call last):\n  File \"/Users/mattjoyce/Environments/vestig/bin/vestig\", line 7, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 1003, in main\n    args.func(args)\n    ~~~~~~~~~^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 197, in cmd_recall\n    storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)\n                                                                 ~~~~~~~~~~~~~^^^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 100, in build_runtime\n    embedding_engine = EmbeddingEngine(\n        model_name=config[\"embedding\"][\"model\"],\n    ...<3 lines>...\n        max_length=config[\"embedding\"].get(\"max_length\"),  # Optional truncation\n    )\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py\", line 62, in __init__\n    raise ValueError(\n    ...<2 lines>...\n    )\nValueError: Embedding dimension mismatch: expected 768, got 384 for model granite-embedding:latest\n",
+    "duration_ms": 1455.3294170182198
+  },
+  {
+    "qa_id": 3,
+    "question": "What are the main barriers preventing people from using AI tools according to the survey?",
+    "expected_answer": "The survey asks about multiple barriers including: trouble accessing technology, lack of time, unsure how AI applies to their role, unclear about Calvary's AI policy, concerns about accuracy, insufficient training, and data privacy/security concerns",
+    "category": "detailed_content",
+    "project": "ai_adoption_survey",
+    "method": "recall",
+    "success": false,
+    "error": "Traceback (most recent call last):\n  File \"/Users/mattjoyce/Environments/vestig/bin/vestig\", line 7, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 1003, in main\n    args.func(args)\n    ~~~~~~~~~^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 197, in cmd_recall\n    storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)\n                                                                 ~~~~~~~~~~~~~^^^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 100, in build_runtime\n    embedding_engine = EmbeddingEngine(\n        model_name=config[\"embedding\"][\"model\"],\n    ...<3 lines>...\n        max_length=config[\"embedding\"].get(\"max_length\"),  # Optional truncation\n    )\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py\", line 62, in __init__\n    raise ValueError(\n    ...<2 lines>...\n    )\nValueError: Embedding dimension mismatch: expected 768, got 384 for model granite-embedding:latest\n",
+    "duration_ms": 1456.8204999668524
+  },
+  {
+    "qa_id": 4,
+    "question": "What problem is Heidi Health trying to solve?",
+    "expected_answer": "Current use of internal typists and external transcription services results in delays of up to seven days for specialist documentation. Additionally, there are staffing sustainability risks due to resignations and anticipated retirements, and external transcription costs are escalating (over $116,000 annually).",
+    "category": "problem_analysis",
+    "project": "heidi_health_ai_scribe",
+    "method": "recall",
+    "success": false,
+    "error": "Traceback (most recent call last):\n  File \"/Users/mattjoyce/Environments/vestig/bin/vestig\", line 7, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 1003, in main\n    args.func(args)\n    ~~~~~~~~~^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 197, in cmd_recall\n    storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)\n                                                                 ~~~~~~~~~~~~~^^^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 100, in build_runtime\n    embedding_engine = EmbeddingEngine(\n        model_name=config[\"embedding\"][\"model\"],\n    ...<3 lines>...\n        max_length=config[\"embedding\"].get(\"max_length\"),  # Optional truncation\n    )\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py\", line 62, in __init__\n    raise ValueError(\n    ...<2 lines>...\n    )\nValueError: Embedding dimension mismatch: expected 768, got 384 for model granite-embedding:latest\n",
+    "duration_ms": 1457.0677920710295
+  },
+  {
+    "qa_id": 5,
+    "question": "What is the status of the Heidi Health AI Scribe project?",
+    "expected_answer": "The status is 'proposal'",
+    "category": "basic_fact",
+    "project": "heidi_health_ai_scribe",
+    "method": "recall",
+    "success": false,
+    "error": "Traceback (most recent call last):\n  File \"/Users/mattjoyce/Environments/vestig/bin/vestig\", line 7, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 1003, in main\n    args.func(args)\n    ~~~~~~~~~^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 197, in cmd_recall\n    storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)\n                                                                 ~~~~~~~~~~~~~^^^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 100, in build_runtime\n    embedding_engine = EmbeddingEngine(\n        model_name=config[\"embedding\"][\"model\"],\n    ...<3 lines>...\n        max_length=config[\"embedding\"].get(\"max_length\"),  # Optional truncation\n    )\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py\", line 62, in __init__\n    raise ValueError(\n    ...<2 lines>...\n    )\nValueError: Embedding dimension mismatch: expected 768, got 384 for model granite-embedding:latest\n",
+    "duration_ms": 1477.7552920859307
+  },
+  {
+    "qa_id": 6,
+    "question": "Where is the Heidi Health pilot planned to be implemented?",
+    "expected_answer": "Hobart Consulting Suites (or Calvary Hobart Consulting Suites)",
+    "category": "basic_fact",
+    "project": "heidi_health_ai_scribe",
+    "method": "recall",
+    "success": false,
+    "error": "Traceback (most recent call last):\n  File \"/Users/mattjoyce/Environments/vestig/bin/vestig\", line 7, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 1003, in main\n    args.func(args)\n    ~~~~~~~~~^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 197, in cmd_recall\n    storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)\n                                                                 ~~~~~~~~~~~~~^^^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 100, in build_runtime\n    embedding_engine = EmbeddingEngine(\n        model_name=config[\"embedding\"][\"model\"],\n    ...<3 lines>...\n        max_length=config[\"embedding\"].get(\"max_length\"),  # Optional truncation\n    )\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py\", line 62, in __init__\n    raise ValueError(\n    ...<2 lines>...\n    )\nValueError: Embedding dimension mismatch: expected 768, got 384 for model granite-embedding:latest\n",
+    "duration_ms": 1452.852833084762
+  },
+  {
+    "qa_id": 7,
+    "question": "Who met with Beamtree to discuss the PICQ proposal?",
+    "expected_answer": "John Sutherland (CIO) and Damien Bruce (CEO)",
+    "category": "basic_fact",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": false,
+    "error": "Traceback (most recent call last):\n  File \"/Users/mattjoyce/Environments/vestig/bin/vestig\", line 7, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 1003, in main\n    args.func(args)\n    ~~~~~~~~~^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 197, in cmd_recall\n    storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)\n                                                                 ~~~~~~~~~~~~~^^^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 100, in build_runtime\n    embedding_engine = EmbeddingEngine(\n        model_name=config[\"embedding\"][\"model\"],\n    ...<3 lines>...\n        max_length=config[\"embedding\"].get(\"max_length\"),  # Optional truncation\n    )\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py\", line 62, in __init__\n    raise ValueError(\n    ...<2 lines>...\n    )\nValueError: Embedding dimension mismatch: expected 768, got 384 for model granite-embedding:latest\n",
+    "duration_ms": 1465.3017920209095
+  },
+  {
+    "qa_id": 8,
+    "question": "Why is the BeamTree PICQ project considered sensitive?",
+    "expected_answer": "It's sensitive with coders/HIMs (Health Information Management staff) because there has been a historical 'frosty' reception to similar initiatives, and it may be perceived as surveillance or questioning of professional competence rather than quality improvement",
+    "category": "contextual_understanding",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": false,
+    "error": "Traceback (most recent call last):\n  File \"/Users/mattjoyce/Environments/vestig/bin/vestig\", line 7, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 1003, in main\n    args.func(args)\n    ~~~~~~~~~^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 197, in cmd_recall\n    storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)\n                                                                 ~~~~~~~~~~~~~^^^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 100, in build_runtime\n    embedding_engine = EmbeddingEngine(\n        model_name=config[\"embedding\"][\"model\"],\n    ...<3 lines>...\n        max_length=config[\"embedding\"].get(\"max_length\"),  # Optional truncation\n    )\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py\", line 62, in __init__\n    raise ValueError(\n    ...<2 lines>...\n    )\nValueError: Embedding dimension mismatch: expected 768, got 384 for model granite-embedding:latest\n",
+    "duration_ms": 1464.7253750590608
+  },
+  {
+    "qa_id": 9,
+    "question": "What is the relationship between Beamtree and Phoebe mentioned in the project brief?",
+    "expected_answer": "The ideal positioning is that Beamtree would provide upstream quality signal (coding optimization) while Phoebe provides downstream claim integrity checking, creating a continuum rather than isolated tools",
+    "category": "relationship_analysis",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": false,
+    "error": "Traceback (most recent call last):\n  File \"/Users/mattjoyce/Environments/vestig/bin/vestig\", line 7, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 1003, in main\n    args.func(args)\n    ~~~~~~~~~^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 197, in cmd_recall\n    storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)\n                                                                 ~~~~~~~~~~~~~^^^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 100, in build_runtime\n    embedding_engine = EmbeddingEngine(\n        model_name=config[\"embedding\"][\"model\"],\n    ...<3 lines>...\n        max_length=config[\"embedding\"].get(\"max_length\"),  # Optional truncation\n    )\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py\", line 62, in __init__\n    raise ValueError(\n    ...<2 lines>...\n    )\nValueError: Embedding dimension mismatch: expected 768, got 384 for model granite-embedding:latest\n",
+    "duration_ms": 1445.0951250037178
+  },
+  {
+    "qa_id": 10,
+    "question": "What is the recommended option for the BeamTree PICQ project?",
+    "expected_answer": "Option B: Small, Controlled Trial - using 1-2 months of recent data from selected private hospitals (1-2 sites), focusing on a single service line or DRG category, with minimal change to existing integrations",
+    "category": "detailed_content",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": false,
+    "error": "Traceback (most recent call last):\n  File \"/Users/mattjoyce/Environments/vestig/bin/vestig\", line 7, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 1003, in main\n    args.func(args)\n    ~~~~~~~~~^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 197, in cmd_recall\n    storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)\n                                                                 ~~~~~~~~~~~~~^^^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 100, in build_runtime\n    embedding_engine = EmbeddingEngine(\n        model_name=config[\"embedding\"][\"model\"],\n    ...<3 lines>...\n        max_length=config[\"embedding\"].get(\"max_length\"),  # Optional truncation\n    )\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py\", line 62, in __init__\n    raise ValueError(\n    ...<2 lines>...\n    )\nValueError: Embedding dimension mismatch: expected 768, got 384 for model granite-embedding:latest\n",
+    "duration_ms": 1450.0971669331193
+  },
+  {
+    "qa_id": 11,
+    "question": "What is Project Bronte?",
+    "expected_answer": "A confidential acquisition project requiring detailed document review and analysis, with an executed NDA. Matt is the project lead.",
+    "category": "basic_fact",
+    "project": "bronte",
+    "method": "recall",
+    "success": false,
+    "error": "Traceback (most recent call last):\n  File \"/Users/mattjoyce/Environments/vestig/bin/vestig\", line 7, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 1003, in main\n    args.func(args)\n    ~~~~~~~~~^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 197, in cmd_recall\n    storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)\n                                                                 ~~~~~~~~~~~~~^^^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 100, in build_runtime\n    embedding_engine = EmbeddingEngine(\n        model_name=config[\"embedding\"][\"model\"],\n    ...<3 lines>...\n        max_length=config[\"embedding\"].get(\"max_length\"),  # Optional truncation\n    )\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py\", line 62, in __init__\n    raise ValueError(\n    ...<2 lines>...\n    )\nValueError: Embedding dimension mismatch: expected 768, got 384 for model granite-embedding:latest\n",
+    "duration_ms": 1457.6599589781836
+  },
+  {
+    "qa_id": 12,
+    "question": "What is the status of Robot Companions project?",
+    "expected_answer": "Discovery",
+    "category": "basic_fact",
+    "project": "robot_companions",
+    "method": "recall",
+    "success": false,
+    "error": "Traceback (most recent call last):\n  File \"/Users/mattjoyce/Environments/vestig/bin/vestig\", line 7, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 1003, in main\n    args.func(args)\n    ~~~~~~~~~^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 197, in cmd_recall\n    storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)\n                                                                 ~~~~~~~~~~~~~^^^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 100, in build_runtime\n    embedding_engine = EmbeddingEngine(\n        model_name=config[\"embedding\"][\"model\"],\n    ...<3 lines>...\n        max_length=config[\"embedding\"].get(\"max_length\"),  # Optional truncation\n    )\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py\", line 62, in __init__\n    raise ValueError(\n    ...<2 lines>...\n    )\nValueError: Embedding dimension mismatch: expected 768, got 384 for model granite-embedding:latest\n",
+    "duration_ms": 1447.540207998827
+  },
+  {
+    "qa_id": 13,
+    "question": "What is the domain or area of focus for the Robot Companions project?",
+    "expected_answer": "Research initiative exploring robotic companions to combat loneliness in aged care settings",
+    "category": "basic_fact",
+    "project": "robot_companions",
+    "method": "recall",
+    "success": false,
+    "error": "Traceback (most recent call last):\n  File \"/Users/mattjoyce/Environments/vestig/bin/vestig\", line 7, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 1003, in main\n    args.func(args)\n    ~~~~~~~~~^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 197, in cmd_recall\n    storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)\n                                                                 ~~~~~~~~~~~~~^^^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 100, in build_runtime\n    embedding_engine = EmbeddingEngine(\n        model_name=config[\"embedding\"][\"model\"],\n    ...<3 lines>...\n        max_length=config[\"embedding\"].get(\"max_length\"),  # Optional truncation\n    )\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py\", line 62, in __init__\n    raise ValueError(\n    ...<2 lines>...\n    )\nValueError: Embedding dimension mismatch: expected 768, got 384 for model granite-embedding:latest\n",
+    "duration_ms": 1523.2889580074698
+  },
+  {
+    "qa_id": 14,
+    "question": "How many leaders participated in the AI Adoption Survey?",
+    "expected_answer": "Approximately 250 Calvary Leaders and 130 DHT Staff",
+    "category": "basic_fact",
+    "project": "ai_adoption_survey",
+    "method": "recall",
+    "success": false,
+    "error": "Traceback (most recent call last):\n  File \"/Users/mattjoyce/Environments/vestig/bin/vestig\", line 7, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 1003, in main\n    args.func(args)\n    ~~~~~~~~~^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 197, in cmd_recall\n    storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)\n                                                                 ~~~~~~~~~~~~~^^^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 100, in build_runtime\n    embedding_engine = EmbeddingEngine(\n        model_name=config[\"embedding\"][\"model\"],\n    ...<3 lines>...\n        max_length=config[\"embedding\"].get(\"max_length\"),  # Optional truncation\n    )\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py\", line 62, in __init__\n    raise ValueError(\n    ...<2 lines>...\n    )\nValueError: Embedding dimension mismatch: expected 768, got 384 for model granite-embedding:latest\n",
+    "duration_ms": 1465.5621249694377
+  },
+  {
+    "qa_id": 15,
+    "question": "What types of support does the AI Adoption Survey ask about?",
+    "expected_answer": "The survey asks about multiple types: technical support and troubleshooting, examples of healthcare use cases, advanced training, introductory AI literacy training, one-on-one coaching, hands-on workshops, peer learning groups, and clear policies and guidelines",
+    "category": "detailed_content",
+    "project": "ai_adoption_survey",
+    "method": "recall",
+    "success": false,
+    "error": "Traceback (most recent call last):\n  File \"/Users/mattjoyce/Environments/vestig/bin/vestig\", line 7, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 1003, in main\n    args.func(args)\n    ~~~~~~~~~^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 197, in cmd_recall\n    storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)\n                                                                 ~~~~~~~~~~~~~^^^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 100, in build_runtime\n    embedding_engine = EmbeddingEngine(\n        model_name=config[\"embedding\"][\"model\"],\n    ...<3 lines>...\n        max_length=config[\"embedding\"].get(\"max_length\"),  # Optional truncation\n    )\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py\", line 62, in __init__\n    raise ValueError(\n    ...<2 lines>...\n    )\nValueError: Embedding dimension mismatch: expected 768, got 384 for model granite-embedding:latest\n",
+    "duration_ms": 1458.003707928583
+  },
+  {
+    "qa_id": 16,
+    "question": "What are the key risks identified for the BeamTree PICQ project?",
+    "expected_answer": "Four main risk categories: 1) Workforce/political risks (HIM/coder perception issues, professional autonomy concerns), 2) Data governance risks (external data sharing, privacy concerns), 3) Technical/integration risks (siloed tool, workflow friction), 4) Financial/ROI risks (cost vs benefit, overestimated uplift)",
+    "category": "detailed_content",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": false,
+    "error": "Traceback (most recent call last):\n  File \"/Users/mattjoyce/Environments/vestig/bin/vestig\", line 7, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 1003, in main\n    args.func(args)\n    ~~~~~~~~~^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 197, in cmd_recall\n    storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)\n                                                                 ~~~~~~~~~~~~~^^^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 100, in build_runtime\n    embedding_engine = EmbeddingEngine(\n        model_name=config[\"embedding\"][\"model\"],\n    ...<3 lines>...\n        max_length=config[\"embedding\"].get(\"max_length\"),  # Optional truncation\n    )\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py\", line 62, in __init__\n    raise ValueError(\n    ...<2 lines>...\n    )\nValueError: Embedding dimension mismatch: expected 768, got 384 for model granite-embedding:latest\n",
+    "duration_ms": 1458.9390830369666
+  },
+  {
+    "qa_id": 17,
+    "question": "What happened with Beamtree's previous engagement with Calvary?",
+    "expected_answer": "There was a prior interaction via Richard and Martin that did not progress due to technical/data constraints and differing opinions on approach",
+    "category": "historical_context",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": false,
+    "error": "Traceback (most recent call last):\n  File \"/Users/mattjoyce/Environments/vestig/bin/vestig\", line 7, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 1003, in main\n    args.func(args)\n    ~~~~~~~~~^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 197, in cmd_recall\n    storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)\n                                                                 ~~~~~~~~~~~~~^^^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 100, in build_runtime\n    embedding_engine = EmbeddingEngine(\n        model_name=config[\"embedding\"][\"model\"],\n    ...<3 lines>...\n        max_length=config[\"embedding\"].get(\"max_length\"),  # Optional truncation\n    )\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py\", line 62, in __init__\n    raise ValueError(\n    ...<2 lines>...\n    )\nValueError: Embedding dimension mismatch: expected 768, got 384 for model granite-embedding:latest\n",
+    "duration_ms": 1452.2509999806061
+  },
+  {
+    "qa_id": 18,
+    "question": "Who is transitioning the Heidi Health project from initial to ongoing leadership?",
+    "expected_answer": "Matt Joyce was the initial project lead, with Liam taking over for ongoing management",
+    "category": "basic_fact",
+    "project": "heidi_health_ai_scribe",
+    "method": "recall",
+    "success": false,
+    "error": "Traceback (most recent call last):\n  File \"/Users/mattjoyce/Environments/vestig/bin/vestig\", line 7, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 1003, in main\n    args.func(args)\n    ~~~~~~~~~^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 197, in cmd_recall\n    storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)\n                                                                 ~~~~~~~~~~~~~^^^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 100, in build_runtime\n    embedding_engine = EmbeddingEngine(\n        model_name=config[\"embedding\"][\"model\"],\n    ...<3 lines>...\n        max_length=config[\"embedding\"].get(\"max_length\"),  # Optional truncation\n    )\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py\", line 62, in __init__\n    raise ValueError(\n    ...<2 lines>...\n    )\nValueError: Embedding dimension mismatch: expected 768, got 384 for model granite-embedding:latest\n",
+    "duration_ms": 1453.58920795843
+  },
+  {
+    "qa_id": 19,
+    "question": "What service areas does the AI Adoption Survey cover?",
+    "expected_answer": "Private Hospitals, Home Care, Residential Aged Care, Retirement Living, Public Hospitals, Corporate/Support Functions, and Other",
+    "category": "detailed_content",
+    "project": "ai_adoption_survey",
+    "method": "recall",
+    "success": false,
+    "error": "Traceback (most recent call last):\n  File \"/Users/mattjoyce/Environments/vestig/bin/vestig\", line 7, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 1003, in main\n    args.func(args)\n    ~~~~~~~~~^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 197, in cmd_recall\n    storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)\n                                                                 ~~~~~~~~~~~~~^^^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 100, in build_runtime\n    embedding_engine = EmbeddingEngine(\n        model_name=config[\"embedding\"][\"model\"],\n    ...<3 lines>...\n        max_length=config[\"embedding\"].get(\"max_length\"),  # Optional truncation\n    )\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py\", line 62, in __init__\n    raise ValueError(\n    ...<2 lines>...\n    )\nValueError: Embedding dimension mismatch: expected 768, got 384 for model granite-embedding:latest\n",
+    "duration_ms": 1457.8644580906257
+  },
+  {
+    "qa_id": 20,
+    "question": "Which project mentions integration with Phoebe?",
+    "expected_answer": "The BeamTree PICQ project mentions Phoebe as a proven success at Calvary for downstream claim-checking, and proposes positioning Beamtree as upstream quality/coding signal to integrate with Phoebe",
+    "category": "cross_project",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": false,
+    "error": "Traceback (most recent call last):\n  File \"/Users/mattjoyce/Environments/vestig/bin/vestig\", line 7, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 1003, in main\n    args.func(args)\n    ~~~~~~~~~^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 197, in cmd_recall\n    storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)\n                                                                 ~~~~~~~~~~~~~^^^^^^^^\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py\", line 100, in build_runtime\n    embedding_engine = EmbeddingEngine(\n        model_name=config[\"embedding\"][\"model\"],\n    ...<3 lines>...\n        max_length=config[\"embedding\"].get(\"max_length\"),  # Optional truncation\n    )\n  File \"/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py\", line 62, in __init__\n    raise ValueError(\n    ...<2 lines>...\n    )\nValueError: Embedding dimension mismatch: expected 768, got 384 for model granite-embedding:latest\n",
+    "duration_ms": 1454.470125027001
+  }
+]

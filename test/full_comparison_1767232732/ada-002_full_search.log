@@ -1,0 +1,668 @@
+
+================================================================================
+Running 20 tests using method: search
+Config: config-ada-002-full.yaml
+================================================================================
+
+================================================================================
+Q1: Who is the project lead for the AI Adoption Survey?
+Expected: Matt Joyce...
+Method: search
+❌ Query failed: Traceback (most recent call last):
+  File "/Users/mattjoyce/Environments/vestig/bin/vestig", line 7, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py", line 1003, in main
+    args.func(args)
+    ~~~~~~~~~^^^^^^
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py", line 171, in cmd_search
+    storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)
+                                                                 ~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py", line 100, in build_runtime
+    embedding_engine = EmbeddingEngine(
+        model_name=config["embedding"]["model"],
+    ...<3 lines>...
+        max_length=config["embedding"].get("max_length"),  # Optional truncation
+    )
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py", line 60, in __init__
+    test_embedding = self._embed_with_llm("test")
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py", line 105, in _embed_with_llm
+    result = subprocess.run(
+        ["llm", "embed", "-c", text, "-m", self.model_name, "-f", "json"],
+    ...<3 lines>...
+        timeout=30,
+    )
+  File "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 556, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 1220, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 2153, in _communicate
+    self._check_timeout(endtime, orig_timeout, stdout, stderr)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 1267, in _check_timeout
+    raise TimeoutExpired(
+    ...<2 lines>...
+            stderr=b''.join(stderr_seq) if stderr_seq else None)
+subprocess.TimeoutExpired: Command '['llm', 'embed', '-c', 'test', '-m', 'ada-002', '-f', 'json']' timed out after 30 seconds
+
+
+================================================================================
+Q2: What is the executive sponsor's name for the AI Adoption Survey project?
+Expected: John Sutherland, who is the CIO...
+Method: search
+❌ Query failed: Traceback (most recent call last):
+  File "/Users/mattjoyce/Environments/vestig/bin/vestig", line 7, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py", line 1003, in main
+    args.func(args)
+    ~~~~~~~~~^^^^^^
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py", line 171, in cmd_search
+    storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)
+                                                                 ~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py", line 100, in build_runtime
+    embedding_engine = EmbeddingEngine(
+        model_name=config["embedding"]["model"],
+    ...<3 lines>...
+        max_length=config["embedding"].get("max_length"),  # Optional truncation
+    )
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py", line 60, in __init__
+    test_embedding = self._embed_with_llm("test")
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py", line 105, in _embed_with_llm
+    result = subprocess.run(
+        ["llm", "embed", "-c", text, "-m", self.model_name, "-f", "json"],
+    ...<3 lines>...
+        timeout=30,
+    )
+  File "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 556, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 1220, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 2153, in _communicate
+    self._check_timeout(endtime, orig_timeout, stdout, stderr)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 1267, in _check_timeout
+    raise TimeoutExpired(
+    ...<2 lines>...
+            stderr=b''.join(stderr_seq) if stderr_seq else None)
+subprocess.TimeoutExpired: Command '['llm', 'embed', '-c', 'test', '-m', 'ada-002', '-f', 'json']' timed out after 30 seconds
+
+
+================================================================================
+Q3: What are the main barriers preventing people from using AI tools according to the survey?
+Expected: The survey asks about multiple barriers including: trouble accessing technology, lack of time, unsur...
+Method: search
+❌ Query failed: Traceback (most recent call last):
+  File "/Users/mattjoyce/Environments/vestig/bin/vestig", line 7, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py", line 1003, in main
+    args.func(args)
+    ~~~~~~~~~^^^^^^
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py", line 171, in cmd_search
+    storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)
+                                                                 ~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py", line 100, in build_runtime
+    embedding_engine = EmbeddingEngine(
+        model_name=config["embedding"]["model"],
+    ...<3 lines>...
+        max_length=config["embedding"].get("max_length"),  # Optional truncation
+    )
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py", line 60, in __init__
+    test_embedding = self._embed_with_llm("test")
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py", line 105, in _embed_with_llm
+    result = subprocess.run(
+        ["llm", "embed", "-c", text, "-m", self.model_name, "-f", "json"],
+    ...<3 lines>...
+        timeout=30,
+    )
+  File "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 556, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 1220, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 2153, in _communicate
+    self._check_timeout(endtime, orig_timeout, stdout, stderr)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 1267, in _check_timeout
+    raise TimeoutExpired(
+    ...<2 lines>...
+            stderr=b''.join(stderr_seq) if stderr_seq else None)
+subprocess.TimeoutExpired: Command '['llm', 'embed', '-c', 'test', '-m', 'ada-002', '-f', 'json']' timed out after 30 seconds
+
+
+================================================================================
+Q4: What problem is Heidi Health trying to solve?
+Expected: Current use of internal typists and external transcription services results in delays of up to seven...
+Method: search
+❌ Query failed: Traceback (most recent call last):
+  File "/Users/mattjoyce/Environments/vestig/bin/vestig", line 7, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py", line 1003, in main
+    args.func(args)
+    ~~~~~~~~~^^^^^^
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py", line 171, in cmd_search
+    storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)
+                                                                 ~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py", line 100, in build_runtime
+    embedding_engine = EmbeddingEngine(
+        model_name=config["embedding"]["model"],
+    ...<3 lines>...
+        max_length=config["embedding"].get("max_length"),  # Optional truncation
+    )
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py", line 60, in __init__
+    test_embedding = self._embed_with_llm("test")
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py", line 105, in _embed_with_llm
+    result = subprocess.run(
+        ["llm", "embed", "-c", text, "-m", self.model_name, "-f", "json"],
+    ...<3 lines>...
+        timeout=30,
+    )
+  File "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 556, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 1220, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 2153, in _communicate
+    self._check_timeout(endtime, orig_timeout, stdout, stderr)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 1267, in _check_timeout
+    raise TimeoutExpired(
+    ...<2 lines>...
+            stderr=b''.join(stderr_seq) if stderr_seq else None)
+subprocess.TimeoutExpired: Command '['llm', 'embed', '-c', 'test', '-m', 'ada-002', '-f', 'json']' timed out after 30 seconds
+
+
+================================================================================
+Q5: What is the status of the Heidi Health AI Scribe project?
+Expected: The status is 'proposal'...
+Method: search
+❌ Query failed: Traceback (most recent call last):
+  File "/Users/mattjoyce/Environments/vestig/bin/vestig", line 7, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py", line 1003, in main
+    args.func(args)
+    ~~~~~~~~~^^^^^^
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py", line 171, in cmd_search
+    storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)
+                                                                 ~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py", line 100, in build_runtime
+    embedding_engine = EmbeddingEngine(
+        model_name=config["embedding"]["model"],
+    ...<3 lines>...
+        max_length=config["embedding"].get("max_length"),  # Optional truncation
+    )
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py", line 60, in __init__
+    test_embedding = self._embed_with_llm("test")
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py", line 105, in _embed_with_llm
+    result = subprocess.run(
+        ["llm", "embed", "-c", text, "-m", self.model_name, "-f", "json"],
+    ...<3 lines>...
+        timeout=30,
+    )
+  File "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 556, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 1220, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 2153, in _communicate
+    self._check_timeout(endtime, orig_timeout, stdout, stderr)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 1267, in _check_timeout
+    raise TimeoutExpired(
+    ...<2 lines>...
+            stderr=b''.join(stderr_seq) if stderr_seq else None)
+subprocess.TimeoutExpired: Command '['llm', 'embed', '-c', 'test', '-m', 'ada-002', '-f', 'json']' timed out after 30 seconds
+
+
+================================================================================
+Q6: Where is the Heidi Health pilot planned to be implemented?
+Expected: Hobart Consulting Suites (or Calvary Hobart Consulting Suites)...
+Method: search
+❌ Query failed: Traceback (most recent call last):
+  File "/Users/mattjoyce/Environments/vestig/bin/vestig", line 7, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py", line 1003, in main
+    args.func(args)
+    ~~~~~~~~~^^^^^^
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py", line 171, in cmd_search
+    storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)
+                                                                 ~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py", line 100, in build_runtime
+    embedding_engine = EmbeddingEngine(
+        model_name=config["embedding"]["model"],
+    ...<3 lines>...
+        max_length=config["embedding"].get("max_length"),  # Optional truncation
+    )
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py", line 60, in __init__
+    test_embedding = self._embed_with_llm("test")
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py", line 105, in _embed_with_llm
+    result = subprocess.run(
+        ["llm", "embed", "-c", text, "-m", self.model_name, "-f", "json"],
+    ...<3 lines>...
+        timeout=30,
+    )
+  File "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 556, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 1220, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 2153, in _communicate
+    self._check_timeout(endtime, orig_timeout, stdout, stderr)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 1267, in _check_timeout
+    raise TimeoutExpired(
+    ...<2 lines>...
+            stderr=b''.join(stderr_seq) if stderr_seq else None)
+subprocess.TimeoutExpired: Command '['llm', 'embed', '-c', 'test', '-m', 'ada-002', '-f', 'json']' timed out after 30 seconds
+
+
+================================================================================
+Q7: Who met with Beamtree to discuss the PICQ proposal?
+Expected: John Sutherland (CIO) and Damien Bruce (CEO)...
+Method: search
+Duration: 16996ms
+Match ratio: 0.00%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801
+Score: 1.2055
+Created: 2025-12-30 11:01:48 UTC
+Content: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...
+
+ID: mem_1b56c1a0-37ff-481e-aa0f-124941452767
+Score: 1.1933
+Created: 2025-12-30 11:10:57 UTC
+Content: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...
+
+ID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed
+Score: 1.1843
+Created: 2025-1
+
+================================================================================
+Q8: Why is the BeamTree PICQ project considered sensitive?
+Expected: It's sensitive with coders/HIMs (Health Information Management staff) because there has been a histo...
+Method: search
+Duration: 16049ms
+Match ratio: 17.24%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801
+Score: 1.2227
+Created: 2025-12-30 11:01:48 UTC
+Content: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...
+
+ID: mem_1b56c1a0-37ff-481e-aa0f-124941452767
+Score: 1.1896
+Created: 2025-12-30 11:10:57 UTC
+Content: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...
+
+ID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed
+Score: 1.1893
+Created: 2025-1
+
+================================================================================
+Q9: What is the relationship between Beamtree and Phoebe mentioned in the project brief?
+Expected: The ideal positioning is that Beamtree would provide upstream quality signal (coding optimization) w...
+Method: search
+Duration: 5676ms
+Match ratio: 8.33%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801
+Score: 1.2607
+Created: 2025-12-30 11:01:48 UTC
+Content: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...
+
+ID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed
+Score: 1.2251
+Created: 2025-12-30 11:02:14 UTC
+Content: Abi supports person‑centered, individualized care by delivering consistent, on‑demand companionship,...
+
+ID: mem_1b56c1a0-37ff-481e-aa0f-124941452767
+Score: 1.2108
+Created: 2025-1
+
+================================================================================
+Q10: What is the recommended option for the BeamTree PICQ project?
+Expected: Option B: Small, Controlled Trial - using 1-2 months of recent data from selected private hospitals ...
+Method: search
+Duration: 5394ms
+Match ratio: 3.70%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801
+Score: 1.2134
+Created: 2025-12-30 11:01:48 UTC
+Content: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...
+
+ID: mem_1b56c1a0-37ff-481e-aa0f-124941452767
+Score: 1.1833
+Created: 2025-12-30 11:10:57 UTC
+Content: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...
+
+ID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed
+Score: 1.1798
+Created: 2025-1
+
+================================================================================
+Q11: What is Project Bronte?
+Expected: A confidential acquisition project requiring detailed document review and analysis, with an executed...
+Method: search
+Duration: 6110ms
+Match ratio: 8.33%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_1b56c1a0-37ff-481e-aa0f-124941452767
+Score: 1.2490
+Created: 2025-12-30 11:10:57 UTC
+Content: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...
+
+ID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801
+Score: 1.2260
+Created: 2025-12-30 11:01:48 UTC
+Content: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...
+
+ID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed
+Score: 1.1834
+Created: 2025-1
+
+================================================================================
+Q12: What is the status of Robot Companions project?
+Expected: Discovery...
+Method: search
+Duration: 5044ms
+Match ratio: 0.00%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_1b56c1a0-37ff-481e-aa0f-124941452767
+Score: 1.4163
+Created: 2025-12-30 11:10:57 UTC
+Content: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...
+
+ID: mem_8e655409-473c-48c5-af5f-ad254a8caace
+Score: 1.2994
+Created: 2025-12-30 11:01:46 UTC
+Content: Abi is a 120 cm tall humanoid robot developed by Melbourne‑based startup Andromeda Robotics, which t...
+
+ID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801
+Score: 1.2886
+Created: 2025-1
+
+================================================================================
+Q13: What is the domain or area of focus for the Robot Companions project?
+Expected: Research initiative exploring robotic companions to combat loneliness in aged care settings...
+Method: search
+Duration: 4418ms
+Match ratio: 50.00%
+Relevant: ✓
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_1b56c1a0-37ff-481e-aa0f-124941452767
+Score: 1.4033
+Created: 2025-12-30 11:10:57 UTC
+Content: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...
+
+ID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801
+Score: 1.3002
+Created: 2025-12-30 11:01:48 UTC
+Content: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...
+
+ID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed
+Score: 1.2768
+Created: 2025-1
+
+================================================================================
+Q14: How many leaders participated in the AI Adoption Survey?
+Expected: Approximately 250 Calvary Leaders and 130 DHT Staff...
+Method: search
+Duration: 5999ms
+Match ratio: 14.29%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801
+Score: 1.2524
+Created: 2025-12-30 11:01:48 UTC
+Content: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...
+
+ID: mem_1b56c1a0-37ff-481e-aa0f-124941452767
+Score: 1.2470
+Created: 2025-12-30 11:10:57 UTC
+Content: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...
+
+ID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed
+Score: 1.2282
+Created: 2025-1
+
+================================================================================
+Q15: What types of support does the AI Adoption Survey ask about?
+Expected: The survey asks about multiple types: technical support and troubleshooting, examples of healthcare ...
+Method: search
+Duration: 5458ms
+Match ratio: 7.41%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801
+Score: 1.2811
+Created: 2025-12-30 11:01:48 UTC
+Content: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...
+
+ID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed
+Score: 1.2805
+Created: 2025-12-30 11:02:14 UTC
+Content: Abi supports person‑centered, individualized care by delivering consistent, on‑demand companionship,...
+
+ID: mem_1b56c1a0-37ff-481e-aa0f-124941452767
+Score: 1.2555
+Created: 2025-1
+
+================================================================================
+Q16: What are the key risks identified for the BeamTree PICQ project?
+Expected: Four main risk categories: 1) Workforce/political risks (HIM/coder perception issues, professional a...
+Method: search
+Duration: 4374ms
+Match ratio: 0.00%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801
+Score: 1.2165
+Created: 2025-12-30 11:01:48 UTC
+Content: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...
+
+ID: mem_1b56c1a0-37ff-481e-aa0f-124941452767
+Score: 1.1999
+Created: 2025-12-30 11:10:57 UTC
+Content: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...
+
+ID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed
+Score: 1.1941
+Created: 2025-1
+
+================================================================================
+Q17: What happened with Beamtree's previous engagement with Calvary?
+Expected: There was a prior interaction via Richard and Martin that did not progress due to technical/data con...
+Method: search
+Duration: 4953ms
+Match ratio: 12.50%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_1b56c1a0-37ff-481e-aa0f-124941452767
+Score: 1.2127
+Created: 2025-12-30 11:10:57 UTC
+Content: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...
+
+ID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801
+Score: 1.1825
+Created: 2025-12-30 11:01:48 UTC
+Content: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...
+
+ID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed
+Score: 1.1579
+Created: 2025-1
+
+================================================================================
+Q18: Who is transitioning the Heidi Health project from initial to ongoing leadership?
+Expected: Matt Joyce was the initial project lead, with Liam taking over for ongoing management...
+Method: search
+Duration: 4906ms
+Match ratio: 10.00%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801
+Score: 1.2481
+Created: 2025-12-30 11:01:48 UTC
+Content: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...
+
+ID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed
+Score: 1.2448
+Created: 2025-12-30 11:02:14 UTC
+Content: Abi supports person‑centered, individualized care by delivering consistent, on‑demand companionship,...
+
+ID: mem_2c645ca7-968b-4207-82be-577118630940
+Score: 1.2112
+Created: 2025-1
+
+================================================================================
+Q19: What service areas does the AI Adoption Survey cover?
+Expected: Private Hospitals, Home Care, Residential Aged Care, Retirement Living, Public Hospitals, Corporate/...
+Method: search
+Duration: 6251ms
+Match ratio: 0.00%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801
+Score: 1.2821
+Created: 2025-12-30 11:01:48 UTC
+Content: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...
+
+ID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed
+Score: 1.2700
+Created: 2025-12-30 11:02:14 UTC
+Content: Abi supports person‑centered, individualized care by delivering consistent, on‑demand companionship,...
+
+ID: mem_1b56c1a0-37ff-481e-aa0f-124941452767
+Score: 1.2576
+Created: 2025-1
+
+================================================================================
+Q20: Which project mentions integration with Phoebe?
+Expected: The BeamTree PICQ project mentions Phoebe as a proven success at Calvary for downstream claim-checki...
+Method: search
+Duration: 5234ms
+Match ratio: 5.88%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801
+Score: 1.2572
+Created: 2025-12-30 11:01:48 UTC
+Content: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...
+
+ID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed
+Score: 1.2359
+Created: 2025-12-30 11:02:14 UTC
+Content: Abi supports person‑centered, individualized care by delivering consistent, on‑demand companionship,...
+
+ID: mem_1b56c1a0-37ff-481e-aa0f-124941452767
+Score: 1.2291
+Created: 2025-1
+
+================================================================================
+TEST SUMMARY
+================================================================================
+
+Total questions: 20
+Successful queries: 14/20 (70.0%)
+Relevant answers: 1/20 (5.0%)
+Average duration: 14102ms
+
+BREAKDOWN BY CATEGORY:
+
+  basic_fact: 1/10 relevant (10.0%)
+    ✗ Q1: 0.0% match - Who is the project lead for the AI Adoption Survey?...
+    ✗ Q2: 0.0% match - What is the executive sponsor's name for the AI Adoption Sur...
+    ✗ Q5: 0.0% match - What is the status of the Heidi Health AI Scribe project?...
+    ✗ Q6: 0.0% match - Where is the Heidi Health pilot planned to be implemented?...
+    ✗ Q7: 0.0% match - Who met with Beamtree to discuss the PICQ proposal?...
+    ✗ Q11: 8.3% match - What is Project Bronte?...
+    ✗ Q12: 0.0% match - What is the status of Robot Companions project?...
+    ✓ Q13: 50.0% match - What is the domain or area of focus for the Robot Companions...
+    ✗ Q14: 14.3% match - How many leaders participated in the AI Adoption Survey?...
+    ✗ Q18: 10.0% match - Who is transitioning the Heidi Health project from initial t...
+
+  contextual_understanding: 0/1 relevant (0.0%)
+    ✗ Q8: 17.2% match - Why is the BeamTree PICQ project considered sensitive?...
+
+  cross_project: 0/1 relevant (0.0%)
+    ✗ Q20: 5.9% match - Which project mentions integration with Phoebe?...
+
+  detailed_content: 0/5 relevant (0.0%)
+    ✗ Q3: 0.0% match - What are the main barriers preventing people from using AI t...
+    ✗ Q10: 3.7% match - What is the recommended option for the BeamTree PICQ project...
+    ✗ Q15: 7.4% match - What types of support does the AI Adoption Survey ask about?...
+    ✗ Q16: 0.0% match - What are the key risks identified for the BeamTree PICQ proj...
+    ✗ Q19: 0.0% match - What service areas does the AI Adoption Survey cover?...
+
+  historical_context: 0/1 relevant (0.0%)
+    ✗ Q17: 12.5% match - What happened with Beamtree's previous engagement with Calva...
+
+  problem_analysis: 0/1 relevant (0.0%)
+    ✗ Q4: 0.0% match - What problem is Heidi Health trying to solve?...
+
+  relationship_analysis: 0/1 relevant (0.0%)
+    ✗ Q9: 8.3% match - What is the relationship between Beamtree and Phoebe mention...
+
+================================================================================
+PERFORMANCE ANALYSIS:
+================================================================================
+
+  Fast (<1s):     0/20
+  Medium (1-5s):  4/20
+  Slow (>5s):     16/20
+
+  Slowest queries:
+    30984ms - Q2: What is the executive sponsor's name for the AI Adoption Sur...
+    30957ms - Q4: What problem is Heidi Health trying to solve?...
+    30867ms - Q5: What is the status of the Heidi Health AI Scribe project?...
+    30803ms - Q6: Where is the Heidi Health pilot planned to be implemented?...
+    30798ms - Q3: What are the main barriers preventing people from using AI t...
+
+
+✓ Detailed results saved to: qa_results_search_1767234742.json

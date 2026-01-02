@@ -104,8 +104,8 @@ class EntityNode:
     entity_type: str  # PERSON | ORG | SYSTEM | PROJECT | PLACE | SKILL | CAPABILITY | TOOL | FILE | CONCEPT (from config)
     canonical_name: str  # Canonical form of entity name
     norm_key: str  # Normalization key for deduplication (type:normalized_name)
-    embedding: str | None = None  # JSON-serialized embedding vector (for semantic matching)
     created_at: str  # ISO 8601 timestamp
+    embedding: str | None = None  # JSON-serialized embedding vector (for semantic matching)
     expired_at: str | None = None  # When entity was merged/deprecated
     merged_into: str | None = None  # ID of entity this was merged into
 

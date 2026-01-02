@@ -1,0 +1,595 @@
+
+================================================================================
+Running 20 tests using method: search
+Config: config-nomic-embed-no-graph.yaml
+================================================================================
+
+================================================================================
+Q1: Who is the project lead for the AI Adoption Survey?
+Expected: Matt Joyce...
+Method: search
+Duration: 2280ms
+Match ratio: 100.00%
+Relevant: ✓
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_524b3cb1-e939-4e42-93db-013e73e9faaa
+Score: 1.1421
+Created: 2025-12-30 10:58:42 UTC
+Content: The project lead is Bojan.
+
+ID: mem_0488f3c9-08ef-4009-80c2-fd09574dbcd9
+Score: 0.9717
+Created: 2025-12-30 10:59:21 UTC
+Content: Matt Joyce is the project lead for the AI Adoption Survey.
+
+ID: mem_c2e0832c-8cc6-4ee2-8fc4-db2808e9f56b
+Score: 0.9395
+Created: 2025-12-30 11:06:52 UTC
+Content: The project lead is Matt Joyce.
+
+ID: mem_bbd50942-b0fa-4dd8-9810-64ca0db08277
+Score: 0.9169
+Cre
+
+================================================================================
+Q2: What is the executive sponsor's name for the AI Adoption Survey project?
+Expected: John Sutherland, who is the CIO...
+Method: search
+Duration: 2302ms
+Match ratio: 75.00%
+Relevant: ✓
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_524b3cb1-e939-4e42-93db-013e73e9faaa
+Score: 0.9000
+Created: 2025-12-30 10:58:42 UTC
+Content: The project lead is Bojan.
+
+ID: mem_4dfa54d2-63ca-4f1f-8e81-16851bb306bf
+Score: 0.8884
+Created: 2025-12-30 11:00:38 UTC
+Content: John Sutherland, CIO, is an executive sponsor stakeholder for the project.
+
+ID: mem_faf98b49-8472-4e13-a367-3a357e08cb68
+Score: 0.8422
+Created: 2025-12-30 11:14:26 UTC
+Content: The project is named "Smartz Incontinence Management".
+
+ID: mem_6f11bdfe-51a7-4
+
+================================================================================
+Q3: What are the main barriers preventing people from using AI tools according to the survey?
+Expected: The survey asks about multiple barriers including: trouble accessing technology, lack of time, unsur...
+Method: search
+Duration: 2266ms
+Match ratio: 19.23%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_b5e0b7d5-5edb-4b4e-94ba-a2db17662687
+Score: 0.8864
+Created: 2025-12-30 10:59:40 UTC
+Content: The survey asks respondents to select the main barriers preventing more AI tool usage, including lac...
+
+ID: mem_4ffc9708-632e-46e1-b130-6278e513c900
+Score: 0.7262
+Created: 2025-12-30 10:59:52 UTC
+Content: # Calvary AI/LLM Survey Design Overview
+
+**Overview:** The Calvary AI/LLM survey gathers information...
+
+ID: mem_5edc06fd-0b93-4ab6-8a25-b5c14f05641a
+Score: 0.7237
+Created: 2025-1
+
+================================================================================
+Q4: What problem is Heidi Health trying to solve?
+Expected: Current use of internal typists and external transcription services results in delays of up to seven...
+Method: search
+Duration: 2272ms
+Match ratio: 3.57%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_524b3cb1-e939-4e42-93db-013e73e9faaa
+Score: 0.7882
+Created: 2025-12-30 10:58:42 UTC
+Content: The project lead is Bojan.
+
+ID: mem_7d6b2dca-55cd-4bf8-9b93-cc1df7864cd9
+Score: 0.7428
+Created: 2025-12-30 11:04:13 UTC
+Content: Grace Brown is the CEO of Andromeda.
+
+ID: mem_6f11bdfe-51a7-47ac-a027-4015a278ead2
+Score: 0.7300
+Created: 2025-12-30 10:59:20 UTC
+Content: The project is titled "AI Adoption Survey".
+
+ID: mem_8e655409-473c-48c5-af5f-ad254a8caace
+Score: 0.7208
+Created: 2025
+
+================================================================================
+Q5: What is the status of the Heidi Health AI Scribe project?
+Expected: The status is 'proposal'...
+Method: search
+Duration: 2264ms
+Match ratio: 0.00%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_55f80fc7-b89d-40cc-98f8-aa3c381174fb
+Score: 0.8712
+Created: 2025-12-30 11:10:13 UTC
+Content: The project notes were created on September 26, 2025.
+
+ID: mem_524b3cb1-e939-4e42-93db-013e73e9faaa
+Score: 0.8430
+Created: 2025-12-30 10:58:42 UTC
+Content: The project lead is Bojan.
+
+ID: mem_6f11bdfe-51a7-47ac-a027-4015a278ead2
+Score: 0.8301
+Created: 2025-12-30 10:59:20 UTC
+Content: The project is titled "AI Adoption Survey".
+
+ID: mem_faf98b49-8472-4e13-a367-3a357e08cb68
+Score: 0.8
+
+================================================================================
+Q6: Where is the Heidi Health pilot planned to be implemented?
+Expected: Hobart Consulting Suites (or Calvary Hobart Consulting Suites)...
+Method: search
+Duration: 2293ms
+Match ratio: 66.67%
+Relevant: ✓
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_21133d39-f976-4549-8a33-3c15c7f9d40c
+Score: 0.9296
+Created: 2025-12-30 11:01:56 UTC
+Content: Grace Brown described the Allity pilot as a significant step in Abi’s evolution, yielding important ...
+
+ID: mem_c40adbf7-e128-4e46-8c30-34c22b4f4a41
+Score: 0.7953
+Created: 2025-12-30 11:09:50 UTC
+Content: The pilot aligns with the Safe Introduction Policy and informs the Responsible AI Policy.
+
+ID: mem_4aae7913-d269-4d5a-891e-194449825337
+Score: 0.7916
+Created: 2025-12-30 11:09:53 
+
+================================================================================
+Q7: Who met with Beamtree to discuss the PICQ proposal?
+Expected: John Sutherland (CIO) and Damien Bruce (CEO)...
+Method: search
+Duration: 2260ms
+Match ratio: 100.00%
+Relevant: ✓
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_b191bd2b-9396-4f55-a36a-51074c1c642f
+Score: 0.7811
+Created: 2025-12-30 11:06:52 UTC
+Content: The vendor for the proposal is Beamtree.
+
+ID: mem_d998f228-ca6c-4c8a-87cd-9b516e529ba1
+Score: 0.7798
+Created: 2025-12-30 11:06:52 UTC
+Content: Executive sponsors for the proposal are John Sutherland (CIO) and Damien Bruce (CEO).
+
+ID: mem_822ef7c4-7cfc-441f-8d4b-062c56d57f7a
+Score: 0.7380
+Created: 2025-12-30 11:06:53 UTC
+Content: Related systems for the proposal include Phoebe, PAS/E
+
+================================================================================
+Q8: Why is the BeamTree PICQ project considered sensitive?
+Expected: It's sensitive with coders/HIMs (Health Information Management staff) because there has been a histo...
+Method: search
+Duration: 2256ms
+Match ratio: 13.79%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_524b3cb1-e939-4e42-93db-013e73e9faaa
+Score: 0.7722
+Created: 2025-12-30 10:58:42 UTC
+Content: The project lead is Bojan.
+
+ID: mem_faf98b49-8472-4e13-a367-3a357e08cb68
+Score: 0.7555
+Created: 2025-12-30 11:14:26 UTC
+Content: The project is named "Smartz Incontinence Management".
+
+ID: mem_6f11bdfe-51a7-47ac-a027-4015a278ead2
+Score: 0.7512
+Created: 2025-12-30 10:59:20 UTC
+Content: The project is titled "AI Adoption Survey".
+
+ID: mem_55f80fc7-b89d-40cc-98f8-aa3c381174fb
+Score: 0.
+
+================================================================================
+Q9: What is the relationship between Beamtree and Phoebe mentioned in the project brief?
+Expected: The ideal positioning is that Beamtree would provide upstream quality signal (coding optimization) w...
+Method: search
+Duration: 2303ms
+Match ratio: 0.00%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_524b3cb1-e939-4e42-93db-013e73e9faaa
+Score: 0.8518
+Created: 2025-12-30 10:58:42 UTC
+Content: The project lead is Bojan.
+
+ID: mem_55f80fc7-b89d-40cc-98f8-aa3c381174fb
+Score: 0.8149
+Created: 2025-12-30 11:10:13 UTC
+Content: The project notes were created on September 26, 2025.
+
+ID: mem_61a5bf81-ed10-4fc1-b73f-5f7ce4d81311
+Score: 0.7966
+Created: 2025-12-30 11:10:58 UTC
+Content: The project aligns with Calvary FY26 Strategic Priorities: Consumer‑Centred Care, CCS Reinforcement,
+
+================================================================================
+Q10: What is the recommended option for the BeamTree PICQ project?
+Expected: Option B: Small, Controlled Trial - using 1-2 months of recent data from selected private hospitals ...
+Method: search
+Duration: 2263ms
+Match ratio: 7.41%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_faf98b49-8472-4e13-a367-3a357e08cb68
+Score: 0.8376
+Created: 2025-12-30 11:14:26 UTC
+Content: The project is named "Smartz Incontinence Management".
+
+ID: mem_524b3cb1-e939-4e42-93db-013e73e9faaa
+Score: 0.8356
+Created: 2025-12-30 10:58:42 UTC
+Content: The project lead is Bojan.
+
+ID: mem_6f11bdfe-51a7-47ac-a027-4015a278ead2
+Score: 0.8337
+Created: 2025-12-30 10:59:20 UTC
+Content: The project is titled "AI Adoption Survey".
+
+ID: mem_178ca507-10d4-4dac-af3f-eece30c410cf
+Score: 0.
+
+================================================================================
+Q11: What is Project Bronte?
+Expected: A confidential acquisition project requiring detailed document review and analysis, with an executed...
+Method: search
+Duration: 2274ms
+Match ratio: 16.67%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_7d6b2dca-55cd-4bf8-9b93-cc1df7864cd9
+Score: 0.8648
+Created: 2025-12-30 11:04:13 UTC
+Content: Grace Brown is the CEO of Andromeda.
+
+ID: mem_d78c365a-68ae-4c00-a388-4f6da2c018d9
+Score: 0.7895
+Created: 2025-12-30 11:11:00 UTC
+Content: Project Lead is Matt Joyce, National Manager Emerging Technologies & Health Informatics; Executive S...
+
+ID: mem_524b3cb1-e939-4e42-93db-013e73e9faaa
+Score: 0.7506
+Created: 2025-12-30 10:58:42 UTC
+Content: The project lead is Bojan.
+
+ID: mem_c44c
+
+================================================================================
+Q12: What is the status of Robot Companions project?
+Expected: Discovery...
+Method: search
+Duration: 2336ms
+Match ratio: 100.00%
+Relevant: ✓
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_524b3cb1-e939-4e42-93db-013e73e9faaa
+Score: 0.8834
+Created: 2025-12-30 10:58:42 UTC
+Content: The project lead is Bojan.
+
+ID: mem_55f80fc7-b89d-40cc-98f8-aa3c381174fb
+Score: 0.8793
+Created: 2025-12-30 11:10:13 UTC
+Content: The project notes were created on September 26, 2025.
+
+ID: mem_6f11bdfe-51a7-47ac-a027-4015a278ead2
+Score: 0.8315
+Created: 2025-12-30 10:59:20 UTC
+Content: The project is titled "AI Adoption Survey".
+
+ID: mem_c700e5d5-71ed-4d82-ab8c-95fe7bf26322
+Score: 0.8
+
+================================================================================
+Q13: What is the domain or area of focus for the Robot Companions project?
+Expected: Research initiative exploring robotic companions to combat loneliness in aged care settings...
+Method: search
+Duration: 2265ms
+Match ratio: 0.00%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_524b3cb1-e939-4e42-93db-013e73e9faaa
+Score: 0.8202
+Created: 2025-12-30 10:58:42 UTC
+Content: The project lead is Bojan.
+
+ID: mem_3d0506ad-a1d5-4dd5-b89a-07f6e3d1b93e
+Score: 0.7904
+Created: 2025-12-30 11:10:17 UTC
+Content: The project operates within the "national" domain.
+
+ID: mem_6f11bdfe-51a7-47ac-a027-4015a278ead2
+Score: 0.7881
+Created: 2025-12-30 10:59:20 UTC
+Content: The project is titled "AI Adoption Survey".
+
+ID: mem_faf98b49-8472-4e13-a367-3a357e08cb68
+Score: 0.7795
+
+================================================================================
+Q14: How many leaders participated in the AI Adoption Survey?
+Expected: Approximately 250 Calvary Leaders and 130 DHT Staff...
+Method: search
+Duration: 2262ms
+Match ratio: 28.57%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_524b3cb1-e939-4e42-93db-013e73e9faaa
+Score: 0.7892
+Created: 2025-12-30 10:58:42 UTC
+Content: The project lead is Bojan.
+
+ID: mem_2c645ca7-968b-4207-82be-577118630940
+Score: 0.7527
+Created: 2025-12-30 11:01:47 UTC
+Content: Abi can lead group activities such as sing‑alongs, dancing, trivia games and Tai Chi, engaging resid...
+
+ID: mem_a37829ac-0b92-4245-9a0d-131766567289
+Score: 0.7051
+Created: 2025-12-30 11:00:04 UTC
+Content: Response summary: the leadership survey collected 
+
+================================================================================
+Q15: What types of support does the AI Adoption Survey ask about?
+Expected: The survey asks about multiple types: technical support and troubleshooting, examples of healthcare ...
+Method: search
+Duration: 2266ms
+Match ratio: 14.81%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed
+Score: 0.8002
+Created: 2025-12-30 11:02:14 UTC
+Content: Abi supports person‑centered, individualized care by delivering consistent, on‑demand companionship,...
+
+ID: mem_715a1293-b621-4b1b-b628-7b38c9c03eef
+Score: 0.7618
+Created: 2025-12-30 10:59:40 UTC
+Content: The survey asks what type of AI or technology support would be most valuable for respondents' roles,...
+
+ID: mem_3ffc0d3c-8d87-4a49-add9-a284dcffa14f
+Score: 0.7510
+Created: 2025-1
+
+================================================================================
+Q16: What are the key risks identified for the BeamTree PICQ project?
+Expected: Four main risk categories: 1) Workforce/political risks (HIM/coder perception issues, professional a...
+Method: search
+Duration: 2319ms
+Match ratio: 0.00%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_524b3cb1-e939-4e42-93db-013e73e9faaa
+Score: 0.8039
+Created: 2025-12-30 10:58:42 UTC
+Content: The project lead is Bojan.
+
+ID: mem_3cb4d1c2-b93d-467e-962e-383613c2e9b8
+Score: 0.7531
+Created: 2025-12-30 11:14:15 UTC
+Content: Key stakeholders for the project were identified as UTS (Sarath Kodagoda), Macquarie (Bamini Gopinat...
+
+ID: mem_55f80fc7-b89d-40cc-98f8-aa3c381174fb
+Score: 0.7526
+Created: 2025-12-30 11:10:13 UTC
+Content: The project notes were created on September 26, 20
+
+================================================================================
+Q17: What happened with Beamtree's previous engagement with Calvary?
+Expected: There was a prior interaction via Richard and Martin that did not progress due to technical/data con...
+Method: search
+Duration: 2285ms
+Match ratio: 37.50%
+Relevant: ✓
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_4bf0f722-1828-4e2e-b1c3-a61e39738579
+Score: 0.7127
+Created: 2025-12-30 11:07:09 UTC
+Content: A prior Beamtree engagement with Calvary, facilitated through Richard and Martin, did not progress b...
+
+ID: mem_55f80fc7-b89d-40cc-98f8-aa3c381174fb
+Score: 0.6766
+Created: 2025-12-30 11:10:13 UTC
+Content: The project notes were created on September 26, 2025.
+
+ID: mem_524b3cb1-e939-4e42-93db-013e73e9faaa
+Score: 0.6673
+Created: 2025-12-30 10:58:42 UTC
+Content: The project lead is Boj
+
+================================================================================
+Q18: Who is transitioning the Heidi Health project from initial to ongoing leadership?
+Expected: Matt Joyce was the initial project lead, with Liam taking over for ongoing management...
+Method: search
+Duration: 2271ms
+Match ratio: 40.00%
+Relevant: ✓
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_524b3cb1-e939-4e42-93db-013e73e9faaa
+Score: 0.9287
+Created: 2025-12-30 10:58:42 UTC
+Content: The project lead is Bojan.
+
+ID: mem_3c928956-d11e-4e0c-b9c9-b52242759307
+Score: 0.8145
+Created: 2025-12-30 11:10:25 UTC
+Content: Project management has transitioned to the Finance team while Health Informatics continues to track ...
+
+ID: mem_ba90eb36-dedc-47cf-abc5-fc5ce78c73c6
+Score: 0.8051
+Created: 2025-12-30 11:05:00 UTC
+Content: A meeting on September 29, 2025 was held between M
+
+================================================================================
+Q19: What service areas does the AI Adoption Survey cover?
+Expected: Private Hospitals, Home Care, Residential Aged Care, Retirement Living, Public Hospitals, Corporate/...
+Method: search
+Duration: 2263ms
+Match ratio: 0.00%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_3ffc0d3c-8d87-4a49-add9-a284dcffa14f
+Score: 0.7541
+Created: 2025-12-30 10:59:39 UTC
+Content: The survey asks respondents to select the service area they primarily support, offering options such...
+
+ID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801
+Score: 0.7484
+Created: 2025-12-30 11:01:48 UTC
+Content: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...
+
+ID: mem_d92c6ab0-6838-4c44-aed4-79ef0f39dff5
+Score: 0.7291
+Created: 2025-1
+
+================================================================================
+Q20: Which project mentions integration with Phoebe?
+Expected: The BeamTree PICQ project mentions Phoebe as a proven success at Calvary for downstream claim-checki...
+Method: search
+Duration: 2265ms
+Match ratio: 17.65%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_524b3cb1-e939-4e42-93db-013e73e9faaa
+Score: 0.8321
+Created: 2025-12-30 10:58:42 UTC
+Content: The project lead is Bojan.
+
+ID: mem_61a5bf81-ed10-4fc1-b73f-5f7ce4d81311
+Score: 0.8046
+Created: 2025-12-30 11:10:58 UTC
+Content: The project aligns with Calvary FY26 Strategic Priorities: Consumer‑Centred Care, CCS Reinforcement,...
+
+ID: mem_6f11bdfe-51a7-47ac-a027-4015a278ead2
+Score: 0.7838
+Created: 2025-12-30 10:59:20 UTC
+Content: The project is titled "AI Adoption Survey".
+
+ID: m
+
+================================================================================
+TEST SUMMARY
+================================================================================
+
+Total questions: 20
+Successful queries: 20/20 (100.0%)
+Relevant answers: 7/20 (35.0%)
+Average duration: 2278ms
+
+BREAKDOWN BY CATEGORY:
+
+  basic_fact: 6/10 relevant (60.0%)
+    ✓ Q1: 100.0% match - Who is the project lead for the AI Adoption Survey?...
+    ✓ Q2: 75.0% match - What is the executive sponsor's name for the AI Adoption Sur...
+    ✗ Q5: 0.0% match - What is the status of the Heidi Health AI Scribe project?...
+    ✓ Q6: 66.7% match - Where is the Heidi Health pilot planned to be implemented?...
+    ✓ Q7: 100.0% match - Who met with Beamtree to discuss the PICQ proposal?...
+    ✗ Q11: 16.7% match - What is Project Bronte?...
+    ✓ Q12: 100.0% match - What is the status of Robot Companions project?...
+    ✗ Q13: 0.0% match - What is the domain or area of focus for the Robot Companions...
+    ✗ Q14: 28.6% match - How many leaders participated in the AI Adoption Survey?...
+    ✓ Q18: 40.0% match - Who is transitioning the Heidi Health project from initial t...
+
+  contextual_understanding: 0/1 relevant (0.0%)
+    ✗ Q8: 13.8% match - Why is the BeamTree PICQ project considered sensitive?...
+
+  cross_project: 0/1 relevant (0.0%)
+    ✗ Q20: 17.6% match - Which project mentions integration with Phoebe?...
+
+  detailed_content: 0/5 relevant (0.0%)
+    ✗ Q3: 19.2% match - What are the main barriers preventing people from using AI t...
+    ✗ Q10: 7.4% match - What is the recommended option for the BeamTree PICQ project...
+    ✗ Q15: 14.8% match - What types of support does the AI Adoption Survey ask about?...
+    ✗ Q16: 0.0% match - What are the key risks identified for the BeamTree PICQ proj...
+    ✗ Q19: 0.0% match - What service areas does the AI Adoption Survey cover?...
+
+  historical_context: 1/1 relevant (100.0%)
+    ✓ Q17: 37.5% match - What happened with Beamtree's previous engagement with Calva...
+
+  problem_analysis: 0/1 relevant (0.0%)
+    ✗ Q4: 3.6% match - What problem is Heidi Health trying to solve?...
+
+  relationship_analysis: 0/1 relevant (0.0%)
+    ✗ Q9: 0.0% match - What is the relationship between Beamtree and Phoebe mention...
+
+================================================================================
+PERFORMANCE ANALYSIS:
+================================================================================
+
+  Fast (<1s):     0/20
+  Medium (1-5s):  20/20
+  Slow (>5s):     0/20
+
+  Slowest queries:
+    2336ms - Q12: What is the status of Robot Companions project?...
+    2319ms - Q16: What are the key risks identified for the BeamTree PICQ proj...
+    2303ms - Q9: What is the relationship between Beamtree and Phoebe mention...
+    2302ms - Q2: What is the executive sponsor's name for the AI Adoption Sur...
+    2293ms - Q6: Where is the Heidi Health pilot planned to be implemented?...
+
+
+✓ Detailed results saved to: qa_results_search_1767242253.json

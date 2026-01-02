@@ -1,0 +1,568 @@
+
+================================================================================
+Running 20 tests using method: search
+Config: config-mxbai-embed-full.yaml
+================================================================================
+
+================================================================================
+Q1: Who is the project lead for the AI Adoption Survey?
+Expected: Matt Joyce...
+Method: search
+Duration: 3269ms
+Match ratio: 100.00%
+Relevant: ✓
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_6f11bdfe-51a7-47ac-a027-4015a278ead2
+Score: 1.0913
+Created: 2025-12-30 10:59:20 UTC
+Content: The project is titled "AI Adoption Survey".
+
+ID: mem_0488f3c9-08ef-4009-80c2-fd09574dbcd9
+Score: 0.9945
+Created: 2025-12-30 10:59:21 UTC
+Content: Matt Joyce is the project lead for the AI Adoption Survey.
+
+ID: mem_7cad799f-2203-4825-bc46-a61ec4f72f78
+Score: 0.9364
+Created: 2025-12-30 10:59:20 UTC
+Content: The project description is "Organizational AI adoption survey analysis and res
+
+================================================================================
+Q2: What is the executive sponsor's name for the AI Adoption Survey project?
+Expected: John Sutherland, who is the CIO...
+Method: search
+Duration: 2353ms
+Match ratio: 50.00%
+Relevant: ✓
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_6f11bdfe-51a7-47ac-a027-4015a278ead2
+Score: 1.0542
+Created: 2025-12-30 10:59:20 UTC
+Content: The project is titled "AI Adoption Survey".
+
+ID: mem_c44ceef0-e142-46b2-8a86-6e34ee9560e3
+Score: 0.9571
+Created: 2025-12-30 10:59:21 UTC
+Content: John Sutherland serves as the CIO and Executive Sponsor for the AI Adoption Survey.
+
+ID: mem_0488f3c9-08ef-4009-80c2-fd09574dbcd9
+Score: 0.8916
+Created: 2025-12-30 10:59:21 UTC
+Content: Matt Joyce is the project lead for the AI Adoption Su
+
+================================================================================
+Q3: What are the main barriers preventing people from using AI tools according to the survey?
+Expected: The survey asks about multiple barriers including: trouble accessing technology, lack of time, unsur...
+Method: search
+Duration: 2333ms
+Match ratio: 23.08%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_b5e0b7d5-5edb-4b4e-94ba-a2db17662687
+Score: 1.0856
+Created: 2025-12-30 10:59:40 UTC
+Content: The survey asks respondents to select the main barriers preventing more AI tool usage, including lac...
+
+ID: mem_6f11bdfe-51a7-47ac-a027-4015a278ead2
+Score: 0.8993
+Created: 2025-12-30 10:59:20 UTC
+Content: The project is titled "AI Adoption Survey".
+
+ID: mem_ff3d8f95-39e3-4b02-b3e1-dc2e0cef38bd
+Score: 0.8493
+Created: 2025-12-30 10:59:39 UTC
+Content: The survey lists multiple activit
+
+================================================================================
+Q4: What problem is Heidi Health trying to solve?
+Expected: Current use of internal typists and external transcription services results in delays of up to seven...
+Method: search
+Duration: 3344ms
+Match ratio: 3.57%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_4aae7913-d269-4d5a-891e-194449825337
+Score: 0.8722
+Created: 2025-12-30 11:09:53 UTC
+Content: Direct cost for the Heidi Health Team pilot subscription is $9,570 for a 3‑month period.
+
+ID: mem_4e4d62a4-f384-4e25-83f6-3b8aac657493
+Score: 0.7648
+Created: 2025-12-30 11:10:01 UTC
+Content: The project type for Heidi Health - AI Scribe is "pilot".
+
+ID: mem_231aaa94-9d08-4144-9997-11b347725e18
+Score: 0.7645
+Created: 2025-12-30 11:10:01 UTC
+Content: Heidi Health - AI Scribe is an AI-
+
+================================================================================
+Q5: What is the status of the Heidi Health AI Scribe project?
+Expected: The status is 'proposal'...
+Method: search
+Duration: 2426ms
+Match ratio: 0.00%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_231aaa94-9d08-4144-9997-11b347725e18
+Score: 1.0861
+Created: 2025-12-30 11:10:01 UTC
+Content: Heidi Health - AI Scribe is an AI-powered medical scribe pilot implementation for Hobart Consulting ...
+
+ID: mem_4e4d62a4-f384-4e25-83f6-3b8aac657493
+Score: 0.9957
+Created: 2025-12-30 11:10:01 UTC
+Content: The project type for Heidi Health - AI Scribe is "pilot".
+
+ID: mem_12c2ae64-bc4c-4ff8-8c1f-2b36bbe0600f
+Score: 0.9666
+Created: 2025-12-30 11:10:02 UTC
+Content: Heidi Health - AI S
+
+================================================================================
+Q6: Where is the Heidi Health pilot planned to be implemented?
+Expected: Hobart Consulting Suites (or Calvary Hobart Consulting Suites)...
+Method: search
+Duration: 2361ms
+Match ratio: 66.67%
+Relevant: ✓
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_4aae7913-d269-4d5a-891e-194449825337
+Score: 0.9460
+Created: 2025-12-30 11:09:53 UTC
+Content: Direct cost for the Heidi Health Team pilot subscription is $9,570 for a 3‑month period.
+
+ID: mem_4e4d62a4-f384-4e25-83f6-3b8aac657493
+Score: 0.9025
+Created: 2025-12-30 11:10:01 UTC
+Content: The project type for Heidi Health - AI Scribe is "pilot".
+
+ID: mem_231aaa94-9d08-4144-9997-11b347725e18
+Score: 0.8312
+Created: 2025-12-30 11:10:01 UTC
+Content: Heidi Health - AI Scribe is an AI-
+
+================================================================================
+Q7: Who met with Beamtree to discuss the PICQ proposal?
+Expected: John Sutherland (CIO) and Damien Bruce (CEO)...
+Method: search
+Duration: 2350ms
+Match ratio: 100.00%
+Relevant: ✓
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_7008863e-9312-43a8-81da-dd1feba1e5f4
+Score: 0.8748
+Created: 2025-12-30 11:06:38 UTC
+Content: The BeamTree PICQ Assessment Framework document is dated December 10, 2025, serves as a structured t...
+
+ID: mem_a455ca7c-57a7-4efe-8ff4-2981db84860a
+Score: 0.8550
+Created: 2025-12-30 11:07:08 UTC
+Content: John Sutherland (CIO) and Damien Bruce (CEO) met with Beamtree, during which Beamtree presented a co...
+
+ID: mem_8a564c6c-b561-4d7e-b5c7-85f54fe785ae
+Score: 0.8001
+Created: 2025-1
+
+================================================================================
+Q8: Why is the BeamTree PICQ project considered sensitive?
+Expected: It's sensitive with coders/HIMs (Health Information Management staff) because there has been a histo...
+Method: search
+Duration: 2346ms
+Match ratio: 10.34%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_54ff5c86-e361-4133-8057-07a21b2fe98d
+Score: 0.7793
+Created: 2025-12-30 11:07:08 UTC
+Content: The BeamTree PICQ project brief was created on December 10, 2025, is currently in the "Executive Rev...
+
+ID: mem_bed0a7e2-e8fb-4eba-8257-dd461f0db347
+Score: 0.7093
+Created: 2025-12-30 11:06:51 UTC
+Content: The "BeamTree PICQ" proposal is a coding optimisation and audit initiative for private hospitals, in...
+
+ID: mem_8a564c6c-b561-4d7e-b5c7-85f54fe785ae
+Score: 0.7079
+Created: 2025-1
+
+================================================================================
+Q9: What is the relationship between Beamtree and Phoebe mentioned in the project brief?
+Expected: The ideal positioning is that Beamtree would provide upstream quality signal (coding optimization) w...
+Method: search
+Duration: 2377ms
+Match ratio: 12.50%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_3c98266a-b399-463d-ac1f-0b95caeb2ae0
+Score: 0.8186
+Created: 2025-12-30 11:10:44 UTC
+Content: Phoebe is classified as software.
+
+ID: mem_3de4bb7a-59ee-4a3c-b184-14b535e0470e
+Score: 0.7936
+Created: 2025-12-30 11:10:45 UTC
+Content: Phoebe is currently in production status.
+
+ID: mem_f41d2f49-d45b-4724-9a1e-38de2eb13e1a
+Score: 0.7852
+Created: 2025-12-30 11:07:09 UTC
+Content: Calvary has a proven success with the Phoebe implementation (downstream claim‑checking) and sees an ...
+
+
+
+================================================================================
+Q10: What is the recommended option for the BeamTree PICQ project?
+Expected: Option B: Small, Controlled Trial - using 1-2 months of recent data from selected private hospitals ...
+Method: search
+Duration: 2461ms
+Match ratio: 11.11%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_7008863e-9312-43a8-81da-dd1feba1e5f4
+Score: 0.8119
+Created: 2025-12-30 11:06:38 UTC
+Content: The BeamTree PICQ Assessment Framework document is dated December 10, 2025, serves as a structured t...
+
+ID: mem_54ff5c86-e361-4133-8057-07a21b2fe98d
+Score: 0.7630
+Created: 2025-12-30 11:07:08 UTC
+Content: The BeamTree PICQ project brief was created on December 10, 2025, is currently in the "Executive Rev...
+
+ID: mem_8a564c6c-b561-4d7e-b5c7-85f54fe785ae
+Score: 0.7623
+Created: 2025-1
+
+================================================================================
+Q11: What is Project Bronte?
+Expected: A confidential acquisition project requiring detailed document review and analysis, with an executed...
+Method: search
+Duration: 2347ms
+Match ratio: 33.33%
+Relevant: ✓
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_a252728b-a353-4c93-91ec-aca2e170b4f8
+Score: 0.8357
+Created: 2025-12-30 10:58:29 UTC
+Content: Project Bronte is a confidential acquisition project with an executed NDA, and the project lead is M...
+
+ID: mem_76e257d4-c035-4701-82a0-dc126cfcd317
+Score: 0.8018
+Created: 2025-12-30 10:59:20 UTC
+Content: The project type is "research".
+
+ID: mem_6adeaec7-38e2-4ad3-9d17-1e2d9e87813e
+Score: 0.7747
+Created: 2025-12-30 10:58:29 UTC
+Content: The Bronte project’s repository follows a def
+
+================================================================================
+Q12: What is the status of Robot Companions project?
+Expected: Discovery...
+Method: search
+Duration: 2329ms
+Match ratio: 0.00%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_1b56c1a0-37ff-481e-aa0f-124941452767
+Score: 1.2070
+Created: 2025-12-30 11:10:57 UTC
+Content: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...
+
+ID: mem_8e655409-473c-48c5-af5f-ad254a8caace
+Score: 0.9678
+Created: 2025-12-30 11:01:46 UTC
+Content: Abi is a 120 cm tall humanoid robot developed by Melbourne‑based startup Andromeda Robotics, which t...
+
+ID: mem_d6cfd570-4f88-4796-96ee-730c2f68ad82
+Score: 0.9440
+Created: 2025-1
+
+================================================================================
+Q13: What is the domain or area of focus for the Robot Companions project?
+Expected: Research initiative exploring robotic companions to combat loneliness in aged care settings...
+Method: search
+Duration: 2341ms
+Match ratio: 40.00%
+Relevant: ✓
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_1b56c1a0-37ff-481e-aa0f-124941452767
+Score: 1.1933
+Created: 2025-12-30 11:10:57 UTC
+Content: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...
+
+ID: mem_8e655409-473c-48c5-af5f-ad254a8caace
+Score: 0.9690
+Created: 2025-12-30 11:01:46 UTC
+Content: Abi is a 120 cm tall humanoid robot developed by Melbourne‑based startup Andromeda Robotics, which t...
+
+ID: mem_d15ba046-5c1a-4b65-ba98-177102920187
+Score: 0.9167
+Created: 2025-1
+
+================================================================================
+Q14: How many leaders participated in the AI Adoption Survey?
+Expected: Approximately 250 Calvary Leaders and 130 DHT Staff...
+Method: search
+Duration: 2338ms
+Match ratio: 28.57%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_6f11bdfe-51a7-47ac-a027-4015a278ead2
+Score: 0.9981
+Created: 2025-12-30 10:59:20 UTC
+Content: The project is titled "AI Adoption Survey".
+
+ID: mem_1500ab1f-47bb-4069-8be5-7805bf8f13a5
+Score: 0.9134
+Created: 2025-12-30 11:00:03 UTC
+Content: On 2025-08-05 the AI Adoption Survey was launched with an initial email sent to approximately 250 Ca...
+
+ID: mem_0488f3c9-08ef-4009-80c2-fd09574dbcd9
+Score: 0.8846
+Created: 2025-12-30 10:59:21 UTC
+Content: Matt Joyce is the project lead fo
+
+================================================================================
+Q15: What types of support does the AI Adoption Survey ask about?
+Expected: The survey asks about multiple types: technical support and troubleshooting, examples of healthcare ...
+Method: search
+Duration: 2390ms
+Match ratio: 14.81%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_6f11bdfe-51a7-47ac-a027-4015a278ead2
+Score: 1.0099
+Created: 2025-12-30 10:59:20 UTC
+Content: The project is titled "AI Adoption Survey".
+
+ID: mem_715a1293-b621-4b1b-b628-7b38c9c03eef
+Score: 0.9954
+Created: 2025-12-30 10:59:40 UTC
+Content: The survey asks what type of AI or technology support would be most valuable for respondents' roles,...
+
+ID: mem_1b56c1a0-37ff-481e-aa0f-124941452767
+Score: 0.8740
+Created: 2025-12-30 11:10:57 UTC
+Content: The Robot Companions Research Ini
+
+================================================================================
+Q16: What are the key risks identified for the BeamTree PICQ project?
+Expected: Four main risk categories: 1) Workforce/political risks (HIM/coder perception issues, professional a...
+Method: search
+Duration: 2325ms
+Match ratio: 0.00%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_7008863e-9312-43a8-81da-dd1feba1e5f4
+Score: 0.7933
+Created: 2025-12-30 11:06:38 UTC
+Content: The BeamTree PICQ Assessment Framework document is dated December 10, 2025, serves as a structured t...
+
+ID: mem_8a564c6c-b561-4d7e-b5c7-85f54fe785ae
+Score: 0.7806
+Created: 2025-12-30 11:06:46 UTC
+Content: # BeamTree PICQ Assessment Framework Overview
+
+**Overview:** The BeamTree PICQ Assessment Framework,...
+
+ID: mem_54ff5c86-e361-4133-8057-07a21b2fe98d
+Score: 0.7759
+Created: 2025-1
+
+================================================================================
+Q17: What happened with Beamtree's previous engagement with Calvary?
+Expected: There was a prior interaction via Richard and Martin that did not progress due to technical/data con...
+Method: search
+Duration: 2376ms
+Match ratio: 37.50%
+Relevant: ✓
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_4bf0f722-1828-4e2e-b1c3-a61e39738579
+Score: 0.7625
+Created: 2025-12-30 11:07:09 UTC
+Content: A prior Beamtree engagement with Calvary, facilitated through Richard and Martin, did not progress b...
+
+ID: mem_f41d2f49-d45b-4724-9a1e-38de2eb13e1a
+Score: 0.7204
+Created: 2025-12-30 11:07:09 UTC
+Content: Calvary has a proven success with the Phoebe implementation (downstream claim‑checking) and sees an ...
+
+ID: mem_7870c7b7-f8f8-4738-bf6f-ed8a5fab3b7b
+Score: 0.6438
+Created: 2025-1
+
+================================================================================
+Q18: Who is transitioning the Heidi Health project from initial to ongoing leadership?
+Expected: Matt Joyce was the initial project lead, with Liam taking over for ongoing management...
+Method: search
+Duration: 2350ms
+Match ratio: 10.00%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801
+Score: 0.8758
+Created: 2025-12-30 11:01:48 UTC
+Content: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...
+
+ID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed
+Score: 0.8617
+Created: 2025-12-30 11:02:14 UTC
+Content: Abi supports person‑centered, individualized care by delivering consistent, on‑demand companionship,...
+
+ID: mem_4aae7913-d269-4d5a-891e-194449825337
+Score: 0.8252
+Created: 2025-1
+
+================================================================================
+Q19: What service areas does the AI Adoption Survey cover?
+Expected: Private Hospitals, Home Care, Residential Aged Care, Retirement Living, Public Hospitals, Corporate/...
+Method: search
+Duration: 2379ms
+Match ratio: 0.00%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_6f11bdfe-51a7-47ac-a027-4015a278ead2
+Score: 1.0066
+Created: 2025-12-30 10:59:20 UTC
+Content: The project is titled "AI Adoption Survey".
+
+ID: mem_1b56c1a0-37ff-481e-aa0f-124941452767
+Score: 0.8949
+Created: 2025-12-30 11:10:57 UTC
+Content: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...
+
+ID: mem_7cad799f-2203-4825-bc46-a61ec4f72f78
+Score: 0.8498
+Created: 2025-12-30 10:59:20 UTC
+Content: The project description is "Organ
+
+================================================================================
+Q20: Which project mentions integration with Phoebe?
+Expected: The BeamTree PICQ project mentions Phoebe as a proven success at Calvary for downstream claim-checki...
+Method: search
+Duration: 2349ms
+Match ratio: 23.53%
+Relevant: ✗
+
+Vestig output preview:
+vestig v0.1.0
+ID: mem_3c98266a-b399-463d-ac1f-0b95caeb2ae0
+Score: 0.9202
+Created: 2025-12-30 11:10:44 UTC
+Content: Phoebe is classified as software.
+
+ID: mem_4cfc126a-7f88-4fee-acc1-06a93459f962
+Score: 0.8950
+Created: 2025-12-30 11:10:43 UTC
+Content: The software product is named "Phoebe".
+
+ID: mem_3de4bb7a-59ee-4a3c-b184-14b535e0470e
+Score: 0.8208
+Created: 2025-12-30 11:10:45 UTC
+Content: Phoebe is currently in production status.
+
+ID: mem_1b56c1a0-37ff-481e-aa0f-124941452767
+Score: 0.7762
+Creat
+
+================================================================================
+TEST SUMMARY
+================================================================================
+
+Total questions: 20
+Successful queries: 20/20 (100.0%)
+Relevant answers: 7/20 (35.0%)
+Average duration: 2457ms
+
+BREAKDOWN BY CATEGORY:
+
+  basic_fact: 6/10 relevant (60.0%)
+    ✓ Q1: 100.0% match - Who is the project lead for the AI Adoption Survey?...
+    ✓ Q2: 50.0% match - What is the executive sponsor's name for the AI Adoption Sur...
+    ✗ Q5: 0.0% match - What is the status of the Heidi Health AI Scribe project?...
+    ✓ Q6: 66.7% match - Where is the Heidi Health pilot planned to be implemented?...
+    ✓ Q7: 100.0% match - Who met with Beamtree to discuss the PICQ proposal?...
+    ✓ Q11: 33.3% match - What is Project Bronte?...
+    ✗ Q12: 0.0% match - What is the status of Robot Companions project?...
+    ✓ Q13: 40.0% match - What is the domain or area of focus for the Robot Companions...
+    ✗ Q14: 28.6% match - How many leaders participated in the AI Adoption Survey?...
+    ✗ Q18: 10.0% match - Who is transitioning the Heidi Health project from initial t...
+
+  contextual_understanding: 0/1 relevant (0.0%)
+    ✗ Q8: 10.3% match - Why is the BeamTree PICQ project considered sensitive?...
+
+  cross_project: 0/1 relevant (0.0%)
+    ✗ Q20: 23.5% match - Which project mentions integration with Phoebe?...
+
+  detailed_content: 0/5 relevant (0.0%)
+    ✗ Q3: 23.1% match - What are the main barriers preventing people from using AI t...
+    ✗ Q10: 11.1% match - What is the recommended option for the BeamTree PICQ project...
+    ✗ Q15: 14.8% match - What types of support does the AI Adoption Survey ask about?...
+    ✗ Q16: 0.0% match - What are the key risks identified for the BeamTree PICQ proj...
+    ✗ Q19: 0.0% match - What service areas does the AI Adoption Survey cover?...
+
+  historical_context: 1/1 relevant (100.0%)
+    ✓ Q17: 37.5% match - What happened with Beamtree's previous engagement with Calva...
+
+  problem_analysis: 0/1 relevant (0.0%)
+    ✗ Q4: 3.6% match - What problem is Heidi Health trying to solve?...
+
+  relationship_analysis: 0/1 relevant (0.0%)
+    ✗ Q9: 12.5% match - What is the relationship between Beamtree and Phoebe mention...
+
+================================================================================
+PERFORMANCE ANALYSIS:
+================================================================================
+
+  Fast (<1s):     0/20
+  Medium (1-5s):  20/20
+  Slow (>5s):     0/20
+
+  Slowest queries:
+    3344ms - Q4: What problem is Heidi Health trying to solve?...
+    3269ms - Q1: Who is the project lead for the AI Adoption Survey?...
+    2461ms - Q10: What is the recommended option for the BeamTree PICQ project...
+    2426ms - Q5: What is the status of the Heidi Health AI Scribe project?...
+    2390ms - Q15: What types of support does the AI Adoption Survey ask about?...
+
+
+✓ Detailed results saved to: qa_results_search_1767241581.json

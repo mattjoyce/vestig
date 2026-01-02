@@ -1,0 +1,158 @@
+================================================================================
+EMBEDDING MODEL COMPARISON REPORT
+================================================================================
+
+ACCURACY COMPARISON (% of relevant answers)
+--------------------------------------------------------------------------------
+Model                     Search          Recall          Avg            
+--------------------------------------------------------------------------------
+all-minilm                 45.0%          70.0%          57.5%
+bge-m3                     45.0%          65.0%          55.0%
+embeddinggemma             55.0%          70.0%          62.5%
+granite-embedding           0.0%           0.0%           0.0%
+mxbai-embed-large          35.0%          55.0%          45.0%
+nomic-embed-text           35.0%          50.0%          42.5%
+--------------------------------------------------------------------------------
+Best overall: embeddinggemma (62.5%)
+
+PERFORMANCE COMPARISON (avg query time in ms)
+--------------------------------------------------------------------------------
+Model                     Search          Recall          Avg            
+--------------------------------------------------------------------------------
+all-minilm                  2212ms          2211ms          2212ms
+bge-m3                      2568ms          2560ms          2564ms
+embeddinggemma              2509ms          2523ms          2516ms
+granite-embedding           1463ms          1461ms          1462ms
+mxbai-embed-large           2393ms          2404ms          2399ms
+nomic-embed-text            2325ms          2310ms          2317ms
+
+CATEGORY BREAKDOWN
+================================================================================
+
+all-minilm
+--------------------------------------------------------------------------------
+  SEARCH:
+    basic_fact           7/10 (70.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     0/5 (0.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 1/1 (100.0%)
+  RECALL:
+    basic_fact           8/10 (80.0%)
+    contextual_understanding 1/1 (100.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     3/5 (60.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 1/1 (100.0%)
+
+bge-m3
+--------------------------------------------------------------------------------
+  SEARCH:
+    basic_fact           7/10 (70.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     0/5 (0.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 1/1 (100.0%)
+  RECALL:
+    basic_fact           8/10 (80.0%)
+    contextual_understanding 1/1 (100.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     2/5 (40.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 1/1 (100.0%)
+
+embeddinggemma
+--------------------------------------------------------------------------------
+  SEARCH:
+    basic_fact           9/10 (90.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     0/5 (0.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 1/1 (100.0%)
+  RECALL:
+    basic_fact           9/10 (90.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     3/5 (60.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 1/1 (100.0%)
+
+granite-embedding
+--------------------------------------------------------------------------------
+  SEARCH:
+    basic_fact           0/10 (0.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     0/5 (0.0%)
+    historical_context   0/1 (0.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 0/1 (0.0%)
+  RECALL:
+    basic_fact           0/10 (0.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     0/5 (0.0%)
+    historical_context   0/1 (0.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 0/1 (0.0%)
+
+mxbai-embed-large
+--------------------------------------------------------------------------------
+  SEARCH:
+    basic_fact           6/10 (60.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     0/5 (0.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 0/1 (0.0%)
+  RECALL:
+    basic_fact           7/10 (70.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     2/5 (40.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 1/1 (100.0%)
+
+nomic-embed-text
+--------------------------------------------------------------------------------
+  SEARCH:
+    basic_fact           6/10 (60.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     0/5 (0.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 0/1 (0.0%)
+  RECALL:
+    basic_fact           6/10 (60.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     3/5 (60.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 0/1 (0.0%)
+
+================================================================================
+MATCH RATIO COMPARISON (avg % of expected keywords found)
+--------------------------------------------------------------------------------
+Model                     Search          Recall          Avg            
+--------------------------------------------------------------------------------
+all-minilm                 31.0%          48.0%          39.5%
+bge-m3                     35.4%          51.0%          43.2%
+embeddinggemma             40.4%          54.4%          47.4%
+granite-embedding           0.0%           0.0%           0.0%
+mxbai-embed-large          27.7%          45.5%          36.6%
+nomic-embed-text           32.1%          43.7%          37.9%
+
+================================================================================

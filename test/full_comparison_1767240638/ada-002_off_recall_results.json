@@ -1,0 +1,362 @@
+[
+  {
+    "qa_id": 1,
+    "question": "Who is the project lead for the AI Adoption Survey?",
+    "expected_answer": "Matt Joyce",
+    "vestig_output": "vestig v0.1.0\n(score=1.2788, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n\n---\n\n(score=1.2586, age=1d, stability=static)\nAbi is designed to augment care staff rather than replace them, stepping in for social interaction when staff are busy and handling routine recreational tasks to free human caregivers for personal care.\n\n---\n\n(score=1.2487, age=1d, stability=static)\nAbi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship, allowing staff to focus on clinical and complex emotional tasks, thereby enhancing care quality and staff efficiency.\n\n---\n\n(score=1.2360, age=1d, stability=static)\nAbi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which trades as Dromeda.\n\n---\n\n(score=1.2276, age=1d, stability=static)\nThe project lead is Bojan.\n",
+    "category": "basic_fact",
+    "project": "ai_adoption_survey",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 7123.289625043981,
+    "evaluation": {
+      "match_ratio": 0.0,
+      "matches": 0,
+      "total_expected_words": 2,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 2,
+    "question": "What is the executive sponsor's name for the AI Adoption Survey project?",
+    "expected_answer": "John Sutherland, who is the CIO",
+    "vestig_output": "vestig v0.1.0\n(score=1.2339, age=1d, stability=static)\nAbi is designed to augment care staff rather than replace them, stepping in for social interaction when staff are busy and handling routine recreational tasks to free human caregivers for personal care.\n\n---\n\n(score=1.2303, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n\n---\n\n(score=1.2281, age=1d, stability=static)\nAbi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship, allowing staff to focus on clinical and complex emotional tasks, thereby enhancing care quality and staff efficiency.\n\n---\n\n(score=1.1977, age=1d, stability=static)\nAbi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which trades as Dromeda.\n\n---\n\n(score=1.1937, age=1d, stability=static)\nAbi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging residents and providing therapeutic physical and cognitive stimulation.\n",
+    "category": "basic_fact",
+    "project": "ai_adoption_survey",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 4659.468874917366,
+    "evaluation": {
+      "match_ratio": 0.0,
+      "matches": 0,
+      "total_expected_words": 4,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 3,
+    "question": "What are the main barriers preventing people from using AI tools according to the survey?",
+    "expected_answer": "The survey asks about multiple barriers including: trouble accessing technology, lack of time, unsure how AI applies to their role, unclear about Calvary's AI policy, concerns about accuracy, insufficient training, and data privacy/security concerns",
+    "vestig_output": "vestig v0.1.0\n(score=1.2889, age=1d, stability=static)\nAbi is designed to augment care staff rather than replace them, stepping in for social interaction when staff are busy and handling routine recreational tasks to free human caregivers for personal care.\n\n---\n\n(score=1.2648, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n\n---\n\n(score=1.2516, age=1d, stability=static)\nAbi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship, allowing staff to focus on clinical and complex emotional tasks, thereby enhancing care quality and staff efficiency.\n\n---\n\n(score=1.2104, age=1d, stability=static)\nAbi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which trades as Dromeda.\n\n---\n\n(score=1.1837, age=1d, stability=static)\nAbi\u2019s core AI uses the ChatGPT\u20114 language model for natural conversation and machine\u2011vision technology to recognize faces and non\u2011verbal cues.\n",
+    "category": "detailed_content",
+    "project": "ai_adoption_survey",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 5532.665958977304,
+    "evaluation": {
+      "match_ratio": 0.11538461538461539,
+      "matches": 3,
+      "total_expected_words": 26,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 4,
+    "question": "What problem is Heidi Health trying to solve?",
+    "expected_answer": "Current use of internal typists and external transcription services results in delays of up to seven days for specialist documentation. Additionally, there are staffing sustainability risks due to resignations and anticipated retirements, and external transcription costs are escalating (over $116,000 annually).",
+    "vestig_output": "vestig v0.1.0\n(score=1.2827, age=1d, stability=static)\nAbi is designed to augment care staff rather than replace them, stepping in for social interaction when staff are busy and handling routine recreational tasks to free human caregivers for personal care.\n\n---\n\n(score=1.2436, age=1d, stability=static)\nAbi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship, allowing staff to focus on clinical and complex emotional tasks, thereby enhancing care quality and staff efficiency.\n\n---\n\n(score=1.2178, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n\n---\n\n(score=1.1932, age=1d, stability=static)\nAbi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging residents and providing therapeutic physical and cognitive stimulation.\n\n---\n\n(score=1.1858, age=1d, stability=static)\nAbi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which trades as Dromeda.\n",
+    "category": "problem_analysis",
+    "project": "heidi_health_ai_scribe",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 5670.248499955051,
+    "evaluation": {
+      "match_ratio": 0.07142857142857142,
+      "matches": 2,
+      "total_expected_words": 28,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 5,
+    "question": "What is the status of the Heidi Health AI Scribe project?",
+    "expected_answer": "The status is 'proposal'",
+    "vestig_output": "vestig v0.1.0\n(score=1.2702, age=1d, stability=static)\nAbi is designed to augment care staff rather than replace them, stepping in for social interaction when staff are busy and handling routine recreational tasks to free human caregivers for personal care.\n\n---\n\n(score=1.2579, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n\n---\n\n(score=1.2400, age=1d, stability=static)\nAbi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship, allowing staff to focus on clinical and complex emotional tasks, thereby enhancing care quality and staff efficiency.\n\n---\n\n(score=1.2236, age=1d, stability=static)\nAbi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which trades as Dromeda.\n\n---\n\n(score=1.1942, age=1d, stability=static)\nAbi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging residents and providing therapeutic physical and cognitive stimulation.\n",
+    "category": "basic_fact",
+    "project": "heidi_health_ai_scribe",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 5759.066917002201,
+    "evaluation": {
+      "match_ratio": 0.0,
+      "matches": 0,
+      "total_expected_words": 2,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 6,
+    "question": "Where is the Heidi Health pilot planned to be implemented?",
+    "expected_answer": "Hobart Consulting Suites (or Calvary Hobart Consulting Suites)",
+    "vestig_output": "vestig v0.1.0\n(score=1.2413, age=1d, stability=static)\nAbi is designed to augment care staff rather than replace them, stepping in for social interaction when staff are busy and handling routine recreational tasks to free human caregivers for personal care.\n\n---\n\n(score=1.2109, age=1d, stability=static)\nAbi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship, allowing staff to focus on clinical and complex emotional tasks, thereby enhancing care quality and staff efficiency.\n\n---\n\n(score=1.2102, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n\n---\n\n(score=1.2049, age=1d, stability=static)\nDirect cost for the Heidi Health Team pilot subscription is $9,570 for a 3\u2011month period.\n\n---\n\n(score=1.1788, age=1d, stability=static)\nAbi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which trades as Dromeda.\n",
+    "category": "basic_fact",
+    "project": "heidi_health_ai_scribe",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 5197.564042056911,
+    "evaluation": {
+      "match_ratio": 0.16666666666666666,
+      "matches": 1,
+      "total_expected_words": 6,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 7,
+    "question": "Who met with Beamtree to discuss the PICQ proposal?",
+    "expected_answer": "John Sutherland (CIO) and Damien Bruce (CEO)",
+    "vestig_output": "vestig v0.1.0\n(score=1.2048, age=1d, stability=static)\nAbi is designed to augment care staff rather than replace them, stepping in for social interaction when staff are busy and handling routine recreational tasks to free human caregivers for personal care.\n\n---\n\n(score=1.1926, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n\n---\n\n(score=1.1836, age=1d, stability=static)\nAbi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship, allowing staff to focus on clinical and complex emotional tasks, thereby enhancing care quality and staff efficiency.\n\n---\n\n(score=1.1815, age=1d, stability=static)\nAbi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging residents and providing therapeutic physical and cognitive stimulation.\n\n---\n\n(score=1.1792, age=1d, stability=static)\nAbi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which trades as Dromeda.\n",
+    "category": "basic_fact",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 5314.731250051409,
+    "evaluation": {
+      "match_ratio": 0.0,
+      "matches": 0,
+      "total_expected_words": 6,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 8,
+    "question": "Why is the BeamTree PICQ project considered sensitive?",
+    "expected_answer": "It's sensitive with coders/HIMs (Health Information Management staff) because there has been a historical 'frosty' reception to similar initiatives, and it may be perceived as surveillance or questioning of professional competence rather than quality improvement",
+    "vestig_output": "vestig v0.1.0\n(score=1.2220, age=1d, stability=static)\nAbi is designed to augment care staff rather than replace them, stepping in for social interaction when staff are busy and handling routine recreational tasks to free human caregivers for personal care.\n\n---\n\n(score=1.1888, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n\n---\n\n(score=1.1886, age=1d, stability=static)\nAbi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship, allowing staff to focus on clinical and complex emotional tasks, thereby enhancing care quality and staff efficiency.\n\n---\n\n(score=1.1568, age=1d, stability=static)\nAbi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging residents and providing therapeutic physical and cognitive stimulation.\n\n---\n\n(score=1.1440, age=1d, stability=static)\nAbi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which trades as Dromeda.\n",
+    "category": "contextual_understanding",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 5017.222083057277,
+    "evaluation": {
+      "match_ratio": 0.20689655172413793,
+      "matches": 6,
+      "total_expected_words": 29,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 9,
+    "question": "What is the relationship between Beamtree and Phoebe mentioned in the project brief?",
+    "expected_answer": "The ideal positioning is that Beamtree would provide upstream quality signal (coding optimization) while Phoebe provides downstream claim integrity checking, creating a continuum rather than isolated tools",
+    "vestig_output": "vestig v0.1.0\n(score=1.2600, age=1d, stability=static)\nAbi is designed to augment care staff rather than replace them, stepping in for social interaction when staff are busy and handling routine recreational tasks to free human caregivers for personal care.\n\n---\n\n(score=1.2245, age=1d, stability=static)\nAbi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship, allowing staff to focus on clinical and complex emotional tasks, thereby enhancing care quality and staff efficiency.\n\n---\n\n(score=1.2103, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n\n---\n\n(score=1.2086, age=1d, stability=static)\nAbi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging residents and providing therapeutic physical and cognitive stimulation.\n\n---\n\n(score=1.1887, age=1d, stability=static)\nAbi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which trades as Dromeda.\n",
+    "category": "relationship_analysis",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 5327.645875047892,
+    "evaluation": {
+      "match_ratio": 0.125,
+      "matches": 3,
+      "total_expected_words": 24,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 10,
+    "question": "What is the recommended option for the BeamTree PICQ project?",
+    "expected_answer": "Option B: Small, Controlled Trial - using 1-2 months of recent data from selected private hospitals (1-2 sites), focusing on a single service line or DRG category, with minimal change to existing integrations",
+    "vestig_output": "vestig v0.1.0\n(score=1.2126, age=1d, stability=static)\nAbi is designed to augment care staff rather than replace them, stepping in for social interaction when staff are busy and handling routine recreational tasks to free human caregivers for personal care.\n\n---\n\n(score=1.1825, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n\n---\n\n(score=1.1791, age=1d, stability=static)\nAbi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship, allowing staff to focus on clinical and complex emotional tasks, thereby enhancing care quality and staff efficiency.\n\n---\n\n(score=1.1605, age=1d, stability=static)\nAbi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging residents and providing therapeutic physical and cognitive stimulation.\n\n---\n\n(score=1.1481, age=1d, stability=static)\nAbi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which trades as Dromeda.\n",
+    "category": "detailed_content",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 4488.193540950306,
+    "evaluation": {
+      "match_ratio": 0.07407407407407407,
+      "matches": 2,
+      "total_expected_words": 27,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 11,
+    "question": "What is Project Bronte?",
+    "expected_answer": "A confidential acquisition project requiring detailed document review and analysis, with an executed NDA. Matt is the project lead.",
+    "vestig_output": "vestig v0.1.0\n(score=1.2482, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n\n---\n\n(score=1.2253, age=1d, stability=static)\nAbi is designed to augment care staff rather than replace them, stepping in for social interaction when staff are busy and handling routine recreational tasks to free human caregivers for personal care.\n\n---\n\n(score=1.1827, age=1d, stability=static)\nAbi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship, allowing staff to focus on clinical and complex emotional tasks, thereby enhancing care quality and staff efficiency.\n\n---\n\n(score=1.1738, age=1d, stability=static)\nAbi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which trades as Dromeda.\n\n---\n\n(score=1.1684, age=1d, stability=static)\nThe project lead is Bojan.\n",
+    "category": "basic_fact",
+    "project": "bronte",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 6940.486166975461,
+    "evaluation": {
+      "match_ratio": 0.08333333333333333,
+      "matches": 1,
+      "total_expected_words": 12,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 12,
+    "question": "What is the status of Robot Companions project?",
+    "expected_answer": "Discovery",
+    "vestig_output": "vestig v0.1.0\n(score=1.4154, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n\n---\n\n(score=1.2986, age=1d, stability=static)\nAbi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which trades as Dromeda.\n\n---\n\n(score=1.2878, age=1d, stability=static)\nAbi is designed to augment care staff rather than replace them, stepping in for social interaction when staff are busy and handling routine recreational tasks to free human caregivers for personal care.\n\n---\n\n(score=1.2602, age=1d, stability=static)\nAbi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship, allowing staff to focus on clinical and complex emotional tasks, thereby enhancing care quality and staff efficiency.\n\n---\n\n(score=1.2182, age=1d, stability=static)\nTLH reported that their mix of service robots, including Abi, generated roughly $400,000 per year in staffing cost savings.\n",
+    "category": "basic_fact",
+    "project": "robot_companions",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 6288.527249940671,
+    "evaluation": {
+      "match_ratio": 0.0,
+      "matches": 0,
+      "total_expected_words": 1,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 13,
+    "question": "What is the domain or area of focus for the Robot Companions project?",
+    "expected_answer": "Research initiative exploring robotic companions to combat loneliness in aged care settings",
+    "vestig_output": "vestig v0.1.0\n(score=1.4024, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n\n---\n\n(score=1.2993, age=1d, stability=static)\nAbi is designed to augment care staff rather than replace them, stepping in for social interaction when staff are busy and handling routine recreational tasks to free human caregivers for personal care.\n\n---\n\n(score=1.2760, age=1d, stability=static)\nAbi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship, allowing staff to focus on clinical and complex emotional tasks, thereby enhancing care quality and staff efficiency.\n\n---\n\n(score=1.2673, age=1d, stability=static)\nAbi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which trades as Dromeda.\n\n---\n\n(score=1.2307, age=1d, stability=static)\nAbi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging residents and providing therapeutic physical and cognitive stimulation.\n",
+    "category": "basic_fact",
+    "project": "robot_companions",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 4627.020542044193,
+    "evaluation": {
+      "match_ratio": 0.9,
+      "matches": 9,
+      "total_expected_words": 10,
+      "appears_relevant": true,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 14,
+    "question": "How many leaders participated in the AI Adoption Survey?",
+    "expected_answer": "Approximately 250 Calvary Leaders and 130 DHT Staff",
+    "vestig_output": "vestig v0.1.0\n(score=1.2516, age=1d, stability=static)\nAbi is designed to augment care staff rather than replace them, stepping in for social interaction when staff are busy and handling routine recreational tasks to free human caregivers for personal care.\n\n---\n\n(score=1.2463, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n\n---\n\n(score=1.2274, age=1d, stability=static)\nAbi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship, allowing staff to focus on clinical and complex emotional tasks, thereby enhancing care quality and staff efficiency.\n\n---\n\n(score=1.2195, age=1d, stability=static)\nAbi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which trades as Dromeda.\n\n---\n\n(score=1.2069, age=1d, stability=static)\nAbi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging residents and providing therapeutic physical and cognitive stimulation.\n",
+    "category": "basic_fact",
+    "project": "ai_adoption_survey",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 6176.201125024818,
+    "evaluation": {
+      "match_ratio": 0.2857142857142857,
+      "matches": 2,
+      "total_expected_words": 7,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 15,
+    "question": "What types of support does the AI Adoption Survey ask about?",
+    "expected_answer": "The survey asks about multiple types: technical support and troubleshooting, examples of healthcare use cases, advanced training, introductory AI literacy training, one-on-one coaching, hands-on workshops, peer learning groups, and clear policies and guidelines",
+    "vestig_output": "vestig v0.1.0\n(score=1.2803, age=1d, stability=static)\nAbi is designed to augment care staff rather than replace them, stepping in for social interaction when staff are busy and handling routine recreational tasks to free human caregivers for personal care.\n\n---\n\n(score=1.2797, age=1d, stability=static)\nAbi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship, allowing staff to focus on clinical and complex emotional tasks, thereby enhancing care quality and staff efficiency.\n\n---\n\n(score=1.2547, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n\n---\n\n(score=1.2092, age=1d, stability=static)\nAbi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging residents and providing therapeutic physical and cognitive stimulation.\n\n---\n\n(score=1.1816, age=1d, stability=static)\nAbi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which trades as Dromeda.\n",
+    "category": "detailed_content",
+    "project": "ai_adoption_survey",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 5392.981083015911,
+    "evaluation": {
+      "match_ratio": 0.1111111111111111,
+      "matches": 3,
+      "total_expected_words": 27,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 16,
+    "question": "What are the key risks identified for the BeamTree PICQ project?",
+    "expected_answer": "Four main risk categories: 1) Workforce/political risks (HIM/coder perception issues, professional autonomy concerns), 2) Data governance risks (external data sharing, privacy concerns), 3) Technical/integration risks (siloed tool, workflow friction), 4) Financial/ROI risks (cost vs benefit, overestimated uplift)",
+    "vestig_output": "vestig v0.1.0\n(score=1.2157, age=1d, stability=static)\nAbi is designed to augment care staff rather than replace them, stepping in for social interaction when staff are busy and handling routine recreational tasks to free human caregivers for personal care.\n\n---\n\n(score=1.1992, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n\n---\n\n(score=1.1934, age=1d, stability=static)\nAbi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship, allowing staff to focus on clinical and complex emotional tasks, thereby enhancing care quality and staff efficiency.\n\n---\n\n(score=1.1804, age=1d, stability=static)\nAbi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging residents and providing therapeutic physical and cognitive stimulation.\n\n---\n\n(score=1.1408, age=1d, stability=static)\nAbi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which trades as Dromeda.\n",
+    "category": "detailed_content",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 4335.216791019775,
+    "evaluation": {
+      "match_ratio": 0.0,
+      "matches": 0,
+      "total_expected_words": 32,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 17,
+    "question": "What happened with Beamtree's previous engagement with Calvary?",
+    "expected_answer": "There was a prior interaction via Richard and Martin that did not progress due to technical/data constraints and differing opinions on approach",
+    "vestig_output": "vestig v0.1.0\n(score=1.2120, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n\n---\n\n(score=1.1817, age=1d, stability=static)\nAbi is designed to augment care staff rather than replace them, stepping in for social interaction when staff are busy and handling routine recreational tasks to free human caregivers for personal care.\n\n---\n\n(score=1.1571, age=1d, stability=static)\nAbi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship, allowing staff to focus on clinical and complex emotional tasks, thereby enhancing care quality and staff efficiency.\n\n---\n\n(score=1.1426, age=1d, stability=static)\nAbi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging residents and providing therapeutic physical and cognitive stimulation.\n\n---\n\n(score=1.1402, age=1d, stability=static)\nAbi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which trades as Dromeda.\n",
+    "category": "historical_context",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 6343.4109590016305,
+    "evaluation": {
+      "match_ratio": 0.1875,
+      "matches": 3,
+      "total_expected_words": 16,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 18,
+    "question": "Who is transitioning the Heidi Health project from initial to ongoing leadership?",
+    "expected_answer": "Matt Joyce was the initial project lead, with Liam taking over for ongoing management",
+    "vestig_output": "vestig v0.1.0\n(score=1.2473, age=1d, stability=static)\nAbi is designed to augment care staff rather than replace them, stepping in for social interaction when staff are busy and handling routine recreational tasks to free human caregivers for personal care.\n\n---\n\n(score=1.2440, age=1d, stability=static)\nAbi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship, allowing staff to focus on clinical and complex emotional tasks, thereby enhancing care quality and staff efficiency.\n\n---\n\n(score=1.2104, age=1d, stability=static)\nAbi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging residents and providing therapeutic physical and cognitive stimulation.\n\n---\n\n(score=1.1779, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n\n---\n\n(score=1.1636, age=1d, stability=static)\nThe project lead is Bojan.\n",
+    "category": "basic_fact",
+    "project": "heidi_health_ai_scribe",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 4891.365749994293,
+    "evaluation": {
+      "match_ratio": 0.1,
+      "matches": 1,
+      "total_expected_words": 10,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 19,
+    "question": "What service areas does the AI Adoption Survey cover?",
+    "expected_answer": "Private Hospitals, Home Care, Residential Aged Care, Retirement Living, Public Hospitals, Corporate/Support Functions, and Other",
+    "vestig_output": "vestig v0.1.0\n(score=1.2813, age=1d, stability=static)\nAbi is designed to augment care staff rather than replace them, stepping in for social interaction when staff are busy and handling routine recreational tasks to free human caregivers for personal care.\n\n---\n\n(score=1.2692, age=1d, stability=static)\nAbi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship, allowing staff to focus on clinical and complex emotional tasks, thereby enhancing care quality and staff efficiency.\n\n---\n\n(score=1.2568, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n\n---\n\n(score=1.2183, age=1d, stability=static)\nAbi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging residents and providing therapeutic physical and cognitive stimulation.\n\n---\n\n(score=1.1930, age=1d, stability=static)\nAbi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which trades as Dromeda.\n",
+    "category": "detailed_content",
+    "project": "ai_adoption_survey",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 6863.459209096618,
+    "evaluation": {
+      "match_ratio": 0.08333333333333333,
+      "matches": 1,
+      "total_expected_words": 12,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 20,
+    "question": "Which project mentions integration with Phoebe?",
+    "expected_answer": "The BeamTree PICQ project mentions Phoebe as a proven success at Calvary for downstream claim-checking, and proposes positioning Beamtree as upstream quality/coding signal to integrate with Phoebe",
+    "vestig_output": "vestig v0.1.0\n(score=1.2565, age=1d, stability=static)\nAbi is designed to augment care staff rather than replace them, stepping in for social interaction when staff are busy and handling routine recreational tasks to free human caregivers for personal care.\n\n---\n\n(score=1.2351, age=1d, stability=static)\nAbi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship, allowing staff to focus on clinical and complex emotional tasks, thereby enhancing care quality and staff efficiency.\n\n---\n\n(score=1.2283, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n\n---\n\n(score=1.2157, age=1d, stability=static)\nAbi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging residents and providing therapeutic physical and cognitive stimulation.\n\n---\n\n(score=1.2070, age=1d, stability=static)\nAbi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which trades as Dromeda.\n",
+    "category": "cross_project",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 4486.656875000335,
+    "evaluation": {
+      "match_ratio": 0.11764705882352941,
+      "matches": 2,
+      "total_expected_words": 17,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  }
+]

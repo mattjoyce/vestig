@@ -1,0 +1,362 @@
+[
+  {
+    "qa_id": 1,
+    "question": "Who is the project lead for the AI Adoption Survey?",
+    "expected_answer": "Matt Joyce",
+    "vestig_output": "vestig v0.1.0\n(score=1.0163, age=1d, stability=static)\nThe project lead is Bojan.\n\n---\n\n(score=0.9782, age=1d, stability=static)\nGrace Brown described the Allity pilot as a significant step in Abi\u2019s evolution, yielding important data for AI model refinement and content library improvements.\n\n---\n\n(score=0.9665, age=1d, stability=static)\nGrace Brown, the 25\u2011year\u2011old founder and CEO of Andromeda Robotics, is a mechatronics engineer and Forbes 30 Under 30 alumna, recognized for her work on Abi.\n\n---\n\n(score=0.9622, age=1d, stability=static)\nAbi\u2019s core AI uses the ChatGPT\u20114 language model for natural conversation and machine\u2011vision technology to recognize faces and non\u2011verbal cues.\n\n---\n\n(score=0.9618, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n",
+    "category": "basic_fact",
+    "project": "ai_adoption_survey",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 7338.063458912075,
+    "evaluation": {
+      "match_ratio": 0.0,
+      "matches": 0,
+      "total_expected_words": 2,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 2,
+    "question": "What is the executive sponsor's name for the AI Adoption Survey project?",
+    "expected_answer": "John Sutherland, who is the CIO",
+    "vestig_output": "vestig v0.1.0\n(score=0.9869, age=1d, stability=static)\nThe project lead is Bojan.\n\n---\n\n(score=0.9520, age=1d, stability=static)\nGrace Brown described the Allity pilot as a significant step in Abi\u2019s evolution, yielding important data for AI model refinement and content library improvements.\n\n---\n\n(score=0.9482, age=1d, stability=static)\nGrace Brown, the 25\u2011year\u2011old founder and CEO of Andromeda Robotics, is a mechatronics engineer and Forbes 30 Under 30 alumna, recognized for her work on Abi.\n\n---\n\n(score=0.9370, age=1d, stability=static)\nAbi\u2019s core AI uses the ChatGPT\u20114 language model for natural conversation and machine\u2011vision technology to recognize faces and non\u2011verbal cues.\n\n---\n\n(score=0.9335, age=1d, stability=static)\nThe project notes were created on September 26, 2025.\n",
+    "category": "basic_fact",
+    "project": "ai_adoption_survey",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 5371.382583049126,
+    "evaluation": {
+      "match_ratio": 0.0,
+      "matches": 0,
+      "total_expected_words": 4,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 3,
+    "question": "What are the main barriers preventing people from using AI tools according to the survey?",
+    "expected_answer": "The survey asks about multiple barriers including: trouble accessing technology, lack of time, unsure how AI applies to their role, unclear about Calvary's AI policy, concerns about accuracy, insufficient training, and data privacy/security concerns",
+    "vestig_output": "vestig v0.1.0\n(score=0.9799, age=1d, stability=static)\nAbi\u2019s core AI uses the ChatGPT\u20114 language model for natural conversation and machine\u2011vision technology to recognize faces and non\u2011verbal cues.\n\n---\n\n(score=0.9607, age=1d, stability=static)\nTLH reported that their mix of service robots, including Abi, generated roughly $400,000 per year in staffing cost savings.\n\n---\n\n(score=0.9513, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n\n---\n\n(score=0.9504, age=1d, stability=static)\nThe survey asks respondents to select the main barriers preventing more AI tool usage, including lack of technology access, time constraints, uncertainty about applicability, policy uncertainty, accuracy concerns, insufficient training, data privacy worries, and Other.\n\n---\n\n(score=0.9455, age=1d, stability=static)\nSoftBank\u2019s Pepper robot was trialed in a Queensland hospital to greet patients and answer questions, illustrating similar use cases for social robots in healthcare.\n",
+    "category": "detailed_content",
+    "project": "ai_adoption_survey",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 5055.226249969564,
+    "evaluation": {
+      "match_ratio": 0.46153846153846156,
+      "matches": 12,
+      "total_expected_words": 26,
+      "appears_relevant": true,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 4,
+    "question": "What problem is Heidi Health trying to solve?",
+    "expected_answer": "Current use of internal typists and external transcription services results in delays of up to seven days for specialist documentation. Additionally, there are staffing sustainability risks due to resignations and anticipated retirements, and external transcription costs are escalating (over $116,000 annually).",
+    "vestig_output": "vestig v0.1.0\n(score=0.9993, age=1d, stability=static)\nDirect cost for the Heidi Health Team pilot subscription is $9,570 for a 3\u2011month period.\n\n---\n\n(score=0.9316, age=1d, stability=static)\nTLH reported that their mix of service robots, including Abi, generated roughly $400,000 per year in staffing cost savings.\n\n---\n\n(score=0.9308, age=1d, stability=static)\nSoftBank\u2019s Pepper robot was trialed in a Queensland hospital to greet patients and answer questions, illustrating similar use cases for social robots in healthcare.\n\n---\n\n(score=0.9263, age=1d, stability=static)\nAbi is designed to augment care staff rather than replace them, stepping in for social interaction when staff are busy and handling routine recreational tasks to free human caregivers for personal care.\n\n---\n\n(score=0.9159, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n",
+    "category": "problem_analysis",
+    "project": "heidi_health_ai_scribe",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 4534.277624916285,
+    "evaluation": {
+      "match_ratio": 0.07142857142857142,
+      "matches": 2,
+      "total_expected_words": 28,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 5,
+    "question": "What is the status of the Heidi Health AI Scribe project?",
+    "expected_answer": "The status is 'proposal'",
+    "vestig_output": "vestig v0.1.0\n(score=0.9723, age=1d, stability=static)\nDirect cost for the Heidi Health Team pilot subscription is $9,570 for a 3\u2011month period.\n\n---\n\n(score=0.9708, age=1d, stability=static)\nSoftBank\u2019s Pepper robot was trialed in a Queensland hospital to greet patients and answer questions, illustrating similar use cases for social robots in healthcare.\n\n---\n\n(score=0.9596, age=1d, stability=static)\nGrace Brown described the Allity pilot as a significant step in Abi\u2019s evolution, yielding important data for AI model refinement and content library improvements.\n\n---\n\n(score=0.9546, age=1d, stability=static)\nTLH reported that their mix of service robots, including Abi, generated roughly $400,000 per year in staffing cost savings.\n\n---\n\n(score=0.9542, age=1d, stability=static)\nThe project notes were created on September 26, 2025.\n",
+    "category": "basic_fact",
+    "project": "heidi_health_ai_scribe",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 4539.477791986428,
+    "evaluation": {
+      "match_ratio": 0.0,
+      "matches": 0,
+      "total_expected_words": 2,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 6,
+    "question": "Where is the Heidi Health pilot planned to be implemented?",
+    "expected_answer": "Hobart Consulting Suites (or Calvary Hobart Consulting Suites)",
+    "vestig_output": "vestig v0.1.0\n(score=1.0349, age=1d, stability=static)\nDirect cost for the Heidi Health Team pilot subscription is $9,570 for a 3\u2011month period.\n\n---\n\n(score=0.9452, age=1d, stability=static)\nThe final consent model approval is scheduled for November 2025.\n\n---\n\n(score=0.9407, age=1d, stability=static)\nSoftBank\u2019s Pepper robot was trialed in a Queensland hospital to greet patients and answer questions, illustrating similar use cases for social robots in healthcare.\n\n---\n\n(score=0.9366, age=1d, stability=static)\nGrace Brown described the Allity pilot as a significant step in Abi\u2019s evolution, yielding important data for AI model refinement and content library improvements.\n\n---\n\n(score=0.9265, age=1d, stability=static)\nTLH reported that their mix of service robots, including Abi, generated roughly $400,000 per year in staffing cost savings.\n",
+    "category": "basic_fact",
+    "project": "heidi_health_ai_scribe",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 5091.93154098466,
+    "evaluation": {
+      "match_ratio": 0.0,
+      "matches": 0,
+      "total_expected_words": 6,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 7,
+    "question": "Who met with Beamtree to discuss the PICQ proposal?",
+    "expected_answer": "John Sutherland (CIO) and Damien Bruce (CEO)",
+    "vestig_output": "vestig v0.1.0\n(score=0.9567, age=1d, stability=static)\nThe project lead is Bojan.\n\n---\n\n(score=0.9338, age=1d, stability=static)\nSoftBank\u2019s Pepper robot was trialed in a Queensland hospital to greet patients and answer questions, illustrating similar use cases for social robots in healthcare.\n\n---\n\n(score=0.9276, age=1d, stability=static)\nGrace Brown described the Allity pilot as a significant step in Abi\u2019s evolution, yielding important data for AI model refinement and content library improvements.\n\n---\n\n(score=0.9170, age=1d, stability=static)\nThe project notes were created on September 26, 2025.\n\n---\n\n(score=0.9066, age=1d, stability=static)\nTLH reported that their mix of service robots, including Abi, generated roughly $400,000 per year in staffing cost savings.\n",
+    "category": "basic_fact",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 5899.809333030134,
+    "evaluation": {
+      "match_ratio": 0.0,
+      "matches": 0,
+      "total_expected_words": 6,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 8,
+    "question": "Why is the BeamTree PICQ project considered sensitive?",
+    "expected_answer": "It's sensitive with coders/HIMs (Health Information Management staff) because there has been a historical 'frosty' reception to similar initiatives, and it may be perceived as surveillance or questioning of professional competence rather than quality improvement",
+    "vestig_output": "vestig v0.1.0\n(score=0.9206, age=1d, stability=static)\nThe project lead is Bojan.\n\n---\n\n(score=0.9171, age=1d, stability=static)\nThe project notes were created on September 26, 2025.\n\n---\n\n(score=0.9167, age=1d, stability=static)\nSoftBank\u2019s Pepper robot was trialed in a Queensland hospital to greet patients and answer questions, illustrating similar use cases for social robots in healthcare.\n\n---\n\n(score=0.9051, age=1d, stability=static)\nGrace Brown described the Allity pilot as a significant step in Abi\u2019s evolution, yielding important data for AI model refinement and content library improvements.\n\n---\n\n(score=0.8999, age=1d, stability=static)\nTLH reported that their mix of service robots, including Abi, generated roughly $400,000 per year in staffing cost savings.\n",
+    "category": "contextual_understanding",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 4828.502207994461,
+    "evaluation": {
+      "match_ratio": 0.1724137931034483,
+      "matches": 5,
+      "total_expected_words": 29,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 9,
+    "question": "What is the relationship between Beamtree and Phoebe mentioned in the project brief?",
+    "expected_answer": "The ideal positioning is that Beamtree would provide upstream quality signal (coding optimization) while Phoebe provides downstream claim integrity checking, creating a continuum rather than isolated tools",
+    "vestig_output": "vestig v0.1.0\n(score=0.9455, age=1d, stability=static)\nThe project lead is Bojan.\n\n---\n\n(score=0.9332, age=1d, stability=static)\nThe project notes were created on September 26, 2025.\n\n---\n\n(score=0.9213, age=1d, stability=static)\nAbi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging residents and providing therapeutic physical and cognitive stimulation.\n\n---\n\n(score=0.9181, age=1d, stability=static)\nSoftBank\u2019s Pepper robot was trialed in a Queensland hospital to greet patients and answer questions, illustrating similar use cases for social robots in healthcare.\n\n---\n\n(score=0.9147, age=1d, stability=static)\nGrace Brown described the Allity pilot as a significant step in Abi\u2019s evolution, yielding important data for AI model refinement and content library improvements.\n",
+    "category": "relationship_analysis",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 11593.327208072878,
+    "evaluation": {
+      "match_ratio": 0.0,
+      "matches": 0,
+      "total_expected_words": 24,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 10,
+    "question": "What is the recommended option for the BeamTree PICQ project?",
+    "expected_answer": "Option B: Small, Controlled Trial - using 1-2 months of recent data from selected private hospitals (1-2 sites), focusing on a single service line or DRG category, with minimal change to existing integrations",
+    "vestig_output": "vestig v0.1.0\n(score=0.9266, age=1d, stability=static)\nThe project lead is Bojan.\n\n---\n\n(score=0.9121, age=1d, stability=static)\nTLH reported that their mix of service robots, including Abi, generated roughly $400,000 per year in staffing cost savings.\n\n---\n\n(score=0.9052, age=1d, stability=static)\nSoftBank\u2019s Pepper robot was trialed in a Queensland hospital to greet patients and answer questions, illustrating similar use cases for social robots in healthcare.\n\n---\n\n(score=0.9016, age=1d, stability=static)\nThe project notes were created on September 26, 2025.\n\n---\n\n(score=0.8901, age=1d, stability=static)\nGrace Brown described the Allity pilot as a significant step in Abi\u2019s evolution, yielding important data for AI model refinement and content library improvements.\n",
+    "category": "detailed_content",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 6758.3997920155525,
+    "evaluation": {
+      "match_ratio": 0.14814814814814814,
+      "matches": 4,
+      "total_expected_words": 27,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 11,
+    "question": "What is Project Bronte?",
+    "expected_answer": "A confidential acquisition project requiring detailed document review and analysis, with an executed NDA. Matt is the project lead.",
+    "vestig_output": "vestig v0.1.0\n(score=0.9673, age=1d, stability=static)\nThe project lead is Bojan.\n\n---\n\n(score=0.9388, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n\n---\n\n(score=0.9367, age=1d, stability=static)\nThe project notes were created on September 26, 2025.\n\n---\n\n(score=0.9194, age=1d, stability=static)\nSoftBank\u2019s Pepper robot was trialed in a Queensland hospital to greet patients and answer questions, illustrating similar use cases for social robots in healthcare.\n\n---\n\n(score=0.9078, age=1d, stability=static)\nGrace Brown, the 25\u2011year\u2011old founder and CEO of Andromeda Robotics, is a mechatronics engineer and Forbes 30 Under 30 alumna, recognized for her work on Abi.\n",
+    "category": "basic_fact",
+    "project": "bronte",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 4842.2315830830485,
+    "evaluation": {
+      "match_ratio": 0.08333333333333333,
+      "matches": 1,
+      "total_expected_words": 12,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 12,
+    "question": "What is the status of Robot Companions project?",
+    "expected_answer": "Discovery",
+    "vestig_output": "vestig v0.1.0\n(score=1.0646, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n\n---\n\n(score=1.0085, age=1d, stability=static)\nTLH reported that their mix of service robots, including Abi, generated roughly $400,000 per year in staffing cost savings.\n\n---\n\n(score=0.9963, age=1d, stability=static)\nSoftBank\u2019s Pepper robot was trialed in a Queensland hospital to greet patients and answer questions, illustrating similar use cases for social robots in healthcare.\n\n---\n\n(score=0.9898, age=1d, stability=static)\nAbi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which trades as Dromeda.\n\n---\n\n(score=0.9685, age=1d, stability=static)\nGrace Brown, the 25\u2011year\u2011old founder and CEO of Andromeda Robotics, is a mechatronics engineer and Forbes 30 Under 30 alumna, recognized for her work on Abi.\n",
+    "category": "basic_fact",
+    "project": "robot_companions",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 6060.883249971084,
+    "evaluation": {
+      "match_ratio": 0.0,
+      "matches": 0,
+      "total_expected_words": 1,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 13,
+    "question": "What is the domain or area of focus for the Robot Companions project?",
+    "expected_answer": "Research initiative exploring robotic companions to combat loneliness in aged care settings",
+    "vestig_output": "vestig v0.1.0\n(score=1.0548, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n\n---\n\n(score=0.9848, age=1d, stability=static)\nTLH reported that their mix of service robots, including Abi, generated roughly $400,000 per year in staffing cost savings.\n\n---\n\n(score=0.9776, age=1d, stability=static)\nSoftBank\u2019s Pepper robot was trialed in a Queensland hospital to greet patients and answer questions, illustrating similar use cases for social robots in healthcare.\n\n---\n\n(score=0.9660, age=1d, stability=static)\nAbi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which trades as Dromeda.\n\n---\n\n(score=0.9589, age=1d, stability=static)\nGrace Brown, the 25\u2011year\u2011old founder and CEO of Andromeda Robotics, is a mechatronics engineer and Forbes 30 Under 30 alumna, recognized for her work on Abi.\n",
+    "category": "basic_fact",
+    "project": "robot_companions",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 5813.941708998755,
+    "evaluation": {
+      "match_ratio": 0.9,
+      "matches": 9,
+      "total_expected_words": 10,
+      "appears_relevant": true,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 14,
+    "question": "How many leaders participated in the AI Adoption Survey?",
+    "expected_answer": "Approximately 250 Calvary Leaders and 130 DHT Staff",
+    "vestig_output": "vestig v0.1.0\n(score=0.9663, age=1d, stability=static)\nGrace Brown described the Allity pilot as a significant step in Abi\u2019s evolution, yielding important data for AI model refinement and content library improvements.\n\n---\n\n(score=0.9598, age=1d, stability=static)\nTLH reported that their mix of service robots, including Abi, generated roughly $400,000 per year in staffing cost savings.\n\n---\n\n(score=0.9524, age=1d, stability=static)\nAbi\u2019s core AI uses the ChatGPT\u20114 language model for natural conversation and machine\u2011vision technology to recognize faces and non\u2011verbal cues.\n\n---\n\n(score=0.9509, age=1d, stability=static)\nThe final consent model approval is scheduled for November 2025.\n\n---\n\n(score=0.9430, age=1d, stability=static)\nThe project lead is Bojan.\n",
+    "category": "basic_fact",
+    "project": "ai_adoption_survey",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 4556.496166042052,
+    "evaluation": {
+      "match_ratio": 0.14285714285714285,
+      "matches": 1,
+      "total_expected_words": 7,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 15,
+    "question": "What types of support does the AI Adoption Survey ask about?",
+    "expected_answer": "The survey asks about multiple types: technical support and troubleshooting, examples of healthcare use cases, advanced training, introductory AI literacy training, one-on-one coaching, hands-on workshops, peer learning groups, and clear policies and guidelines",
+    "vestig_output": "vestig v0.1.0\n(score=0.9571, age=1d, stability=static)\nAbi\u2019s core AI uses the ChatGPT\u20114 language model for natural conversation and machine\u2011vision technology to recognize faces and non\u2011verbal cues.\n\n---\n\n(score=0.9508, age=1d, stability=static)\nGrace Brown described the Allity pilot as a significant step in Abi\u2019s evolution, yielding important data for AI model refinement and content library improvements.\n\n---\n\n(score=0.9437, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n\n---\n\n(score=0.9412, age=1d, stability=static)\nAbi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship, allowing staff to focus on clinical and complex emotional tasks, thereby enhancing care quality and staff efficiency.\n\n---\n\n(score=0.9350, age=1d, stability=static)\nTLH reported that their mix of service robots, including Abi, generated roughly $400,000 per year in staffing cost savings.\n",
+    "category": "detailed_content",
+    "project": "ai_adoption_survey",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 6154.620832996443,
+    "evaluation": {
+      "match_ratio": 0.14814814814814814,
+      "matches": 4,
+      "total_expected_words": 27,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 16,
+    "question": "What are the key risks identified for the BeamTree PICQ project?",
+    "expected_answer": "Four main risk categories: 1) Workforce/political risks (HIM/coder perception issues, professional autonomy concerns), 2) Data governance risks (external data sharing, privacy concerns), 3) Technical/integration risks (siloed tool, workflow friction), 4) Financial/ROI risks (cost vs benefit, overestimated uplift)",
+    "vestig_output": "vestig v0.1.0\n(score=0.9433, age=1d, stability=static)\nThe project lead is Bojan.\n\n---\n\n(score=0.9277, age=1d, stability=static)\nThe project notes were created on September 26, 2025.\n\n---\n\n(score=0.9159, age=1d, stability=static)\nTLH reported that their mix of service robots, including Abi, generated roughly $400,000 per year in staffing cost savings.\n\n---\n\n(score=0.9074, age=1d, stability=static)\nSoftBank\u2019s Pepper robot was trialed in a Queensland hospital to greet patients and answer questions, illustrating similar use cases for social robots in healthcare.\n\n---\n\n(score=0.9024, age=1d, stability=static)\nDirect cost for the Heidi Health Team pilot subscription is $9,570 for a 3\u2011month period.\n",
+    "category": "detailed_content",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 6701.205707970075,
+    "evaluation": {
+      "match_ratio": 0.0,
+      "matches": 0,
+      "total_expected_words": 32,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 17,
+    "question": "What happened with Beamtree's previous engagement with Calvary?",
+    "expected_answer": "There was a prior interaction via Richard and Martin that did not progress due to technical/data constraints and differing opinions on approach",
+    "vestig_output": "vestig v0.1.0\n(score=0.9115, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n\n---\n\n(score=0.9021, age=1d, stability=static)\nA prior Beamtree engagement with Calvary, facilitated through Richard and Martin, did not progress because of technical/data constraints and differing opinions on approach.\n\n---\n\n(score=0.9008, age=1d, stability=static)\nGrace Brown described the Allity pilot as a significant step in Abi\u2019s evolution, yielding important data for AI model refinement and content library improvements.\n\n---\n\n(score=0.8995, age=1d, stability=static)\nTLH reported that their mix of service robots, including Abi, generated roughly $400,000 per year in staffing cost savings.\n\n---\n\n(score=0.8885, age=1d, stability=static)\nThe project lead is Bojan.\n",
+    "category": "historical_context",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 6592.399624991231,
+    "evaluation": {
+      "match_ratio": 0.75,
+      "matches": 12,
+      "total_expected_words": 16,
+      "appears_relevant": true,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 18,
+    "question": "Who is transitioning the Heidi Health project from initial to ongoing leadership?",
+    "expected_answer": "Matt Joyce was the initial project lead, with Liam taking over for ongoing management",
+    "vestig_output": "vestig v0.1.0\n(score=0.9752, age=1d, stability=static)\nDirect cost for the Heidi Health Team pilot subscription is $9,570 for a 3\u2011month period.\n\n---\n\n(score=0.9632, age=1d, stability=static)\nThe project lead is Bojan.\n\n---\n\n(score=0.9336, age=1d, stability=static)\nThe project notes were created on September 26, 2025.\n\n---\n\n(score=0.9320, age=1d, stability=static)\nThe final consent model approval is scheduled for November 2025.\n\n---\n\n(score=0.9282, age=1d, stability=static)\nGrace Brown, the 25\u2011year\u2011old founder and CEO of Andromeda Robotics, is a mechatronics engineer and Forbes 30 Under 30 alumna, recognized for her work on Abi.\n",
+    "category": "basic_fact",
+    "project": "heidi_health_ai_scribe",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 6978.760917088948,
+    "evaluation": {
+      "match_ratio": 0.1,
+      "matches": 1,
+      "total_expected_words": 10,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 19,
+    "question": "What service areas does the AI Adoption Survey cover?",
+    "expected_answer": "Private Hospitals, Home Care, Residential Aged Care, Retirement Living, Public Hospitals, Corporate/Support Functions, and Other",
+    "vestig_output": "vestig v0.1.0\n(score=0.9475, age=1d, stability=static)\nGrace Brown described the Allity pilot as a significant step in Abi\u2019s evolution, yielding important data for AI model refinement and content library improvements.\n\n---\n\n(score=0.9453, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n\n---\n\n(score=0.9448, age=1d, stability=static)\nAbi\u2019s core AI uses the ChatGPT\u20114 language model for natural conversation and machine\u2011vision technology to recognize faces and non\u2011verbal cues.\n\n---\n\n(score=0.9429, age=1d, stability=static)\nTLH reported that their mix of service robots, including Abi, generated roughly $400,000 per year in staffing cost savings.\n\n---\n\n(score=0.9335, age=1d, stability=static)\nAbi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship, allowing staff to focus on clinical and complex emotional tasks, thereby enhancing care quality and staff efficiency.\n",
+    "category": "detailed_content",
+    "project": "ai_adoption_survey",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 7587.961500044912,
+    "evaluation": {
+      "match_ratio": 0.08333333333333333,
+      "matches": 1,
+      "total_expected_words": 12,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 20,
+    "question": "Which project mentions integration with Phoebe?",
+    "expected_answer": "The BeamTree PICQ project mentions Phoebe as a proven success at Calvary for downstream claim-checking, and proposes positioning Beamtree as upstream quality/coding signal to integrate with Phoebe",
+    "vestig_output": "vestig v0.1.0\n(score=0.9591, age=1d, stability=static)\nThe project lead is Bojan.\n\n---\n\n(score=0.9572, age=1d, stability=static)\nThe project notes were created on September 26, 2025.\n\n---\n\n(score=0.9329, age=1d, stability=static)\nGrace Brown described the Allity pilot as a significant step in Abi\u2019s evolution, yielding important data for AI model refinement and content library improvements.\n\n---\n\n(score=0.9304, age=1d, stability=static)\nSoftBank\u2019s Pepper robot was trialed in a Queensland hospital to greet patients and answer questions, illustrating similar use cases for social robots in healthcare.\n\n---\n\n(score=0.9281, age=1d, stability=static)\nTLH reported that their mix of service robots, including Abi, generated roughly $400,000 per year in staffing cost savings.\n",
+    "category": "cross_project",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 6948.770625051111,
+    "evaluation": {
+      "match_ratio": 0.11764705882352941,
+      "matches": 2,
+      "total_expected_words": 17,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  }
+]

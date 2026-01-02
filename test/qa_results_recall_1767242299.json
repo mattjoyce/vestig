@@ -1,0 +1,362 @@
+[
+  {
+    "qa_id": 1,
+    "question": "Who is the project lead for the AI Adoption Survey?",
+    "expected_answer": "Matt Joyce",
+    "vestig_output": "vestig v0.1.0\n(score=1.1421, age=1d, stability=static)\nThe project lead is Bojan.\n\n---\n\n(score=0.9717, age=1d, stability=static)\nMatt Joyce is the project lead for the AI Adoption Survey.\n\n---\n\n(score=0.9395, age=1d, stability=static)\nThe project lead is Matt Joyce.\n\n---\n\n(score=0.9169, age=1d, stability=static)\nBojan is the project lead for the Mimaso SaaS Platform implementation.\n\n---\n\n(score=0.8109, age=1d, stability=static)\nThe project lead for this enhancement is Liam.\n",
+    "category": "basic_fact",
+    "project": "ai_adoption_survey",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2277.7570410398766,
+    "evaluation": {
+      "match_ratio": 1.0,
+      "matches": 2,
+      "total_expected_words": 2,
+      "appears_relevant": true,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 2,
+    "question": "What is the executive sponsor's name for the AI Adoption Survey project?",
+    "expected_answer": "John Sutherland, who is the CIO",
+    "vestig_output": "vestig v0.1.0\n(score=0.9000, age=1d, stability=static)\nThe project lead is Bojan.\n\n---\n\n(score=0.8884, age=1d, stability=static)\nJohn Sutherland, CIO, is an executive sponsor stakeholder for the project.\n\n---\n\n(score=0.8422, age=1d, stability=static)\nThe project is named \"Smartz Incontinence Management\".\n\n---\n\n(score=0.8193, age=1d, stability=static)\nThe project is titled \"AI Adoption Survey\".\n\n---\n\n(score=0.7980, age=1d, stability=static)\nMatt Joyce is the project lead for the AI Adoption Survey.\n",
+    "category": "basic_fact",
+    "project": "ai_adoption_survey",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2336.495624971576,
+    "evaluation": {
+      "match_ratio": 0.75,
+      "matches": 3,
+      "total_expected_words": 4,
+      "appears_relevant": true,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 3,
+    "question": "What are the main barriers preventing people from using AI tools according to the survey?",
+    "expected_answer": "The survey asks about multiple barriers including: trouble accessing technology, lack of time, unsure how AI applies to their role, unclear about Calvary's AI policy, concerns about accuracy, insufficient training, and data privacy/security concerns",
+    "vestig_output": "vestig v0.1.0\n(score=0.8864, age=1d, stability=static)\nThe survey asks respondents to select the main barriers preventing more AI tool usage, including lack of technology access, time constraints, uncertainty about applicability, policy uncertainty, accuracy concerns, insufficient training, data privacy worries, and Other.\n\n---\n\n(score=0.7262, age=1d, stability=static)\n# Calvary AI/LLM Survey Design Overview\n\n**Overview:** The Calvary AI/LLM survey gathers information about staff roles, service areas, and current use of AI tools. It assesses confidence, interest in skill development, preferred support, and perceived barriers, while also exploring interest in training and future initiatives. The survey provides multiple-choice questions covering usage frequency, activities, subscription status, and desired AI integration areas. Respondents can contact a dedicated email for any questions.\n\n**Key Insights:**\n- Respondents select the service area they primarily support, such as Private Hospitals, Home Care, Residential Aged Care, and others.\n- The survey captures respondents' role at Calvary, offering options like Executive Leader, Senior Management, and Operational Management.\n- Frequency of AI/LLM tool usage in the past two weeks is measured, ranging from regular daily/weekly use to never or policy\u2011uncertain use.\n- A wide set of AI\u2011related activities is listed, including automating admin tasks, supporting clinical decisions, creating reports, and brainstorming.\n- Respondents indicate whether they pay for AI tool subscriptions, with options for free use, premium subscriptions, or no use.\n- Confidence in using AI/LLM tools is rated on a 5\u2011point Likert scale from Very confident to No confidence.\n- Interest in developing AI/LLM skills for work is captured using a 5\u2011point Likert scale from Very interested to Not interested at all.\n- Attending a half\u2011day internal training workshop on AI/LLM tools is explored with options from definitely interested to not interested.\n- Key barriers to greater AI tool usage are identified, including technology access, time constraints, policy uncertainty, accuracy concerns, and data privacy worries.\n- Respondents indicate the most valuable AI support types (technical support, use\u2011case examples, training, coaching, policies) and are provided a contact email for queries.\n- Potential benefit areas for AI integration are listed, such as clinical documentation, quality monitoring, patient communication, and administrative efficiency.\n- Interest in participating in new AI initiatives is captured with Yes, No, and Maybe response options.\n\n**Themes:** AIUsage, Barriers, Training, Support, Roles, Benefits\n\n---\n\n(score=0.7237, age=1d, stability=static)\nThe survey measures respondents' confidence in using AI/LLM tools on a 5\u2011point Likert scale ranging from Very confident to No confidence.\n\n---\n\n(score=0.7128, age=1d, stability=static)\nPrevious engagement barriers involved Richard and Martin.\n\n---\n\n(score=0.7118, age=1d, stability=static)\nThe survey asks how often respondents have used AI/LLM tools in the last two weeks, offering choices: regularly (daily/weekly), occasionally (monthly or less), rarely (once or twice), never, and not allowed/unsure of policy.\n",
+    "category": "detailed_content",
+    "project": "ai_adoption_survey",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2255.598333082162,
+    "evaluation": {
+      "match_ratio": 0.5,
+      "matches": 13,
+      "total_expected_words": 26,
+      "appears_relevant": true,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 4,
+    "question": "What problem is Heidi Health trying to solve?",
+    "expected_answer": "Current use of internal typists and external transcription services results in delays of up to seven days for specialist documentation. Additionally, there are staffing sustainability risks due to resignations and anticipated retirements, and external transcription costs are escalating (over $116,000 annually).",
+    "vestig_output": "vestig v0.1.0\n(score=0.7882, age=1d, stability=static)\nThe project lead is Bojan.\n\n---\n\n(score=0.7428, age=1d, stability=static)\nGrace Brown is the CEO of Andromeda.\n\n---\n\n(score=0.7300, age=1d, stability=static)\nThe project is titled \"AI Adoption Survey\".\n\n---\n\n(score=0.7208, age=1d, stability=static)\nAbi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which trades as Dromeda.\n\n---\n\n(score=0.7190, age=1d, stability=static)\nAbi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging residents and providing therapeutic physical and cognitive stimulation.\n",
+    "category": "problem_analysis",
+    "project": "heidi_health_ai_scribe",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2265.4129170114174,
+    "evaluation": {
+      "match_ratio": 0.03571428571428571,
+      "matches": 1,
+      "total_expected_words": 28,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 5,
+    "question": "What is the status of the Heidi Health AI Scribe project?",
+    "expected_answer": "The status is 'proposal'",
+    "vestig_output": "vestig v0.1.0\n(score=0.8712, age=1d, stability=static)\nThe project notes were created on September 26, 2025.\n\n---\n\n(score=0.8430, age=1d, stability=static)\nThe project lead is Bojan.\n\n---\n\n(score=0.8301, age=1d, stability=static)\nThe project is titled \"AI Adoption Survey\".\n\n---\n\n(score=0.8160, age=1d, stability=static)\nThe project is named \"Smartz Incontinence Management\".\n\n---\n\n(score=0.8008, age=1d, stability=static)\nThe project is in the phase \"SOW1 - Discovery and Design\".\n",
+    "category": "basic_fact",
+    "project": "heidi_health_ai_scribe",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2253.0162920011207,
+    "evaluation": {
+      "match_ratio": 0.0,
+      "matches": 0,
+      "total_expected_words": 2,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 6,
+    "question": "Where is the Heidi Health pilot planned to be implemented?",
+    "expected_answer": "Hobart Consulting Suites (or Calvary Hobart Consulting Suites)",
+    "vestig_output": "vestig v0.1.0\n(score=0.9296, age=1d, stability=static)\nGrace Brown described the Allity pilot as a significant step in Abi\u2019s evolution, yielding important data for AI model refinement and content library improvements.\n\n---\n\n(score=0.7953, age=1d, stability=static)\nThe pilot aligns with the Safe Introduction Policy and informs the Responsible AI Policy.\n\n---\n\n(score=0.7916, age=1d, stability=static)\nDirect cost for the Heidi Health Team pilot subscription is $9,570 for a 3\u2011month period.\n\n---\n\n(score=0.7669, age=1d, stability=static)\nThe project type for Heidi Health - AI Scribe is \"pilot\".\n\n---\n\n(score=0.7586, age=1d, stability=static)\nFunding for the pilot is covered directly by Calvary Hobart Consulting Suites (site funded).\n",
+    "category": "basic_fact",
+    "project": "heidi_health_ai_scribe",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2283.695042016916,
+    "evaluation": {
+      "match_ratio": 0.6666666666666666,
+      "matches": 4,
+      "total_expected_words": 6,
+      "appears_relevant": true,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 7,
+    "question": "Who met with Beamtree to discuss the PICQ proposal?",
+    "expected_answer": "John Sutherland (CIO) and Damien Bruce (CEO)",
+    "vestig_output": "vestig v0.1.0\n(score=0.7811, age=1d, stability=static)\nThe vendor for the proposal is Beamtree.\n\n---\n\n(score=0.7798, age=1d, stability=static)\nExecutive sponsors for the proposal are John Sutherland (CIO) and Damien Bruce (CEO).\n\n---\n\n(score=0.7380, age=1d, stability=static)\nRelated systems for the proposal include Phoebe, PAS/EMR, Coding Platforms, and the Data Warehouse.\n\n---\n\n(score=0.7267, age=1d, stability=static)\nMelissa Evans, Regional Chief Executive Officer of the TAS Region, is the Executive Sponsor for the Heidi Health AI Scribe Pilot proposal dated 18 September 2025.\n\n---\n\n(score=0.7256, age=1d, stability=static)\nA meeting on September 29, 2025 was held between Matt Joyce and Dana Ieraci to discuss the leadership transition for the Andromeda ABI Robot project.\n",
+    "category": "basic_fact",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2261.215625097975,
+    "evaluation": {
+      "match_ratio": 1.0,
+      "matches": 6,
+      "total_expected_words": 6,
+      "appears_relevant": true,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 8,
+    "question": "Why is the BeamTree PICQ project considered sensitive?",
+    "expected_answer": "It's sensitive with coders/HIMs (Health Information Management staff) because there has been a historical 'frosty' reception to similar initiatives, and it may be perceived as surveillance or questioning of professional competence rather than quality improvement",
+    "vestig_output": "vestig v0.1.0\n(score=0.7722, age=1d, stability=static)\nThe project lead is Bojan.\n\n---\n\n(score=0.7555, age=1d, stability=static)\nThe project is named \"Smartz Incontinence Management\".\n\n---\n\n(score=0.7512, age=1d, stability=static)\nThe project is titled \"AI Adoption Survey\".\n\n---\n\n(score=0.7495, age=1d, stability=static)\nThe project notes were created on September 26, 2025.\n\n---\n\n(score=0.7414, age=1d, stability=static)\nThe BeamTree PICQ project brief was created on December 10, 2025, is currently in the \"Executive Review - Pre-engagement Assessment\" status, and is marked as high sensitivity (not for HIM/Coder distribution at this stage).\n",
+    "category": "contextual_understanding",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2271.64383395575,
+    "evaluation": {
+      "match_ratio": 0.13793103448275862,
+      "matches": 4,
+      "total_expected_words": 29,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 9,
+    "question": "What is the relationship between Beamtree and Phoebe mentioned in the project brief?",
+    "expected_answer": "The ideal positioning is that Beamtree would provide upstream quality signal (coding optimization) while Phoebe provides downstream claim integrity checking, creating a continuum rather than isolated tools",
+    "vestig_output": "vestig v0.1.0\n(score=0.8518, age=1d, stability=static)\nThe project lead is Bojan.\n\n---\n\n(score=0.8149, age=1d, stability=static)\nThe project notes were created on September 26, 2025.\n\n---\n\n(score=0.7966, age=1d, stability=static)\nThe project aligns with Calvary FY26 Strategic Priorities: Consumer\u2011Centred Care, CCS Reinforcement, Mission Integration, and Operational Excellence.\n\n---\n\n(score=0.7956, age=1d, stability=static)\nThe project is titled \"Mimaso - Riverina Drug and Alcohol\".\n\n---\n\n(score=0.7920, age=1d, stability=static)\nThe project is in the phase \"SOW1 - Discovery and Design\".\n",
+    "category": "relationship_analysis",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2275.163499987684,
+    "evaluation": {
+      "match_ratio": 0.0,
+      "matches": 0,
+      "total_expected_words": 24,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 10,
+    "question": "What is the recommended option for the BeamTree PICQ project?",
+    "expected_answer": "Option B: Small, Controlled Trial - using 1-2 months of recent data from selected private hospitals (1-2 sites), focusing on a single service line or DRG category, with minimal change to existing integrations",
+    "vestig_output": "vestig v0.1.0\n(score=0.8376, age=1d, stability=static)\nThe project is named \"Smartz Incontinence Management\".\n\n---\n\n(score=0.8356, age=1d, stability=static)\nThe project lead is Bojan.\n\n---\n\n(score=0.8337, age=1d, stability=static)\nThe project is titled \"AI Adoption Survey\".\n\n---\n\n(score=0.7996, age=1d, stability=static)\nThe project is titled \"Mimaso - Riverina Drug and Alcohol\".\n\n---\n\n(score=0.7976, age=1d, stability=static)\nThe project is in the phase \"SOW1 - Discovery and Design\".\n",
+    "category": "detailed_content",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2337.8261670004576,
+    "evaluation": {
+      "match_ratio": 0.07407407407407407,
+      "matches": 2,
+      "total_expected_words": 27,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 11,
+    "question": "What is Project Bronte?",
+    "expected_answer": "A confidential acquisition project requiring detailed document review and analysis, with an executed NDA. Matt is the project lead.",
+    "vestig_output": "vestig v0.1.0\n(score=0.8648, age=1d, stability=static)\nGrace Brown is the CEO of Andromeda.\n\n---\n\n(score=0.7895, age=1d, stability=static)\nProject Lead is Matt Joyce, National Manager Emerging Technologies & Health Informatics; Executive Sponsor is John Sutherland, National Director Digital Health & Technology.\n\n---\n\n(score=0.7506, age=1d, stability=static)\nThe project lead is Bojan.\n\n---\n\n(score=0.7454, age=1d, stability=static)\nJohn Sutherland serves as the CIO and Executive Sponsor for the AI Adoption Survey.\n\n---\n\n(score=0.7310, age=1d, stability=static)\nThe project is titled \"AI Adoption Survey\".\n",
+    "category": "basic_fact",
+    "project": "bronte",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2360.5542910518125,
+    "evaluation": {
+      "match_ratio": 0.16666666666666666,
+      "matches": 2,
+      "total_expected_words": 12,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 12,
+    "question": "What is the status of Robot Companions project?",
+    "expected_answer": "Discovery",
+    "vestig_output": "vestig v0.1.0\n(score=0.8834, age=1d, stability=static)\nThe project lead is Bojan.\n\n---\n\n(score=0.8793, age=1d, stability=static)\nThe project notes were created on September 26, 2025.\n\n---\n\n(score=0.8315, age=1d, stability=static)\nThe project is titled \"AI Adoption Survey\".\n\n---\n\n(score=0.8184, age=1d, stability=static)\nThe project is in the phase \"SOW1 - Discovery and Design\".\n\n---\n\n(score=0.8160, age=1d, stability=static)\nThe project is named \"Smartz Incontinence Management\".\n",
+    "category": "basic_fact",
+    "project": "robot_companions",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2278.728708042763,
+    "evaluation": {
+      "match_ratio": 1.0,
+      "matches": 1,
+      "total_expected_words": 1,
+      "appears_relevant": true,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 13,
+    "question": "What is the domain or area of focus for the Robot Companions project?",
+    "expected_answer": "Research initiative exploring robotic companions to combat loneliness in aged care settings",
+    "vestig_output": "vestig v0.1.0\n(score=0.8202, age=1d, stability=static)\nThe project lead is Bojan.\n\n---\n\n(score=0.7904, age=1d, stability=static)\nThe project operates within the \"national\" domain.\n\n---\n\n(score=0.7881, age=1d, stability=static)\nThe project is titled \"AI Adoption Survey\".\n\n---\n\n(score=0.7795, age=1d, stability=static)\nThe project is named \"Smartz Incontinence Management\".\n\n---\n\n(score=0.7795, age=1d, stability=static)\nThe project domain is \"organizational_development\".\n",
+    "category": "basic_fact",
+    "project": "robot_companions",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2332.5176659272984,
+    "evaluation": {
+      "match_ratio": 0.0,
+      "matches": 0,
+      "total_expected_words": 10,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 14,
+    "question": "How many leaders participated in the AI Adoption Survey?",
+    "expected_answer": "Approximately 250 Calvary Leaders and 130 DHT Staff",
+    "vestig_output": "vestig v0.1.0\n(score=0.7892, age=1d, stability=static)\nThe project lead is Bojan.\n\n---\n\n(score=0.7527, age=1d, stability=static)\nAbi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging residents and providing therapeutic physical and cognitive stimulation.\n\n---\n\n(score=0.7051, age=1d, stability=static)\nResponse summary: the leadership survey collected 113 responses out of ~250 leaders (45% response rate); the DHT survey collected 72 responses out of ~130 staff (55% response rate); total combined responses amount to 185.\n\n---\n\n(score=0.6937, age=1d, stability=static)\n# AI Adoption Survey Progress Summary\n\n**Overview:** The AI Adoption Survey was launched in August 2025 to assess AI usage and needs among Calvary leaders and later extended to the Digital Health Technology team. Over 185 respondents provided insights across six structured sections, informing planned workshops, investment priorities, and an emerging AI strategy. An executive briefing presented initial findings to senior leadership, and data collection is now complete, awaiting comparative analysis.\n\n**Key Insights:**\n- The survey was launched on 2025-08-05 targeting approximately 250 Calvary leaders, designed to take under 5 minutes, offered anonymous participation, and included a commitment to share results and actions.\n- It was organized into six sections covering background, current AI/LLM usage, skills & interest, barriers & support needs, future vision, and contact information.\n- The intended outcomes included developing practical workshops, informing technology investment priorities, identifying implementation champions, and shaping an AI strategy aligned with the organization\u2019s mission and values.\n- An executive briefing on 2025-08-29 presented the initial analysis of 113 leadership responses to CIO John Sutherland, outlining key insights and organizational implications.\n- The survey was extended on 2025-09-26 to the Digital Health Technology team (~130 staff) using the same six\u2011section design for consistency and comparative analysis.\n- Response rates were 45% for leadership (113 of ~250) and 55% for DHT (72 of ~130), yielding a combined total of 185 completed surveys.\n- Data collection for both surveys is complete, enabling comparative analysis between leadership and technical teams, though analysis and response development are still pending.\n\n**Themes:** survey, AI adoption, leadership, digital health, response rate, analysis, workshops\n\n---\n\n(score=0.6897, age=1d, stability=static)\nGrace Brown, the 25\u2011year\u2011old founder and CEO of Andromeda Robotics, is a mechatronics engineer and Forbes 30 Under 30 alumna, recognized for her work on Abi.\n",
+    "category": "basic_fact",
+    "project": "ai_adoption_survey",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2281.753999995999,
+    "evaluation": {
+      "match_ratio": 1.0,
+      "matches": 7,
+      "total_expected_words": 7,
+      "appears_relevant": true,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 15,
+    "question": "What types of support does the AI Adoption Survey ask about?",
+    "expected_answer": "The survey asks about multiple types: technical support and troubleshooting, examples of healthcare use cases, advanced training, introductory AI literacy training, one-on-one coaching, hands-on workshops, peer learning groups, and clear policies and guidelines",
+    "vestig_output": "vestig v0.1.0\n(score=0.8002, age=1d, stability=static)\nAbi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship, allowing staff to focus on clinical and complex emotional tasks, thereby enhancing care quality and staff efficiency.\n\n---\n\n(score=0.7618, age=1d, stability=static)\nThe survey asks what type of AI or technology support would be most valuable for respondents' roles, with options such as technical support, use\u2011case examples, advanced training, introductory literacy training, one\u2011on\u2011one coaching, hands\u2011on workshops, peer learning groups, clear policies, and Other.\n\n---\n\n(score=0.7510, age=1d, stability=static)\nThe survey asks respondents to select the service area they primarily support, offering options such as Private Hospitals, Home Care, Residential Aged Care, Retirement Living, Public Hospitals, Corporate/Support Functions, and Other.\n\n---\n\n(score=0.7397, age=1d, stability=static)\nAbi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging residents and providing therapeutic physical and cognitive stimulation.\n\n---\n\n(score=0.7235, age=1d, stability=static)\nAbi is designed to augment care staff rather than replace them, stepping in for social interaction when staff are busy and handling routine recreational tasks to free human caregivers for personal care.\n",
+    "category": "detailed_content",
+    "project": "ai_adoption_survey",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2272.39079202991,
+    "evaluation": {
+      "match_ratio": 0.6666666666666666,
+      "matches": 18,
+      "total_expected_words": 27,
+      "appears_relevant": true,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 16,
+    "question": "What are the key risks identified for the BeamTree PICQ project?",
+    "expected_answer": "Four main risk categories: 1) Workforce/political risks (HIM/coder perception issues, professional autonomy concerns), 2) Data governance risks (external data sharing, privacy concerns), 3) Technical/integration risks (siloed tool, workflow friction), 4) Financial/ROI risks (cost vs benefit, overestimated uplift)",
+    "vestig_output": "vestig v0.1.0\n(score=0.8039, age=1d, stability=static)\nThe project lead is Bojan.\n\n---\n\n(score=0.7531, age=1d, stability=static)\nKey stakeholders for the project were identified as UTS (Sarath Kodagoda), Macquarie (Bamini Gopinath), Meals on Wheels (Claudia Odello), and NeuraNext (Adrian Tyson).\n\n---\n\n(score=0.7526, age=1d, stability=static)\nThe project notes were created on September 26, 2025.\n\n---\n\n(score=0.7509, age=1d, stability=static)\nThe project is titled \"AI Adoption Survey\".\n\n---\n\n(score=0.7459, age=1d, stability=static)\nThe project is named \"Smartz Incontinence Management\".\n",
+    "category": "detailed_content",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2316.084416001104,
+    "evaluation": {
+      "match_ratio": 0.0,
+      "matches": 0,
+      "total_expected_words": 32,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 17,
+    "question": "What happened with Beamtree's previous engagement with Calvary?",
+    "expected_answer": "There was a prior interaction via Richard and Martin that did not progress due to technical/data constraints and differing opinions on approach",
+    "vestig_output": "vestig v0.1.0\n(score=0.7127, age=1d, stability=static)\nA prior Beamtree engagement with Calvary, facilitated through Richard and Martin, did not progress because of technical/data constraints and differing opinions on approach.\n\n---\n\n(score=0.6766, age=1d, stability=static)\nThe project notes were created on September 26, 2025.\n\n---\n\n(score=0.6673, age=1d, stability=static)\nThe project lead is Bojan.\n\n---\n\n(score=0.6605, age=1d, stability=static)\nPrevious engagement barriers involved Richard and Martin.\n\n---\n\n(score=0.6540, age=1d, stability=static)\nGrace Brown, the 25\u2011year\u2011old founder and CEO of Andromeda Robotics, is a mechatronics engineer and Forbes 30 Under 30 alumna, recognized for her work on Abi.\n",
+    "category": "historical_context",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2259.571957984008,
+    "evaluation": {
+      "match_ratio": 0.6875,
+      "matches": 11,
+      "total_expected_words": 16,
+      "appears_relevant": true,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 18,
+    "question": "Who is transitioning the Heidi Health project from initial to ongoing leadership?",
+    "expected_answer": "Matt Joyce was the initial project lead, with Liam taking over for ongoing management",
+    "vestig_output": "vestig v0.1.0\n(score=0.9287, age=1d, stability=static)\nThe project lead is Bojan.\n\n---\n\n(score=0.8145, age=1d, stability=static)\nProject management has transitioned to the Finance team while Health Informatics continues to track the project for visibility.\n\n---\n\n(score=0.8051, age=1d, stability=static)\nA meeting on September 29, 2025 was held between Matt Joyce and Dana Ieraci to discuss the leadership transition for the Andromeda ABI Robot project.\n\n---\n\n(score=0.7848, age=1d, stability=static)\nBojan is the project lead for the Mimaso SaaS Platform implementation.\n\n---\n\n(score=0.7825, age=1d, stability=static)\nProject ownership changed: the Finance team now mostly manages the project, replacing the previous Health Informatics lead.\n",
+    "category": "basic_fact",
+    "project": "heidi_health_ai_scribe",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2265.338708064519,
+    "evaluation": {
+      "match_ratio": 0.4,
+      "matches": 4,
+      "total_expected_words": 10,
+      "appears_relevant": true,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 19,
+    "question": "What service areas does the AI Adoption Survey cover?",
+    "expected_answer": "Private Hospitals, Home Care, Residential Aged Care, Retirement Living, Public Hospitals, Corporate/Support Functions, and Other",
+    "vestig_output": "vestig v0.1.0\n(score=0.7541, age=1d, stability=static)\nThe survey asks respondents to select the service area they primarily support, offering options such as Private Hospitals, Home Care, Residential Aged Care, Retirement Living, Public Hospitals, Corporate/Support Functions, and Other.\n\n---\n\n(score=0.7484, age=1d, stability=static)\nAbi is designed to augment care staff rather than replace them, stepping in for social interaction when staff are busy and handling routine recreational tasks to free human caregivers for personal care.\n\n---\n\n(score=0.7291, age=1d, stability=static)\nThe latest generation, called \u201cGenesis Abi\u201d, can self\u2011navigate on wheels through a care facility, following schedules pre\u2011programmed by staff.\n\n---\n\n(score=0.7217, age=1d, stability=static)\nJohn Sutherland serves as the CIO and Executive Sponsor for the AI Adoption Survey.\n\n---\n\n(score=0.7140, age=1d, stability=static)\nAbi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging residents and providing therapeutic physical and cognitive stimulation.\n",
+    "category": "detailed_content",
+    "project": "ai_adoption_survey",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2343.1479580467567,
+    "evaluation": {
+      "match_ratio": 1.0,
+      "matches": 12,
+      "total_expected_words": 12,
+      "appears_relevant": true,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 20,
+    "question": "Which project mentions integration with Phoebe?",
+    "expected_answer": "The BeamTree PICQ project mentions Phoebe as a proven success at Calvary for downstream claim-checking, and proposes positioning Beamtree as upstream quality/coding signal to integrate with Phoebe",
+    "vestig_output": "vestig v0.1.0\n(score=0.8321, age=1d, stability=static)\nThe project lead is Bojan.\n\n---\n\n(score=0.8046, age=1d, stability=static)\nThe project aligns with Calvary FY26 Strategic Priorities: Consumer\u2011Centred Care, CCS Reinforcement, Mission Integration, and Operational Excellence.\n\n---\n\n(score=0.7838, age=1d, stability=static)\nThe project is titled \"AI Adoption Survey\".\n\n---\n\n(score=0.7775, age=1d, stability=static)\nThe project is titled \"Mimaso - Riverina Drug and Alcohol\".\n\n---\n\n(score=0.7698, age=1d, stability=static)\nThe project is named \"Smartz Incontinence Management\".\n",
+    "category": "cross_project",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2280.504458001815,
+    "evaluation": {
+      "match_ratio": 0.17647058823529413,
+      "matches": 3,
+      "total_expected_words": 17,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  }
+]

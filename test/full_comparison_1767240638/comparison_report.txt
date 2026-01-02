@@ -1,0 +1,488 @@
+================================================================================
+EMBEDDING MODEL COMPARISON REPORT
+================================================================================
+
+ACCURACY COMPARISON (% of relevant answers)
+--------------------------------------------------------------------------------
+Model                     Search          Recall          Avg            
+--------------------------------------------------------------------------------
+ada-002_full                5.0%           5.0%           5.0%
+ada-002_no-graph           10.0%          15.0%          12.5%
+ada-002_off                 5.0%           5.0%           5.0%
+all-minilm_full            45.0%          70.0%          57.5%
+all-minilm_no-graph        35.0%          65.0%          50.0%
+all-minilm_off             45.0%          70.0%          57.5%
+bge-m3_full                40.0%          60.0%          50.0%
+bge-m3_no-graph            35.0%          65.0%          50.0%
+bge-m3_off                 40.0%          60.0%          50.0%
+embeddinggemma_full        55.0%          70.0%          62.5%
+embeddinggemma_no-graph    60.0%          80.0%          70.0%
+embeddinggemma_off         55.0%          70.0%          62.5%
+granite-embedding_full     35.0%          50.0%          42.5%
+granite-embedding_no-graph  25.0%          50.0%          37.5%
+granite-embedding_off      35.0%          50.0%          42.5%
+mxbai-embed-large_full     35.0%          55.0%          45.0%
+mxbai-embed-large_no-graph  35.0%          70.0%          52.5%
+mxbai-embed-large_off      35.0%          55.0%          45.0%
+nomic-embed-text_full      30.0%          45.0%          37.5%
+nomic-embed-text_no-graph  35.0%          55.0%          45.0%
+nomic-embed-text_off       30.0%          45.0%          37.5%
+--------------------------------------------------------------------------------
+Best overall: embeddinggemma_no-graph (70.0%)
+
+PERFORMANCE COMPARISON (avg query time in ms)
+--------------------------------------------------------------------------------
+Model                     Search          Recall          Avg            
+--------------------------------------------------------------------------------
+ada-002_full                6903ms          5115ms          6009ms
+ada-002_no-graph            5957ms          6162ms          6060ms
+ada-002_off                 5822ms          5522ms          5672ms
+all-minilm_full             2274ms          2229ms          2252ms
+all-minilm_no-graph         2224ms          2233ms          2228ms
+all-minilm_off              2237ms          2266ms          2251ms
+bge-m3_full                 2782ms          2549ms          2665ms
+bge-m3_no-graph             2536ms          2554ms          2545ms
+bge-m3_off                  2549ms          2566ms          2557ms
+embeddinggemma_full         2596ms          2520ms          2558ms
+embeddinggemma_no-graph     2514ms          2720ms          2617ms
+embeddinggemma_off          2506ms          2527ms          2517ms
+granite-embedding_full      2436ms          2296ms          2366ms
+granite-embedding_no-graph   2275ms          2302ms          2288ms
+granite-embedding_off       2383ms          2269ms          2326ms
+mxbai-embed-large_full      2457ms          2363ms          2410ms
+mxbai-embed-large_no-graph   2473ms          2759ms          2616ms
+mxbai-embed-large_off       2537ms          2581ms          2559ms
+nomic-embed-text_full       2326ms          2267ms          2296ms
+nomic-embed-text_no-graph   2278ms          2290ms          2284ms
+nomic-embed-text_off        2285ms          2286ms          2286ms
+
+CATEGORY BREAKDOWN
+================================================================================
+
+ada-002_full
+--------------------------------------------------------------------------------
+  SEARCH:
+    basic_fact           1/10 (10.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     0/5 (0.0%)
+    historical_context   0/1 (0.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 0/1 (0.0%)
+  RECALL:
+    basic_fact           1/10 (10.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     0/5 (0.0%)
+    historical_context   0/1 (0.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 0/1 (0.0%)
+
+ada-002_no-graph
+--------------------------------------------------------------------------------
+  SEARCH:
+    basic_fact           1/10 (10.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     0/5 (0.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 0/1 (0.0%)
+  RECALL:
+    basic_fact           1/10 (10.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     1/5 (20.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 0/1 (0.0%)
+
+ada-002_off
+--------------------------------------------------------------------------------
+  SEARCH:
+    basic_fact           1/10 (10.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     0/5 (0.0%)
+    historical_context   0/1 (0.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 0/1 (0.0%)
+  RECALL:
+    basic_fact           1/10 (10.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     0/5 (0.0%)
+    historical_context   0/1 (0.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 0/1 (0.0%)
+
+all-minilm_full
+--------------------------------------------------------------------------------
+  SEARCH:
+    basic_fact           7/10 (70.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     0/5 (0.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 1/1 (100.0%)
+  RECALL:
+    basic_fact           8/10 (80.0%)
+    contextual_understanding 1/1 (100.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     3/5 (60.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 1/1 (100.0%)
+
+all-minilm_no-graph
+--------------------------------------------------------------------------------
+  SEARCH:
+    basic_fact           5/10 (50.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     0/5 (0.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 1/1 (100.0%)
+  RECALL:
+    basic_fact           8/10 (80.0%)
+    contextual_understanding 1/1 (100.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     2/5 (40.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 1/1 (100.0%)
+
+all-minilm_off
+--------------------------------------------------------------------------------
+  SEARCH:
+    basic_fact           7/10 (70.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     0/5 (0.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 1/1 (100.0%)
+  RECALL:
+    basic_fact           8/10 (80.0%)
+    contextual_understanding 1/1 (100.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     3/5 (60.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 1/1 (100.0%)
+
+bge-m3_full
+--------------------------------------------------------------------------------
+  SEARCH:
+    basic_fact           6/10 (60.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     0/5 (0.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 1/1 (100.0%)
+  RECALL:
+    basic_fact           7/10 (70.0%)
+    contextual_understanding 1/1 (100.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     2/5 (40.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 1/1 (100.0%)
+
+bge-m3_no-graph
+--------------------------------------------------------------------------------
+  SEARCH:
+    basic_fact           6/10 (60.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     0/5 (0.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 0/1 (0.0%)
+  RECALL:
+    basic_fact           8/10 (80.0%)
+    contextual_understanding 1/1 (100.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     3/5 (60.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 0/1 (0.0%)
+
+bge-m3_off
+--------------------------------------------------------------------------------
+  SEARCH:
+    basic_fact           6/10 (60.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     0/5 (0.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 1/1 (100.0%)
+  RECALL:
+    basic_fact           7/10 (70.0%)
+    contextual_understanding 1/1 (100.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     2/5 (40.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 1/1 (100.0%)
+
+embeddinggemma_full
+--------------------------------------------------------------------------------
+  SEARCH:
+    basic_fact           9/10 (90.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     0/5 (0.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 1/1 (100.0%)
+  RECALL:
+    basic_fact           9/10 (90.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     3/5 (60.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 1/1 (100.0%)
+
+embeddinggemma_no-graph
+--------------------------------------------------------------------------------
+  SEARCH:
+    basic_fact           10/10 (100.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     0/5 (0.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 1/1 (100.0%)
+  RECALL:
+    basic_fact           10/10 (100.0%)
+    contextual_understanding 1/1 (100.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     3/5 (60.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 1/1 (100.0%)
+
+embeddinggemma_off
+--------------------------------------------------------------------------------
+  SEARCH:
+    basic_fact           9/10 (90.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     0/5 (0.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 1/1 (100.0%)
+  RECALL:
+    basic_fact           9/10 (90.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     3/5 (60.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 1/1 (100.0%)
+
+granite-embedding_full
+--------------------------------------------------------------------------------
+  SEARCH:
+    basic_fact           6/10 (60.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     0/5 (0.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 0/1 (0.0%)
+  RECALL:
+    basic_fact           6/10 (60.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     2/5 (40.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 1/1 (100.0%)
+
+granite-embedding_no-graph
+--------------------------------------------------------------------------------
+  SEARCH:
+    basic_fact           4/10 (40.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     0/5 (0.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 0/1 (0.0%)
+  RECALL:
+    basic_fact           6/10 (60.0%)
+    contextual_understanding 1/1 (100.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     2/5 (40.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 0/1 (0.0%)
+
+granite-embedding_off
+--------------------------------------------------------------------------------
+  SEARCH:
+    basic_fact           6/10 (60.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     0/5 (0.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 0/1 (0.0%)
+  RECALL:
+    basic_fact           6/10 (60.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     2/5 (40.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 1/1 (100.0%)
+
+mxbai-embed-large_full
+--------------------------------------------------------------------------------
+  SEARCH:
+    basic_fact           6/10 (60.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     0/5 (0.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 0/1 (0.0%)
+  RECALL:
+    basic_fact           7/10 (70.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     2/5 (40.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 1/1 (100.0%)
+
+mxbai-embed-large_no-graph
+--------------------------------------------------------------------------------
+  SEARCH:
+    basic_fact           6/10 (60.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     0/5 (0.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 0/1 (0.0%)
+  RECALL:
+    basic_fact           8/10 (80.0%)
+    contextual_understanding 1/1 (100.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     3/5 (60.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 1/1 (100.0%)
+
+mxbai-embed-large_off
+--------------------------------------------------------------------------------
+  SEARCH:
+    basic_fact           6/10 (60.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     0/5 (0.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 0/1 (0.0%)
+  RECALL:
+    basic_fact           7/10 (70.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     2/5 (40.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 1/1 (100.0%)
+
+nomic-embed-text_full
+--------------------------------------------------------------------------------
+  SEARCH:
+    basic_fact           5/10 (50.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     0/5 (0.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 0/1 (0.0%)
+  RECALL:
+    basic_fact           5/10 (50.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     3/5 (60.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 0/1 (0.0%)
+
+nomic-embed-text_no-graph
+--------------------------------------------------------------------------------
+  SEARCH:
+    basic_fact           6/10 (60.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     0/5 (0.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 0/1 (0.0%)
+  RECALL:
+    basic_fact           7/10 (70.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     3/5 (60.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 0/1 (0.0%)
+
+nomic-embed-text_off
+--------------------------------------------------------------------------------
+  SEARCH:
+    basic_fact           5/10 (50.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     0/5 (0.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 0/1 (0.0%)
+  RECALL:
+    basic_fact           5/10 (50.0%)
+    contextual_understanding 0/1 (0.0%)
+    cross_project        0/1 (0.0%)
+    detailed_content     3/5 (60.0%)
+    historical_context   1/1 (100.0%)
+    problem_analysis     0/1 (0.0%)
+    relationship_analysis 0/1 (0.0%)
+
+================================================================================
+MATCH RATIO COMPARISON (avg % of expected keywords found)
+--------------------------------------------------------------------------------
+Model                     Search          Recall          Avg            
+--------------------------------------------------------------------------------
+ada-002_full                7.3%          13.1%          10.2%
+ada-002_no-graph            8.3%          15.9%          12.1%
+ada-002_off                 7.3%          13.1%          10.2%
+all-minilm_full            30.9%          47.9%          39.4%
+all-minilm_no-graph        29.5%          47.5%          38.5%
+all-minilm_off             30.9%          47.9%          39.4%
+bge-m3_full                30.4%          46.0%          38.2%
+bge-m3_no-graph            29.4%          56.1%          42.8%
+bge-m3_off                 30.4%          46.0%          38.2%
+embeddinggemma_full        40.4%          54.4%          47.4%
+embeddinggemma_no-graph    43.5%          59.3%          51.4%
+embeddinggemma_off         40.4%          54.4%          47.4%
+granite-embedding_full     27.6%          38.5%          33.0%
+granite-embedding_no-graph  18.3%          41.3%          29.8%
+granite-embedding_off      27.6%          38.5%          33.0%
+mxbai-embed-large_full     28.3%          46.0%          37.1%
+mxbai-embed-large_no-graph  29.3%          57.0%          43.1%
+mxbai-embed-large_off      28.3%          46.0%          37.1%
+nomic-embed-text_full      27.1%          38.7%          32.9%
+nomic-embed-text_no-graph  32.0%          46.3%          39.2%
+nomic-embed-text_off       27.1%          38.7%          32.9%
+
+================================================================================

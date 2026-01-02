@@ -1,0 +1,44 @@
+Error generating embeddings for batch 3: llm embed failed: Traceback (most recent call last):
+  File "/Users/mattjoyce/Environments/vestig/bin/llm", line 7, in <module>
+    sys.exit(cli())
+             ~~~^^
+  File "/Users/mattjoyce/Environments/vestig/lib/python3.14/site-packages/click/core.py", line 1485, in __call__
+    return self.main(*args, **kwargs)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/mattjoyce/Environments/vestig/lib/python3.14/site-packages/click/core.py", line 1406, in main
+    rv = self.invoke(ctx)
+  File "/Users/mattjoyce/Environments/vestig/lib/python3.14/site-packages/click/core.py", line 1873, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/mattjoyce/Environments/vestig/lib/python3.14/site-packages/click/core.py", line 1269, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mattjoyce/Environments/vestig/lib/python3.14/site-packages/click/core.py", line 824, in invoke
+    return callback(*args, **kwargs)
+  File "/Users/mattjoyce/Environments/vestig/lib/python3.14/site-packages/llm/cli.py", line 3133, in embed
+    embedding = model_obj.embed(content)
+  File "/Users/mattjoyce/Environments/vestig/lib/python3.14/site-packages/llm/models.py", line 2028, in embed
+    return next(iter(self.embed_batch([item])))
+  File "/Users/mattjoyce/Environments/vestig/lib/python3.14/site-packages/llm_ollama/__init__.py", line 392, in embed_batch
+    result = get_client().embed(
+        model=self.model_id,
+        input=items,
+        truncate=self.truncate,
+    )
+  File "/Users/mattjoyce/Environments/vestig/lib/python3.14/site-packages/ollama/_client.py", line 393, in embed
+    return self._request(
+           ~~~~~~~~~~~~~^
+      EmbedResponse,
+      ^^^^^^^^^^^^^^
+    ...<9 lines>...
+      ).model_dump(exclude_none=True),
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/mattjoyce/Environments/vestig/lib/python3.14/site-packages/ollama/_client.py", line 189, in _request
+    return cls(**self._request_raw(*args, **kwargs).json())
+                 ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/mattjoyce/Environments/vestig/lib/python3.14/site-packages/ollama/_client.py", line 133, in _request_raw
+    raise ResponseError(e.response.text, e.response.status_code) from None
+ollama._types.ResponseError: the input length exceeds the context length (status code: 400)
+

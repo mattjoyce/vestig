@@ -1,0 +1,35 @@
+vestig v0.1.0
+Loading all memories from database...
+Processing 766 memories
+
+Processing batch 1/8 (100 memories)...
+Progress: 100/766 (13.1%)
+
+Processing batch 2/8 (100 memories)...
+Progress: 200/766 (26.1%)
+
+Processing batch 3/8 (100 memories)...
+Progress: 300/766 (39.2%)
+
+Processing batch 4/8 (100 memories)...
+Progress: 400/766 (52.2%)
+
+Processing batch 5/8 (100 memories)...
+Progress: 500/766 (65.3%)
+
+Processing batch 6/8 (100 memories)...
+Progress: 600/766 (78.3%)
+
+Processing batch 7/8 (100 memories)...
+Progress: 700/766 (91.4%)
+
+Processing batch 8/8 (66 memories)...
+Progress: 766/766 (100.0%)
+
+============================================================
+REGENERATION COMPLETE
+============================================================
+Total processed: 766
+Total errors: 0
+Model: nomic-embed-text:latest
+Dimension: 768

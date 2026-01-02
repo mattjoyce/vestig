@@ -1,0 +1,362 @@
+[
+  {
+    "qa_id": 1,
+    "question": "Who is the project lead for the AI Adoption Survey?",
+    "expected_answer": "Matt Joyce",
+    "vestig_output": "vestig v0.1.0\nID: mem_1b56c1a0-37ff-481e-aa0f-124941452767\nScore: 1.2788\nCreated: 2025-12-30 11:10:57 UTC\nContent: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...\n\nID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801\nScore: 1.2587\nCreated: 2025-12-30 11:01:48 UTC\nContent: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...\n\nID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed\nScore: 1.2488\nCreated: 2025-12-30 11:02:14 UTC\nContent: Abi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship,...\n\nID: mem_8e655409-473c-48c5-af5f-ad254a8caace\nScore: 1.2361\nCreated: 2025-12-30 11:01:46 UTC\nContent: Abi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which t...\n\nID: mem_524b3cb1-e939-4e42-93db-013e73e9faaa\nScore: 1.2276\nCreated: 2025-12-30 10:58:42 UTC\nContent: The project lead is Bojan.\n\n",
+    "category": "basic_fact",
+    "project": "ai_adoption_survey",
+    "method": "search",
+    "success": true,
+    "duration_ms": 7466.6964169591665,
+    "evaluation": {
+      "match_ratio": 0.0,
+      "matches": 0,
+      "total_expected_words": 2,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 2,
+    "question": "What is the executive sponsor's name for the AI Adoption Survey project?",
+    "expected_answer": "John Sutherland, who is the CIO",
+    "vestig_output": "vestig v0.1.0\nID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801\nScore: 1.2338\nCreated: 2025-12-30 11:01:48 UTC\nContent: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...\n\nID: mem_1b56c1a0-37ff-481e-aa0f-124941452767\nScore: 1.2303\nCreated: 2025-12-30 11:10:57 UTC\nContent: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...\n\nID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed\nScore: 1.2281\nCreated: 2025-12-30 11:02:14 UTC\nContent: Abi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship,...\n\nID: mem_8e655409-473c-48c5-af5f-ad254a8caace\nScore: 1.1977\nCreated: 2025-12-30 11:01:46 UTC\nContent: Abi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which t...\n\nID: mem_2c645ca7-968b-4207-82be-577118630940\nScore: 1.1936\nCreated: 2025-12-30 11:01:47 UTC\nContent: Abi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging resid...\n\n",
+    "category": "basic_fact",
+    "project": "ai_adoption_survey",
+    "method": "search",
+    "success": true,
+    "duration_ms": 11111.271083937027,
+    "evaluation": {
+      "match_ratio": 0.0,
+      "matches": 0,
+      "total_expected_words": 4,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 3,
+    "question": "What are the main barriers preventing people from using AI tools according to the survey?",
+    "expected_answer": "The survey asks about multiple barriers including: trouble accessing technology, lack of time, unsure how AI applies to their role, unclear about Calvary's AI policy, concerns about accuracy, insufficient training, and data privacy/security concerns",
+    "vestig_output": "vestig v0.1.0\nID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801\nScore: 1.2889\nCreated: 2025-12-30 11:01:48 UTC\nContent: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...\n\nID: mem_1b56c1a0-37ff-481e-aa0f-124941452767\nScore: 1.2649\nCreated: 2025-12-30 11:10:57 UTC\nContent: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...\n\nID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed\nScore: 1.2517\nCreated: 2025-12-30 11:02:14 UTC\nContent: Abi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship,...\n\nID: mem_8e655409-473c-48c5-af5f-ad254a8caace\nScore: 1.2104\nCreated: 2025-12-30 11:01:46 UTC\nContent: Abi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which t...\n\nID: mem_8b0c760b-7716-4989-88ea-c77e1b04ab13\nScore: 1.1837\nCreated: 2025-12-30 11:01:47 UTC\nContent: Abi\u2019s core AI uses the ChatGPT\u20114 language model for natural conversation and machine\u2011vision technolo...\n\n",
+    "category": "detailed_content",
+    "project": "ai_adoption_survey",
+    "method": "search",
+    "success": true,
+    "duration_ms": 8690.235333051533,
+    "evaluation": {
+      "match_ratio": 0.038461538461538464,
+      "matches": 1,
+      "total_expected_words": 26,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 4,
+    "question": "What problem is Heidi Health trying to solve?",
+    "expected_answer": "Current use of internal typists and external transcription services results in delays of up to seven days for specialist documentation. Additionally, there are staffing sustainability risks due to resignations and anticipated retirements, and external transcription costs are escalating (over $116,000 annually).",
+    "vestig_output": "vestig v0.1.0\nID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801\nScore: 1.2827\nCreated: 2025-12-30 11:01:48 UTC\nContent: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...\n\nID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed\nScore: 1.2437\nCreated: 2025-12-30 11:02:14 UTC\nContent: Abi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship,...\n\nID: mem_1b56c1a0-37ff-481e-aa0f-124941452767\nScore: 1.2178\nCreated: 2025-12-30 11:10:57 UTC\nContent: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...\n\nID: mem_2c645ca7-968b-4207-82be-577118630940\nScore: 1.1933\nCreated: 2025-12-30 11:01:47 UTC\nContent: Abi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging resid...\n\nID: mem_8e655409-473c-48c5-af5f-ad254a8caace\nScore: 1.1858\nCreated: 2025-12-30 11:01:46 UTC\nContent: Abi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which t...\n\n",
+    "category": "problem_analysis",
+    "project": "heidi_health_ai_scribe",
+    "method": "search",
+    "success": true,
+    "duration_ms": 5634.649500017986,
+    "evaluation": {
+      "match_ratio": 0.03571428571428571,
+      "matches": 1,
+      "total_expected_words": 28,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 5,
+    "question": "What is the status of the Heidi Health AI Scribe project?",
+    "expected_answer": "The status is 'proposal'",
+    "vestig_output": "vestig v0.1.0\nID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801\nScore: 1.2703\nCreated: 2025-12-30 11:01:48 UTC\nContent: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...\n\nID: mem_1b56c1a0-37ff-481e-aa0f-124941452767\nScore: 1.2579\nCreated: 2025-12-30 11:10:57 UTC\nContent: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...\n\nID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed\nScore: 1.2401\nCreated: 2025-12-30 11:02:14 UTC\nContent: Abi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship,...\n\nID: mem_8e655409-473c-48c5-af5f-ad254a8caace\nScore: 1.2237\nCreated: 2025-12-30 11:01:46 UTC\nContent: Abi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which t...\n\nID: mem_2c645ca7-968b-4207-82be-577118630940\nScore: 1.1942\nCreated: 2025-12-30 11:01:47 UTC\nContent: Abi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging resid...\n\n",
+    "category": "basic_fact",
+    "project": "heidi_health_ai_scribe",
+    "method": "search",
+    "success": true,
+    "duration_ms": 5214.369917055592,
+    "evaluation": {
+      "match_ratio": 0.0,
+      "matches": 0,
+      "total_expected_words": 2,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 6,
+    "question": "Where is the Heidi Health pilot planned to be implemented?",
+    "expected_answer": "Hobart Consulting Suites (or Calvary Hobart Consulting Suites)",
+    "vestig_output": "vestig v0.1.0\nID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801\nScore: 1.2416\nCreated: 2025-12-30 11:01:48 UTC\nContent: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...\n\nID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed\nScore: 1.2116\nCreated: 2025-12-30 11:02:14 UTC\nContent: Abi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship,...\n\nID: mem_1b56c1a0-37ff-481e-aa0f-124941452767\nScore: 1.2107\nCreated: 2025-12-30 11:10:57 UTC\nContent: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...\n\nID: mem_4aae7913-d269-4d5a-891e-194449825337\nScore: 1.2054\nCreated: 2025-12-30 11:09:53 UTC\nContent: Direct cost for the Heidi Health Team pilot subscription is $9,570 for a 3\u2011month period.\n\nID: mem_8e655409-473c-48c5-af5f-ad254a8caace\nScore: 1.1791\nCreated: 2025-12-30 11:01:46 UTC\nContent: Abi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which t...\n\n",
+    "category": "basic_fact",
+    "project": "heidi_health_ai_scribe",
+    "method": "search",
+    "success": true,
+    "duration_ms": 6903.726999997161,
+    "evaluation": {
+      "match_ratio": 0.0,
+      "matches": 0,
+      "total_expected_words": 6,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 7,
+    "question": "Who met with Beamtree to discuss the PICQ proposal?",
+    "expected_answer": "John Sutherland (CIO) and Damien Bruce (CEO)",
+    "vestig_output": "vestig v0.1.0\nID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801\nScore: 1.2048\nCreated: 2025-12-30 11:01:48 UTC\nContent: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...\n\nID: mem_1b56c1a0-37ff-481e-aa0f-124941452767\nScore: 1.1926\nCreated: 2025-12-30 11:10:57 UTC\nContent: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...\n\nID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed\nScore: 1.1837\nCreated: 2025-12-30 11:02:14 UTC\nContent: Abi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship,...\n\nID: mem_2c645ca7-968b-4207-82be-577118630940\nScore: 1.1815\nCreated: 2025-12-30 11:01:47 UTC\nContent: Abi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging resid...\n\nID: mem_8e655409-473c-48c5-af5f-ad254a8caace\nScore: 1.1792\nCreated: 2025-12-30 11:01:46 UTC\nContent: Abi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which t...\n\n",
+    "category": "basic_fact",
+    "project": "beamtree_picq",
+    "method": "search",
+    "success": true,
+    "duration_ms": 4997.697125072591,
+    "evaluation": {
+      "match_ratio": 0.0,
+      "matches": 0,
+      "total_expected_words": 6,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 8,
+    "question": "Why is the BeamTree PICQ project considered sensitive?",
+    "expected_answer": "It's sensitive with coders/HIMs (Health Information Management staff) because there has been a historical 'frosty' reception to similar initiatives, and it may be perceived as surveillance or questioning of professional competence rather than quality improvement",
+    "vestig_output": "vestig v0.1.0\nID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801\nScore: 1.2220\nCreated: 2025-12-30 11:01:48 UTC\nContent: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...\n\nID: mem_1b56c1a0-37ff-481e-aa0f-124941452767\nScore: 1.1889\nCreated: 2025-12-30 11:10:57 UTC\nContent: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...\n\nID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed\nScore: 1.1886\nCreated: 2025-12-30 11:02:14 UTC\nContent: Abi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship,...\n\nID: mem_2c645ca7-968b-4207-82be-577118630940\nScore: 1.1569\nCreated: 2025-12-30 11:01:47 UTC\nContent: Abi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging resid...\n\nID: mem_8e655409-473c-48c5-af5f-ad254a8caace\nScore: 1.1441\nCreated: 2025-12-30 11:01:46 UTC\nContent: Abi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which t...\n\n",
+    "category": "contextual_understanding",
+    "project": "beamtree_picq",
+    "method": "search",
+    "success": true,
+    "duration_ms": 8153.666291036643,
+    "evaluation": {
+      "match_ratio": 0.1724137931034483,
+      "matches": 5,
+      "total_expected_words": 29,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 9,
+    "question": "What is the relationship between Beamtree and Phoebe mentioned in the project brief?",
+    "expected_answer": "The ideal positioning is that Beamtree would provide upstream quality signal (coding optimization) while Phoebe provides downstream claim integrity checking, creating a continuum rather than isolated tools",
+    "vestig_output": "vestig v0.1.0\nID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801\nScore: 1.2599\nCreated: 2025-12-30 11:01:48 UTC\nContent: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...\n\nID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed\nScore: 1.2244\nCreated: 2025-12-30 11:02:14 UTC\nContent: Abi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship,...\n\nID: mem_1b56c1a0-37ff-481e-aa0f-124941452767\nScore: 1.2101\nCreated: 2025-12-30 11:10:57 UTC\nContent: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...\n\nID: mem_2c645ca7-968b-4207-82be-577118630940\nScore: 1.2085\nCreated: 2025-12-30 11:01:47 UTC\nContent: Abi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging resid...\n\nID: mem_8e655409-473c-48c5-af5f-ad254a8caace\nScore: 1.1885\nCreated: 2025-12-30 11:01:46 UTC\nContent: Abi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which t...\n\n",
+    "category": "relationship_analysis",
+    "project": "beamtree_picq",
+    "method": "search",
+    "success": true,
+    "duration_ms": 6212.996416026726,
+    "evaluation": {
+      "match_ratio": 0.08333333333333333,
+      "matches": 2,
+      "total_expected_words": 24,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 10,
+    "question": "What is the recommended option for the BeamTree PICQ project?",
+    "expected_answer": "Option B: Small, Controlled Trial - using 1-2 months of recent data from selected private hospitals (1-2 sites), focusing on a single service line or DRG category, with minimal change to existing integrations",
+    "vestig_output": "vestig v0.1.0\nID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801\nScore: 1.2127\nCreated: 2025-12-30 11:01:48 UTC\nContent: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...\n\nID: mem_1b56c1a0-37ff-481e-aa0f-124941452767\nScore: 1.1826\nCreated: 2025-12-30 11:10:57 UTC\nContent: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...\n\nID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed\nScore: 1.1791\nCreated: 2025-12-30 11:02:14 UTC\nContent: Abi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship,...\n\nID: mem_2c645ca7-968b-4207-82be-577118630940\nScore: 1.1606\nCreated: 2025-12-30 11:01:47 UTC\nContent: Abi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging resid...\n\nID: mem_8e655409-473c-48c5-af5f-ad254a8caace\nScore: 1.1481\nCreated: 2025-12-30 11:01:46 UTC\nContent: Abi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which t...\n\n",
+    "category": "detailed_content",
+    "project": "beamtree_picq",
+    "method": "search",
+    "success": true,
+    "duration_ms": 7631.365457898937,
+    "evaluation": {
+      "match_ratio": 0.037037037037037035,
+      "matches": 1,
+      "total_expected_words": 27,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 11,
+    "question": "What is Project Bronte?",
+    "expected_answer": "A confidential acquisition project requiring detailed document review and analysis, with an executed NDA. Matt is the project lead.",
+    "vestig_output": "vestig v0.1.0\nID: mem_1b56c1a0-37ff-481e-aa0f-124941452767\nScore: 1.2483\nCreated: 2025-12-30 11:10:57 UTC\nContent: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...\n\nID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801\nScore: 1.2253\nCreated: 2025-12-30 11:01:48 UTC\nContent: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...\n\nID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed\nScore: 1.1827\nCreated: 2025-12-30 11:02:14 UTC\nContent: Abi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship,...\n\nID: mem_8e655409-473c-48c5-af5f-ad254a8caace\nScore: 1.1738\nCreated: 2025-12-30 11:01:46 UTC\nContent: Abi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which t...\n\nID: mem_524b3cb1-e939-4e42-93db-013e73e9faaa\nScore: 1.1685\nCreated: 2025-12-30 10:58:42 UTC\nContent: The project lead is Bojan.\n\n",
+    "category": "basic_fact",
+    "project": "bronte",
+    "method": "search",
+    "success": true,
+    "duration_ms": 8593.564333044924,
+    "evaluation": {
+      "match_ratio": 0.08333333333333333,
+      "matches": 1,
+      "total_expected_words": 12,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 12,
+    "question": "What is the status of Robot Companions project?",
+    "expected_answer": "Discovery",
+    "vestig_output": "vestig v0.1.0\nID: mem_1b56c1a0-37ff-481e-aa0f-124941452767\nScore: 1.4155\nCreated: 2025-12-30 11:10:57 UTC\nContent: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...\n\nID: mem_8e655409-473c-48c5-af5f-ad254a8caace\nScore: 1.2986\nCreated: 2025-12-30 11:01:46 UTC\nContent: Abi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which t...\n\nID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801\nScore: 1.2879\nCreated: 2025-12-30 11:01:48 UTC\nContent: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...\n\nID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed\nScore: 1.2603\nCreated: 2025-12-30 11:02:14 UTC\nContent: Abi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship,...\n\nID: mem_6b261665-01ae-4265-a1eb-55fef635671c\nScore: 1.2182\nCreated: 2025-12-30 11:02:07 UTC\nContent: TLH reported that their mix of service robots, including Abi, generated roughly $400,000 per year in...\n\n",
+    "category": "basic_fact",
+    "project": "robot_companions",
+    "method": "search",
+    "success": true,
+    "duration_ms": 9278.573958086781,
+    "evaluation": {
+      "match_ratio": 0.0,
+      "matches": 0,
+      "total_expected_words": 1,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 13,
+    "question": "What is the domain or area of focus for the Robot Companions project?",
+    "expected_answer": "Research initiative exploring robotic companions to combat loneliness in aged care settings",
+    "vestig_output": "vestig v0.1.0\nID: mem_1b56c1a0-37ff-481e-aa0f-124941452767\nScore: 1.4022\nCreated: 2025-12-30 11:10:57 UTC\nContent: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...\n\nID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801\nScore: 1.2993\nCreated: 2025-12-30 11:01:48 UTC\nContent: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...\n\nID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed\nScore: 1.2759\nCreated: 2025-12-30 11:02:14 UTC\nContent: Abi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship,...\n\nID: mem_8e655409-473c-48c5-af5f-ad254a8caace\nScore: 1.2673\nCreated: 2025-12-30 11:01:46 UTC\nContent: Abi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which t...\n\nID: mem_2c645ca7-968b-4207-82be-577118630940\nScore: 1.2307\nCreated: 2025-12-30 11:01:47 UTC\nContent: Abi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging resid...\n\n",
+    "category": "basic_fact",
+    "project": "robot_companions",
+    "method": "search",
+    "success": true,
+    "duration_ms": 5583.9236250612885,
+    "evaluation": {
+      "match_ratio": 0.5,
+      "matches": 5,
+      "total_expected_words": 10,
+      "appears_relevant": true,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 14,
+    "question": "How many leaders participated in the AI Adoption Survey?",
+    "expected_answer": "Approximately 250 Calvary Leaders and 130 DHT Staff",
+    "vestig_output": "vestig v0.1.0\nID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801\nScore: 1.2516\nCreated: 2025-12-30 11:01:48 UTC\nContent: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...\n\nID: mem_1b56c1a0-37ff-481e-aa0f-124941452767\nScore: 1.2464\nCreated: 2025-12-30 11:10:57 UTC\nContent: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...\n\nID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed\nScore: 1.2275\nCreated: 2025-12-30 11:02:14 UTC\nContent: Abi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship,...\n\nID: mem_8e655409-473c-48c5-af5f-ad254a8caace\nScore: 1.2196\nCreated: 2025-12-30 11:01:46 UTC\nContent: Abi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which t...\n\nID: mem_2c645ca7-968b-4207-82be-577118630940\nScore: 1.2070\nCreated: 2025-12-30 11:01:47 UTC\nContent: Abi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging resid...\n\n",
+    "category": "basic_fact",
+    "project": "ai_adoption_survey",
+    "method": "search",
+    "success": true,
+    "duration_ms": 4608.728417078964,
+    "evaluation": {
+      "match_ratio": 0.14285714285714285,
+      "matches": 1,
+      "total_expected_words": 7,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 15,
+    "question": "What types of support does the AI Adoption Survey ask about?",
+    "expected_answer": "The survey asks about multiple types: technical support and troubleshooting, examples of healthcare use cases, advanced training, introductory AI literacy training, one-on-one coaching, hands-on workshops, peer learning groups, and clear policies and guidelines",
+    "vestig_output": "vestig v0.1.0\nID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801\nScore: 1.2803\nCreated: 2025-12-30 11:01:48 UTC\nContent: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...\n\nID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed\nScore: 1.2797\nCreated: 2025-12-30 11:02:14 UTC\nContent: Abi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship,...\n\nID: mem_1b56c1a0-37ff-481e-aa0f-124941452767\nScore: 1.2547\nCreated: 2025-12-30 11:10:57 UTC\nContent: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...\n\nID: mem_2c645ca7-968b-4207-82be-577118630940\nScore: 1.2092\nCreated: 2025-12-30 11:01:47 UTC\nContent: Abi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging resid...\n\nID: mem_8e655409-473c-48c5-af5f-ad254a8caace\nScore: 1.1816\nCreated: 2025-12-30 11:01:46 UTC\nContent: Abi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which t...\n\n",
+    "category": "detailed_content",
+    "project": "ai_adoption_survey",
+    "method": "search",
+    "success": true,
+    "duration_ms": 6227.071874891408,
+    "evaluation": {
+      "match_ratio": 0.07407407407407407,
+      "matches": 2,
+      "total_expected_words": 27,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 16,
+    "question": "What are the key risks identified for the BeamTree PICQ project?",
+    "expected_answer": "Four main risk categories: 1) Workforce/political risks (HIM/coder perception issues, professional autonomy concerns), 2) Data governance risks (external data sharing, privacy concerns), 3) Technical/integration risks (siloed tool, workflow friction), 4) Financial/ROI risks (cost vs benefit, overestimated uplift)",
+    "vestig_output": "vestig v0.1.0\nID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801\nScore: 1.2157\nCreated: 2025-12-30 11:01:48 UTC\nContent: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...\n\nID: mem_1b56c1a0-37ff-481e-aa0f-124941452767\nScore: 1.1992\nCreated: 2025-12-30 11:10:57 UTC\nContent: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...\n\nID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed\nScore: 1.1934\nCreated: 2025-12-30 11:02:14 UTC\nContent: Abi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship,...\n\nID: mem_2c645ca7-968b-4207-82be-577118630940\nScore: 1.1805\nCreated: 2025-12-30 11:01:47 UTC\nContent: Abi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging resid...\n\nID: mem_8e655409-473c-48c5-af5f-ad254a8caace\nScore: 1.1409\nCreated: 2025-12-30 11:01:46 UTC\nContent: Abi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which t...\n\n",
+    "category": "detailed_content",
+    "project": "beamtree_picq",
+    "method": "search",
+    "success": true,
+    "duration_ms": 8324.742625001818,
+    "evaluation": {
+      "match_ratio": 0.0,
+      "matches": 0,
+      "total_expected_words": 32,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 17,
+    "question": "What happened with Beamtree's previous engagement with Calvary?",
+    "expected_answer": "There was a prior interaction via Richard and Martin that did not progress due to technical/data constraints and differing opinions on approach",
+    "vestig_output": "vestig v0.1.0\nID: mem_1b56c1a0-37ff-481e-aa0f-124941452767\nScore: 1.2120\nCreated: 2025-12-30 11:10:57 UTC\nContent: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...\n\nID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801\nScore: 1.1818\nCreated: 2025-12-30 11:01:48 UTC\nContent: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...\n\nID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed\nScore: 1.1572\nCreated: 2025-12-30 11:02:14 UTC\nContent: Abi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship,...\n\nID: mem_2c645ca7-968b-4207-82be-577118630940\nScore: 1.1426\nCreated: 2025-12-30 11:01:47 UTC\nContent: Abi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging resid...\n\nID: mem_8e655409-473c-48c5-af5f-ad254a8caace\nScore: 1.1403\nCreated: 2025-12-30 11:01:46 UTC\nContent: Abi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which t...\n\n",
+    "category": "historical_context",
+    "project": "beamtree_picq",
+    "method": "search",
+    "success": true,
+    "duration_ms": 4827.396083041094,
+    "evaluation": {
+      "match_ratio": 0.125,
+      "matches": 2,
+      "total_expected_words": 16,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 18,
+    "question": "Who is transitioning the Heidi Health project from initial to ongoing leadership?",
+    "expected_answer": "Matt Joyce was the initial project lead, with Liam taking over for ongoing management",
+    "vestig_output": "vestig v0.1.0\nID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801\nScore: 1.2474\nCreated: 2025-12-30 11:01:48 UTC\nContent: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...\n\nID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed\nScore: 1.2440\nCreated: 2025-12-30 11:02:14 UTC\nContent: Abi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship,...\n\nID: mem_2c645ca7-968b-4207-82be-577118630940\nScore: 1.2105\nCreated: 2025-12-30 11:01:47 UTC\nContent: Abi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging resid...\n\nID: mem_1b56c1a0-37ff-481e-aa0f-124941452767\nScore: 1.1780\nCreated: 2025-12-30 11:10:57 UTC\nContent: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...\n\nID: mem_524b3cb1-e939-4e42-93db-013e73e9faaa\nScore: 1.1637\nCreated: 2025-12-30 10:58:42 UTC\nContent: The project lead is Bojan.\n\n",
+    "category": "basic_fact",
+    "project": "heidi_health_ai_scribe",
+    "method": "search",
+    "success": true,
+    "duration_ms": 4489.804166019894,
+    "evaluation": {
+      "match_ratio": 0.1,
+      "matches": 1,
+      "total_expected_words": 10,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 19,
+    "question": "What service areas does the AI Adoption Survey cover?",
+    "expected_answer": "Private Hospitals, Home Care, Residential Aged Care, Retirement Living, Public Hospitals, Corporate/Support Functions, and Other",
+    "vestig_output": "vestig v0.1.0\nID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801\nScore: 1.2813\nCreated: 2025-12-30 11:01:48 UTC\nContent: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...\n\nID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed\nScore: 1.2693\nCreated: 2025-12-30 11:02:14 UTC\nContent: Abi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship,...\n\nID: mem_1b56c1a0-37ff-481e-aa0f-124941452767\nScore: 1.2568\nCreated: 2025-12-30 11:10:57 UTC\nContent: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...\n\nID: mem_2c645ca7-968b-4207-82be-577118630940\nScore: 1.2183\nCreated: 2025-12-30 11:01:47 UTC\nContent: Abi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging resid...\n\nID: mem_8e655409-473c-48c5-af5f-ad254a8caace\nScore: 1.1931\nCreated: 2025-12-30 11:01:46 UTC\nContent: Abi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which t...\n\n",
+    "category": "detailed_content",
+    "project": "ai_adoption_survey",
+    "method": "search",
+    "success": true,
+    "duration_ms": 8448.223041952588,
+    "evaluation": {
+      "match_ratio": 0.0,
+      "matches": 0,
+      "total_expected_words": 12,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 20,
+    "question": "Which project mentions integration with Phoebe?",
+    "expected_answer": "The BeamTree PICQ project mentions Phoebe as a proven success at Calvary for downstream claim-checking, and proposes positioning Beamtree as upstream quality/coding signal to integrate with Phoebe",
+    "vestig_output": "vestig v0.1.0\nID: mem_0f426a6b-8e6d-4e13-a2bb-b946ccc7d801\nScore: 1.2565\nCreated: 2025-12-30 11:01:48 UTC\nContent: Abi is designed to augment care staff rather than replace them, stepping in for social interaction w...\n\nID: mem_b7fc2372-b82b-4bc7-b968-2ff901037aed\nScore: 1.2352\nCreated: 2025-12-30 11:02:14 UTC\nContent: Abi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship,...\n\nID: mem_1b56c1a0-37ff-481e-aa0f-124941452767\nScore: 1.2284\nCreated: 2025-12-30 11:10:57 UTC\nContent: The Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic inter...\n\nID: mem_2c645ca7-968b-4207-82be-577118630940\nScore: 1.2157\nCreated: 2025-12-30 11:01:47 UTC\nContent: Abi can lead group activities such as sing\u2011alongs, dancing, trivia games and Tai Chi, engaging resid...\n\nID: mem_8e655409-473c-48c5-af5f-ad254a8caace\nScore: 1.2071\nCreated: 2025-12-30 11:01:46 UTC\nContent: Abi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which t...\n\n",
+    "category": "cross_project",
+    "project": "beamtree_picq",
+    "method": "search",
+    "success": true,
+    "duration_ms": 5664.034416899085,
+    "evaluation": {
+      "match_ratio": 0.058823529411764705,
+      "matches": 1,
+      "total_expected_words": 17,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  }
+]

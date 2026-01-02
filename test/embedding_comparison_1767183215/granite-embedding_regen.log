@@ -1,0 +1,22 @@
+vestig v0.1.0
+Traceback (most recent call last):
+  File "/Users/mattjoyce/Environments/vestig/bin/vestig", line 7, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py", line 1003, in main
+    args.func(args)
+    ~~~~~~~~~^^^^^^
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py", line 515, in cmd_regen_embeddings
+    storage, embedding_engine, _, _ = build_runtime(config)
+                                      ~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/cli.py", line 100, in build_runtime
+    embedding_engine = EmbeddingEngine(
+        model_name=config["embedding"]["model"],
+    ...<3 lines>...
+        max_length=config["embedding"].get("max_length"),  # Optional truncation
+    )
+  File "/Users/mattjoyce/Projects/vestig/src/vestig/core/embeddings.py", line 62, in __init__
+    raise ValueError(
+    ...<2 lines>...
+    )
+ValueError: Embedding dimension mismatch: expected 768, got 384 for model granite-embedding:latest

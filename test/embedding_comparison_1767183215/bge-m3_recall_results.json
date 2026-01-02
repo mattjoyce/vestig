@@ -1,0 +1,362 @@
+[
+  {
+    "qa_id": 1,
+    "question": "Who is the project lead for the AI Adoption Survey?",
+    "expected_answer": "Matt Joyce",
+    "vestig_output": "vestig v0.1.0\n(score=0.9962, age=1d, stability=static)\nThe project is titled \"AI Adoption Survey\".\n\n---\n\n(score=0.9592, age=1d, stability=static)\nMatt Joyce is the project lead for the AI Adoption Survey.\n\n---\n\n(score=0.8153, age=1d, stability=static)\nThe project lead is Bojan.\n\n---\n\n(score=0.7974, age=1d, stability=static)\nJohn Sutherland serves as the CIO and Executive Sponsor for the AI Adoption Survey.\n\n---\n\n(score=0.7426, age=1d, stability=static)\nThe project description is \"Organizational AI adoption survey analysis and response development\".\n",
+    "category": "basic_fact",
+    "project": "ai_adoption_survey",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2587.9828750621527,
+    "evaluation": {
+      "match_ratio": 1.0,
+      "matches": 2,
+      "total_expected_words": 2,
+      "appears_relevant": true,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 2,
+    "question": "What is the executive sponsor's name for the AI Adoption Survey project?",
+    "expected_answer": "John Sutherland, who is the CIO",
+    "vestig_output": "vestig v0.1.0\n(score=0.9922, age=1d, stability=static)\nThe project is titled \"AI Adoption Survey\".\n\n---\n\n(score=0.9000, age=1d, stability=static)\nMatt Joyce is the project lead for the AI Adoption Survey.\n\n---\n\n(score=0.8553, age=1d, stability=static)\nJohn Sutherland serves as the CIO and Executive Sponsor for the AI Adoption Survey.\n\n---\n\n(score=0.7370, age=1d, stability=static)\nThe project description is \"Organizational AI adoption survey analysis and response development\".\n\n---\n\n(score=0.7325, age=1d, stability=static)\nAbi is a 120 cm tall humanoid robot developed by Melbourne\u2011based startup Andromeda Robotics, which trades as Dromeda.\n",
+    "category": "basic_fact",
+    "project": "ai_adoption_survey",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2585.709874983877,
+    "evaluation": {
+      "match_ratio": 0.5,
+      "matches": 2,
+      "total_expected_words": 4,
+      "appears_relevant": true,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 3,
+    "question": "What are the main barriers preventing people from using AI tools according to the survey?",
+    "expected_answer": "The survey asks about multiple barriers including: trouble accessing technology, lack of time, unsure how AI applies to their role, unclear about Calvary's AI policy, concerns about accuracy, insufficient training, and data privacy/security concerns",
+    "vestig_output": "vestig v0.1.0\n(score=0.9388, age=1d, stability=static)\nThe survey asks respondents to select the main barriers preventing more AI tool usage, including lack of technology access, time constraints, uncertainty about applicability, policy uncertainty, accuracy concerns, insufficient training, data privacy worries, and Other.\n\n---\n\n(score=0.7134, age=1d, stability=static)\n# Calvary AI/LLM Survey Design Overview\n\n**Overview:** The Calvary AI/LLM survey gathers information about staff roles, service areas, and current use of AI tools. It assesses confidence, interest in skill development, preferred support, and perceived barriers, while also exploring interest in training and future initiatives. The survey provides multiple-choice questions covering usage frequency, activities, subscription status, and desired AI integration areas. Respondents can contact a dedicated email for any questions.\n\n**Key Insights:**\n- Respondents select the service area they primarily support, such as Private Hospitals, Home Care, Residential Aged Care, and others.\n- The survey captures respondents' role at Calvary, offering options like Executive Leader, Senior Management, and Operational Management.\n- Frequency of AI/LLM tool usage in the past two weeks is measured, ranging from regular daily/weekly use to never or policy\u2011uncertain use.\n- A wide set of AI\u2011related activities is listed, including automating admin tasks, supporting clinical decisions, creating reports, and brainstorming.\n- Respondents indicate whether they pay for AI tool subscriptions, with options for free use, premium subscriptions, or no use.\n- Confidence in using AI/LLM tools is rated on a 5\u2011point Likert scale from Very confident to No confidence.\n- Interest in developing AI/LLM skills for work is captured using a 5\u2011point Likert scale from Very interested to Not interested at all.\n- Attending a half\u2011day internal training workshop on AI/LLM tools is explored with options from definitely interested to not interested.\n- Key barriers to greater AI tool usage are identified, including technology access, time constraints, policy uncertainty, accuracy concerns, and data privacy worries.\n- Respondents indicate the most valuable AI support types (technical support, use\u2011case examples, training, coaching, policies) and are provided a contact email for queries.\n- Potential benefit areas for AI integration are listed, such as clinical documentation, quality monitoring, patient communication, and administrative efficiency.\n- Interest in participating in new AI initiatives is captured with Yes, No, and Maybe response options.\n\n**Themes:** AIUsage, Barriers, Training, Support, Roles, Benefits\n\n---\n\n(score=0.6975, age=1d, stability=static)\nThe survey asks how often respondents have used AI/LLM tools in the last two weeks, offering choices: regularly (daily/weekly), occasionally (monthly or less), rarely (once or twice), never, and not allowed/unsure of policy.\n\n---\n\n(score=0.6794, age=1d, stability=static)\nThe survey asks what type of AI or technology support would be most valuable for respondents' roles, with options such as technical support, use\u2011case examples, advanced training, introductory literacy training, one\u2011on\u2011one coaching, hands\u2011on workshops, peer learning groups, clear policies, and Other.\n\n---\n\n(score=0.6760, age=1d, stability=static)\nThe survey lists multiple activities for which AI tools may be used, including automating routine administrative tasks, supporting clinical decisions, developing policies, creating reports, preparing for meetings, analysing data, creating training materials, brainstorming, researching, writing emails, and Other.\n",
+    "category": "detailed_content",
+    "project": "ai_adoption_survey",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2557.070125010796,
+    "evaluation": {
+      "match_ratio": 0.5,
+      "matches": 13,
+      "total_expected_words": 26,
+      "appears_relevant": true,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 4,
+    "question": "What problem is Heidi Health trying to solve?",
+    "expected_answer": "Current use of internal typists and external transcription services results in delays of up to seven days for specialist documentation. Additionally, there are staffing sustainability risks due to resignations and anticipated retirements, and external transcription costs are escalating (over $116,000 annually).",
+    "vestig_output": "vestig v0.1.0\n(score=0.7242, age=1d, stability=static)\nDirect cost for the Heidi Health Team pilot subscription is $9,570 for a 3\u2011month period.\n\n---\n\n(score=0.7238, age=1d, stability=static)\nCommitment to Heidi Health as the sole long\u2011term provider is out of scope.\n\n---\n\n(score=0.6925, age=1d, stability=static)\nAbi is designed to augment care staff rather than replace them, stepping in for social interaction when staff are busy and handling routine recreational tasks to free human caregivers for personal care.\n\n---\n\n(score=0.6751, age=1d, stability=static)\nAbi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship, allowing staff to focus on clinical and complex emotional tasks, thereby enhancing care quality and staff efficiency.\n\n---\n\n(score=0.6728, age=1d, stability=static)\nHeidi Health - AI Scribe is an AI-powered medical scribe pilot implementation for Hobart Consulting Suites.\n",
+    "category": "problem_analysis",
+    "project": "heidi_health_ai_scribe",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2553.1694580568,
+    "evaluation": {
+      "match_ratio": 0.07142857142857142,
+      "matches": 2,
+      "total_expected_words": 28,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 5,
+    "question": "What is the status of the Heidi Health AI Scribe project?",
+    "expected_answer": "The status is 'proposal'",
+    "vestig_output": "vestig v0.1.0\n(score=0.9300, age=1d, stability=static)\nThe project type for Heidi Health - AI Scribe is \"pilot\".\n\n---\n\n(score=0.8773, age=1d, stability=static)\nHeidi Health - AI Scribe is an AI-powered medical scribe pilot implementation for Hobart Consulting Suites.\n\n---\n\n(score=0.7688, age=1d, stability=static)\nHeidi Health - AI Scribe operates in the clinical_documentation domain.\n\n---\n\n(score=0.7322, age=1d, stability=static)\nMelissa Evans, Regional Chief Executive Officer of the TAS Region, is the Executive Sponsor for the Heidi Health AI Scribe Pilot proposal dated 18 September 2025.\n\n---\n\n(score=0.7287, age=1d, stability=static)\nDirect cost for the Heidi Health Team pilot subscription is $9,570 for a 3\u2011month period.\n",
+    "category": "basic_fact",
+    "project": "heidi_health_ai_scribe",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2562.567792017944,
+    "evaluation": {
+      "match_ratio": 0.0,
+      "matches": 0,
+      "total_expected_words": 2,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 6,
+    "question": "Where is the Heidi Health pilot planned to be implemented?",
+    "expected_answer": "Hobart Consulting Suites (or Calvary Hobart Consulting Suites)",
+    "vestig_output": "vestig v0.1.0\n(score=0.8198, age=1d, stability=static)\nDirect cost for the Heidi Health Team pilot subscription is $9,570 for a 3\u2011month period.\n\n---\n\n(score=0.7353, age=1d, stability=static)\nThe pilot\u2019s working boundary includes Calvary Hobart Consulting Suites, non\u2011employee VMOs, patients who consent to recording, Heidi Health as vendor, Calvary governance (Clinical Governance, Legal, Cybersecurity), admin staff, and GP recipients.\n\n---\n\n(score=0.7352, age=1d, stability=static)\nThe project type for Heidi Health - AI Scribe is \"pilot\".\n\n---\n\n(score=0.7045, age=1d, stability=static)\nHeidi Health - AI Scribe is an AI-powered medical scribe pilot implementation for Hobart Consulting Suites.\n\n---\n\n(score=0.6772, age=1d, stability=static)\nThe final consent model approval is scheduled for November 2025.\n",
+    "category": "basic_fact",
+    "project": "heidi_health_ai_scribe",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2537.9200419411063,
+    "evaluation": {
+      "match_ratio": 0.6666666666666666,
+      "matches": 4,
+      "total_expected_words": 6,
+      "appears_relevant": true,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 7,
+    "question": "Who met with Beamtree to discuss the PICQ proposal?",
+    "expected_answer": "John Sutherland (CIO) and Damien Bruce (CEO)",
+    "vestig_output": "vestig v0.1.0\n(score=0.7417, age=1d, stability=static)\nJohn Sutherland (CIO) and Damien Bruce (CEO) met with Beamtree, during which Beamtree presented a coding optimisation/audit proposal that includes a PICQ audit for private hospitals, a trial letter, a data extract specification, and presentation slides.\n\n---\n\n(score=0.6605, age=1d, stability=static)\nThe \"BeamTree PICQ\" proposal is a coding optimisation and audit initiative for private hospitals, intended to improve DRG accuracy and reduce clawbacks.\n\n---\n\n(score=0.6578, age=1d, stability=static)\nThe BeamTree PICQ Assessment Framework document is dated December 10, 2025, serves as a structured template for evaluating Beamtree's proposal, and is intended for an internal audience to inform discussion with John Sutherland.\n\n---\n\n(score=0.6554, age=1d, stability=static)\nJohn and Damien made an informed decision regarding the Beamtree trial.\n\n---\n\n(score=0.6206, age=1d, stability=static)\nThe vendor for the proposal is Beamtree.\n",
+    "category": "basic_fact",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2579.0289170108736,
+    "evaluation": {
+      "match_ratio": 1.0,
+      "matches": 6,
+      "total_expected_words": 6,
+      "appears_relevant": true,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 8,
+    "question": "Why is the BeamTree PICQ project considered sensitive?",
+    "expected_answer": "It's sensitive with coders/HIMs (Health Information Management staff) because there has been a historical 'frosty' reception to similar initiatives, and it may be perceived as surveillance or questioning of professional competence rather than quality improvement",
+    "vestig_output": "vestig v0.1.0\n(score=0.7819, age=1d, stability=static)\nThe BeamTree PICQ project brief was created on December 10, 2025, is currently in the \"Executive Review - Pre-engagement Assessment\" status, and is marked as high sensitivity (not for HIM/Coder distribution at this stage).\n\n---\n\n(score=0.7256, age=1d, stability=static)\nThe \"BeamTree PICQ\" proposal is a coding optimisation and audit initiative for private hospitals, intended to improve DRG accuracy and reduce clawbacks.\n\n---\n\n(score=0.6680, age=1d, stability=static)\nThe BeamTree PICQ Assessment Framework document is dated December 10, 2025, serves as a structured template for evaluating Beamtree's proposal, and is intended for an internal audience to inform discussion with John Sutherland.\n\n---\n\n(score=0.6581, age=1d, stability=static)\n# Beamtree PICQ Trial Decision and Next Steps\n\n**Overview:** The BeamTree PICQ project brief was prepared on December 10, 2025 and is under executive review with high sensitivity. CIO John Sutherland and CEO Damien Bruce evaluated a coding optimisation proposal from Beamtree and opted for a small, confidential trial to test the PICQ audit in private hospitals, aligning with Calvary's risk\u2011management goals and upstream quality strategy.\n\n**Key Insights:**\n- The BeamTree PICQ project brief was created on December 10, 2025, is in Executive Review \u2013 Pre\u2011engagement Assessment, and is marked high sensitivity.\n- John Sutherland (CIO) and Damien Bruce (CEO) met with Beamtree, who presented a coding optimisation/audit proposal including a PICQ audit, trial letter, data extract specification, and slides.\n- No commitments were made; the proposal is considered sensitive for coders/HIMs and any rollout would likely be a top\u2011down directive.\n- A prior Beamtree engagement with Calvary did not progress due to technical/data constraints and differing opinions on approach.\n- Calvary views Beamtree as an upstream quality signal that complements Phoebe\u2019s downstream claim\u2011checking, creating a continuum of quality assurance.\n- John tasked the team to confidentially review Beamtree materials, form an assessment, and schedule a \u201ccompare notes\u201d follow\u2011up; no formal deadline was set.\n- The preferred recommendation (Option B) is a small, controlled trial using 1\u20112 months of recent data from 1\u20112 private hospitals on a single service line, with minimal integration changes and strict confidentiality.\n- The trial aims to reduce clawbacks and improve defensibility as part of risk management, aligning with Calvary\u2019s mission of fair resourcing for patient care.\n- Implementation will be co\u2011designed with HIM and coders to support professional practice rather than surveillance.\n- John and Damien made an informed decision regarding the Beamtree trial.\n- The document summarizing the Beamtree trial was created and last updated on December 10, 2025.\n\n**Themes:** sensitivity, trial, upstream, downstream, risk management, confidentiality, co\u2011design\n\n---\n\n(score=0.6302, age=1d, stability=static)\n# BeamTree PICQ Assessment Framework Overview\n\n**Overview:** The BeamTree PICQ Assessment Framework, created on December 10, 2025, outlines a structured approach for evaluating the proposal and guiding internal discussions with John Sutherland. It details the preferred integration of PICQ outputs into coding worklists, incorporates the downstream claim\u2011checking tool Phoebe, and maps the full workflow from documentation to claim submission. Past initiatives at Calvary faced staff resistance, highlighting the need for careful stakeholder engagement.\n\n**Key Insights:**\n- The BeamTree PICQ Assessment Framework was authored on Dec 10, 2025 as an internal template to evaluate the proposal for discussion with John Sutherland.\n- Prior similar initiatives at Calvary encountered a \"Frosty\" reception, indicating notable staff resistance to change.\n- Integration of PICQ outputs is preferred to be directly embedded within coding worklists rather than using a separate portal or spreadsheet.\n- The revenue cycle integration plan includes a downstream claim\u2011checking tool called Phoebe, which validates claims before submission.\n- The end\u2011to\u2011end workflow flows from Clinical Documentation through Coding, then BeamTree PICQ as an upstream quality signal, onward to the coded episode, followed by Phoebe for downstream claim integrity, and finally claim submission.\n- Engagement barriers previously involved key individuals Richard and Martin, suggesting the need to address stakeholder concerns.\n- The document serves as an analysis of integration, establishing the timeline and expectations for the proposed workflow.\n\n**Themes:** Assessment, Integration, Workflow, Resistance, Tooling, Stakeholders\n\n**Open Questions:**\n- What strategies will be employed to mitigate the staff resistance observed in previous Calvary initiatives?\n",
+    "category": "contextual_understanding",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2545.55145802442,
+    "evaluation": {
+      "match_ratio": 0.4482758620689655,
+      "matches": 13,
+      "total_expected_words": 29,
+      "appears_relevant": true,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 9,
+    "question": "What is the relationship between Beamtree and Phoebe mentioned in the project brief?",
+    "expected_answer": "The ideal positioning is that Beamtree would provide upstream quality signal (coding optimization) while Phoebe provides downstream claim integrity checking, creating a continuum rather than isolated tools",
+    "vestig_output": "vestig v0.1.0\n(score=0.7327, age=1d, stability=static)\nInternally, John and Damien view Beamtree as providing an upstream quality signal that complements Phoebe's downstream checking.\n\n---\n\n(score=0.7201, age=1d, stability=static)\nPhoebe is currently in production status.\n\n---\n\n(score=0.6586, age=1d, stability=static)\nThe project lead is Bojan.\n\n---\n\n(score=0.6575, age=1d, stability=static)\nPhoebe is classified as software.\n\n---\n\n(score=0.6370, age=1d, stability=static)\nPhoebe provides downstream claim checking before claim submission.\n",
+    "category": "relationship_analysis",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2573.0452499119565,
+    "evaluation": {
+      "match_ratio": 0.4166666666666667,
+      "matches": 10,
+      "total_expected_words": 24,
+      "appears_relevant": true,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 10,
+    "question": "What is the recommended option for the BeamTree PICQ project?",
+    "expected_answer": "Option B: Small, Controlled Trial - using 1-2 months of recent data from selected private hospitals (1-2 sites), focusing on a single service line or DRG category, with minimal change to existing integrations",
+    "vestig_output": "vestig v0.1.0\n(score=0.7854, age=1d, stability=static)\nThe \"BeamTree PICQ\" proposal is a coding optimisation and audit initiative for private hospitals, intended to improve DRG accuracy and reduce clawbacks.\n\n---\n\n(score=0.7230, age=1d, stability=static)\nThe BeamTree PICQ Assessment Framework document is dated December 10, 2025, serves as a structured template for evaluating Beamtree's proposal, and is intended for an internal audience to inform discussion with John Sutherland.\n\n---\n\n(score=0.6957, age=1d, stability=static)\nThe BeamTree PICQ project brief was created on December 10, 2025, is currently in the \"Executive Review - Pre-engagement Assessment\" status, and is marked as high sensitivity (not for HIM/Coder distribution at this stage).\n\n---\n\n(score=0.6830, age=1d, stability=static)\n# BeamTree PICQ Assessment Framework Overview\n\n**Overview:** The BeamTree PICQ Assessment Framework, created on December 10, 2025, outlines a structured approach for evaluating the proposal and guiding internal discussions with John Sutherland. It details the preferred integration of PICQ outputs into coding worklists, incorporates the downstream claim\u2011checking tool Phoebe, and maps the full workflow from documentation to claim submission. Past initiatives at Calvary faced staff resistance, highlighting the need for careful stakeholder engagement.\n\n**Key Insights:**\n- The BeamTree PICQ Assessment Framework was authored on Dec 10, 2025 as an internal template to evaluate the proposal for discussion with John Sutherland.\n- Prior similar initiatives at Calvary encountered a \"Frosty\" reception, indicating notable staff resistance to change.\n- Integration of PICQ outputs is preferred to be directly embedded within coding worklists rather than using a separate portal or spreadsheet.\n- The revenue cycle integration plan includes a downstream claim\u2011checking tool called Phoebe, which validates claims before submission.\n- The end\u2011to\u2011end workflow flows from Clinical Documentation through Coding, then BeamTree PICQ as an upstream quality signal, onward to the coded episode, followed by Phoebe for downstream claim integrity, and finally claim submission.\n- Engagement barriers previously involved key individuals Richard and Martin, suggesting the need to address stakeholder concerns.\n- The document serves as an analysis of integration, establishing the timeline and expectations for the proposed workflow.\n\n**Themes:** Assessment, Integration, Workflow, Resistance, Tooling, Stakeholders\n\n**Open Questions:**\n- What strategies will be employed to mitigate the staff resistance observed in previous Calvary initiatives?\n\n---\n\n(score=0.6436, age=1d, stability=static)\nThe project type is \"research\".\n",
+    "category": "detailed_content",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2559.210375067778,
+    "evaluation": {
+      "match_ratio": 0.2962962962962963,
+      "matches": 8,
+      "total_expected_words": 27,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 11,
+    "question": "What is Project Bronte?",
+    "expected_answer": "A confidential acquisition project requiring detailed document review and analysis, with an executed NDA. Matt is the project lead.",
+    "vestig_output": "vestig v0.1.0\n(score=0.8083, age=1d, stability=static)\nProject Bronte is a confidential acquisition project with an executed NDA, and the project lead is Matt.\n\n---\n\n(score=0.7316, age=1d, stability=static)\nThe Project Bronte is confidential and an NDA has been signed.\n\n---\n\n(score=0.6675, age=1d, stability=static)\nAll work products for Project Bronte are classified as highly confidential; document storage and handling must comply with NDA requirements, and regular review cycles are mandated for thorough understanding.\n\n---\n\n(score=0.6600, age=1d, stability=static)\nThe project lead is Bojan.\n\n---\n\n(score=0.6335, age=1d, stability=static)\nThe project type is \"research\".\n",
+    "category": "basic_fact",
+    "project": "bronte",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2522.8307500947267,
+    "evaluation": {
+      "match_ratio": 0.5833333333333334,
+      "matches": 7,
+      "total_expected_words": 12,
+      "appears_relevant": true,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 12,
+    "question": "What is the status of Robot Companions project?",
+    "expected_answer": "Discovery",
+    "vestig_output": "vestig v0.1.0\n(score=0.9221, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n\n---\n\n(score=0.8072, age=1d, stability=static)\nThe Andromeda Abi Robot Project was created on September 23, 2025, classified as a Robot Companion for Aged Care and its status at that time was Regional Leadership Transition.\n\n---\n\n(score=0.7894, age=1d, stability=static)\n# Robot Companion Pets Initiative Overview\n\n**Overview:** The Robot Companions Research Initiative explores the use of robotic companion pets to address loneliness and social isolation among older adults in Calvary's aged and community care settings. Backed by a CRC-P Round 18 grant, the multi\u2011institutional project aligns with Calvary's FY26 strategic priorities and is currently in a collaborative planning phase focused on meaningful therapeutic outcomes.\n\n**Key Insights:**\n- The initiative aims to explore robotic companion pets as therapeutic interventions for loneliness and social isolation in Calvary's aged care and community care settings.\n- Funding comes from the CRC-P Round 18 grant opportunity, which closes on October 7, 2025, and involves a multi\u2011institutional partnership.\n- The project aligns with Calvary FY26 Strategic Priorities: Consumer\u2011Centred Care, CCS Reinforcement, Mission Integration, and Operational Excellence.\n- Evidence shows robotic companion pets reduce agitation, improve mood, decrease psychotropic medication usage, enhance social interaction, and are cost\u2011effective at $100\u2011150 versus traditional $5,000 devices with minimal operational burden.\n- The partnership includes Lead Institution Calvary Health Care, research partners University of Technology Sydney and Macquarie University, industry partner NeuraNext, community partner NSW Meals on Wheels, and facilitator NSW Smart Sensing Network.\n- Current phase is collaborative planning and implementation design, focusing on meaningful outcomes rather than grant deadlines; the technology framework includes Fluffy (therapeutic, tactile) and Hard (mobile, utility) robots.\n- Next steps involve generating implementation ideas, providing a shared workspace, and holding bi\u2011weekly stakeholder meetings.\n- Project Lead is Matt Joyce, National Manager Emerging Technologies & Health Informatics; Executive Sponsor is John Sutherland, National Director Digital Health & Technology.\n\n**Themes:** Robotics, Therapeutic, Aged Care, Collaboration, Funding, Evidence, Leadership\n\n---\n\n(score=0.7734, age=1d, stability=static)\nThe bibliography for the Robot Companions Research Initiative was compiled in September 2025.\n\n---\n\n(score=0.7417, age=1d, stability=dynamic)\nThe current status of the project is \"discovery\".\n",
+    "category": "basic_fact",
+    "project": "robot_companions",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2585.5475830612704,
+    "evaluation": {
+      "match_ratio": 1.0,
+      "matches": 1,
+      "total_expected_words": 1,
+      "appears_relevant": true,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 13,
+    "question": "What is the domain or area of focus for the Robot Companions project?",
+    "expected_answer": "Research initiative exploring robotic companions to combat loneliness in aged care settings",
+    "vestig_output": "vestig v0.1.0\n(score=1.0129, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n\n---\n\n(score=0.8249, age=1d, stability=static)\n# Robot Companion Pets Initiative Overview\n\n**Overview:** The Robot Companions Research Initiative explores the use of robotic companion pets to address loneliness and social isolation among older adults in Calvary's aged and community care settings. Backed by a CRC-P Round 18 grant, the multi\u2011institutional project aligns with Calvary's FY26 strategic priorities and is currently in a collaborative planning phase focused on meaningful therapeutic outcomes.\n\n**Key Insights:**\n- The initiative aims to explore robotic companion pets as therapeutic interventions for loneliness and social isolation in Calvary's aged care and community care settings.\n- Funding comes from the CRC-P Round 18 grant opportunity, which closes on October 7, 2025, and involves a multi\u2011institutional partnership.\n- The project aligns with Calvary FY26 Strategic Priorities: Consumer\u2011Centred Care, CCS Reinforcement, Mission Integration, and Operational Excellence.\n- Evidence shows robotic companion pets reduce agitation, improve mood, decrease psychotropic medication usage, enhance social interaction, and are cost\u2011effective at $100\u2011150 versus traditional $5,000 devices with minimal operational burden.\n- The partnership includes Lead Institution Calvary Health Care, research partners University of Technology Sydney and Macquarie University, industry partner NeuraNext, community partner NSW Meals on Wheels, and facilitator NSW Smart Sensing Network.\n- Current phase is collaborative planning and implementation design, focusing on meaningful outcomes rather than grant deadlines; the technology framework includes Fluffy (therapeutic, tactile) and Hard (mobile, utility) robots.\n- Next steps involve generating implementation ideas, providing a shared workspace, and holding bi\u2011weekly stakeholder meetings.\n- Project Lead is Matt Joyce, National Manager Emerging Technologies & Health Informatics; Executive Sponsor is John Sutherland, National Director Digital Health & Technology.\n\n**Themes:** Robotics, Therapeutic, Aged Care, Collaboration, Funding, Evidence, Leadership\n\n---\n\n(score=0.7789, age=1d, stability=static)\nThe Andromeda Abi Robot Project was created on September 23, 2025, classified as a Robot Companion for Aged Care and its status at that time was Regional Leadership Transition.\n\n---\n\n(score=0.7649, age=1d, stability=static)\nThe bibliography for the Robot Companions Research Initiative was compiled in September 2025.\n\n---\n\n(score=0.7242, age=1d, stability=static)\nThe project lead is Bojan.\n",
+    "category": "basic_fact",
+    "project": "robot_companions",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2546.906500007026,
+    "evaluation": {
+      "match_ratio": 0.9,
+      "matches": 9,
+      "total_expected_words": 10,
+      "appears_relevant": true,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 14,
+    "question": "How many leaders participated in the AI Adoption Survey?",
+    "expected_answer": "Approximately 250 Calvary Leaders and 130 DHT Staff",
+    "vestig_output": "vestig v0.1.0\n(score=0.8031, age=1d, stability=static)\nThe project is titled \"AI Adoption Survey\".\n\n---\n\n(score=0.8030, age=1d, stability=static)\nOn 2025-08-05 the AI Adoption Survey was launched with an initial email sent to approximately 250 Calvary leaders; the survey focused on AI/technology usage and needs assessment for senior management, targeted senior managers and leaders across the Calvary organization, was designed to take less than 5 minutes, offered anonymous participation with optional voluntary contact sharing, and included a commitment to respond to participants with results and actions. The comprehensive survey consisted of 6 sections and 36 questions covering background, usage, skills, barriers, vision, and follow\u2011up.\n\n---\n\n(score=0.7993, age=1d, stability=static)\n# AI Adoption Survey Progress Summary\n\n**Overview:** The AI Adoption Survey was launched in August 2025 to assess AI usage and needs among Calvary leaders and later extended to the Digital Health Technology team. Over 185 respondents provided insights across six structured sections, informing planned workshops, investment priorities, and an emerging AI strategy. An executive briefing presented initial findings to senior leadership, and data collection is now complete, awaiting comparative analysis.\n\n**Key Insights:**\n- The survey was launched on 2025-08-05 targeting approximately 250 Calvary leaders, designed to take under 5 minutes, offered anonymous participation, and included a commitment to share results and actions.\n- It was organized into six sections covering background, current AI/LLM usage, skills & interest, barriers & support needs, future vision, and contact information.\n- The intended outcomes included developing practical workshops, informing technology investment priorities, identifying implementation champions, and shaping an AI strategy aligned with the organization\u2019s mission and values.\n- An executive briefing on 2025-08-29 presented the initial analysis of 113 leadership responses to CIO John Sutherland, outlining key insights and organizational implications.\n- The survey was extended on 2025-09-26 to the Digital Health Technology team (~130 staff) using the same six\u2011section design for consistency and comparative analysis.\n- Response rates were 45% for leadership (113 of ~250) and 55% for DHT (72 of ~130), yielding a combined total of 185 completed surveys.\n- Data collection for both surveys is complete, enabling comparative analysis between leadership and technical teams, though analysis and response development are still pending.\n\n**Themes:** survey, AI adoption, leadership, digital health, response rate, analysis, workshops\n\n---\n\n(score=0.7643, age=1d, stability=static)\nMatt Joyce is the project lead for the AI Adoption Survey.\n\n---\n\n(score=0.7186, age=1d, stability=static)\nJohn Sutherland serves as the CIO and Executive Sponsor for the AI Adoption Survey.\n",
+    "category": "basic_fact",
+    "project": "ai_adoption_survey",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2536.3820829661563,
+    "evaluation": {
+      "match_ratio": 1.0,
+      "matches": 7,
+      "total_expected_words": 7,
+      "appears_relevant": true,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 15,
+    "question": "What types of support does the AI Adoption Survey ask about?",
+    "expected_answer": "The survey asks about multiple types: technical support and troubleshooting, examples of healthcare use cases, advanced training, introductory AI literacy training, one-on-one coaching, hands-on workshops, peer learning groups, and clear policies and guidelines",
+    "vestig_output": "vestig v0.1.0\n(score=0.9067, age=1d, stability=static)\nThe project is titled \"AI Adoption Survey\".\n\n---\n\n(score=0.8286, age=1d, stability=static)\nThe survey asks what type of AI or technology support would be most valuable for respondents' roles, with options such as technical support, use\u2011case examples, advanced training, introductory literacy training, one\u2011on\u2011one coaching, hands\u2011on workshops, peer learning groups, clear policies, and Other.\n\n---\n\n(score=0.8096, age=1d, stability=static)\nMatt Joyce is the project lead for the AI Adoption Survey.\n\n---\n\n(score=0.7964, age=1d, stability=static)\nThe Robot Companions Research Initiative aims to explore robotic companion pets as therapeutic interventions for combating loneliness and social isolation in Calvary's aged care and community care settings.\n\n---\n\n(score=0.7653, age=1d, stability=static)\nAbi supports person\u2011centered, individualized care by delivering consistent, on\u2011demand companionship, allowing staff to focus on clinical and complex emotional tasks, thereby enhancing care quality and staff efficiency.\n",
+    "category": "detailed_content",
+    "project": "ai_adoption_survey",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2530.638625030406,
+    "evaluation": {
+      "match_ratio": 0.6666666666666666,
+      "matches": 18,
+      "total_expected_words": 27,
+      "appears_relevant": true,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 16,
+    "question": "What are the key risks identified for the BeamTree PICQ project?",
+    "expected_answer": "Four main risk categories: 1) Workforce/political risks (HIM/coder perception issues, professional autonomy concerns), 2) Data governance risks (external data sharing, privacy concerns), 3) Technical/integration risks (siloed tool, workflow friction), 4) Financial/ROI risks (cost vs benefit, overestimated uplift)",
+    "vestig_output": "vestig v0.1.0\n(score=0.7205, age=1d, stability=static)\nThe \"BeamTree PICQ\" proposal is a coding optimisation and audit initiative for private hospitals, intended to improve DRG accuracy and reduce clawbacks.\n\n---\n\n(score=0.6812, age=1d, stability=static)\nThe BeamTree PICQ project brief was created on December 10, 2025, is currently in the \"Executive Review - Pre-engagement Assessment\" status, and is marked as high sensitivity (not for HIM/Coder distribution at this stage).\n\n---\n\n(score=0.6387, age=1d, stability=static)\nThe BeamTree PICQ Assessment Framework document is dated December 10, 2025, serves as a structured template for evaluating Beamtree's proposal, and is intended for an internal audience to inform discussion with John Sutherland.\n\n---\n\n(score=0.6360, age=1d, stability=static)\n# BeamTree PICQ Assessment Framework Overview\n\n**Overview:** The BeamTree PICQ Assessment Framework, created on December 10, 2025, outlines a structured approach for evaluating the proposal and guiding internal discussions with John Sutherland. It details the preferred integration of PICQ outputs into coding worklists, incorporates the downstream claim\u2011checking tool Phoebe, and maps the full workflow from documentation to claim submission. Past initiatives at Calvary faced staff resistance, highlighting the need for careful stakeholder engagement.\n\n**Key Insights:**\n- The BeamTree PICQ Assessment Framework was authored on Dec 10, 2025 as an internal template to evaluate the proposal for discussion with John Sutherland.\n- Prior similar initiatives at Calvary encountered a \"Frosty\" reception, indicating notable staff resistance to change.\n- Integration of PICQ outputs is preferred to be directly embedded within coding worklists rather than using a separate portal or spreadsheet.\n- The revenue cycle integration plan includes a downstream claim\u2011checking tool called Phoebe, which validates claims before submission.\n- The end\u2011to\u2011end workflow flows from Clinical Documentation through Coding, then BeamTree PICQ as an upstream quality signal, onward to the coded episode, followed by Phoebe for downstream claim integrity, and finally claim submission.\n- Engagement barriers previously involved key individuals Richard and Martin, suggesting the need to address stakeholder concerns.\n- The document serves as an analysis of integration, establishing the timeline and expectations for the proposed workflow.\n\n**Themes:** Assessment, Integration, Workflow, Resistance, Tooling, Stakeholders\n\n**Open Questions:**\n- What strategies will be employed to mitigate the staff resistance observed in previous Calvary initiatives?\n\n---\n\n(score=0.6164, age=1d, stability=static)\nJohn Sutherland (CIO) and Damien Bruce (CEO) met with Beamtree, during which Beamtree presented a coding optimisation/audit proposal that includes a PICQ audit for private hospitals, a trial letter, a data extract specification, and presentation slides.\n",
+    "category": "detailed_content",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2529.7882079612464,
+    "evaluation": {
+      "match_ratio": 0.0625,
+      "matches": 2,
+      "total_expected_words": 32,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 17,
+    "question": "What happened with Beamtree's previous engagement with Calvary?",
+    "expected_answer": "There was a prior interaction via Richard and Martin that did not progress due to technical/data constraints and differing opinions on approach",
+    "vestig_output": "vestig v0.1.0\n(score=0.7170, age=1d, stability=static)\nA prior Beamtree engagement with Calvary, facilitated through Richard and Martin, did not progress because of technical/data constraints and differing opinions on approach.\n\n---\n\n(score=0.6317, age=1d, stability=static)\nA follow\u2011up meeting between Calvary and Andromeda took place on 17 June 2025.\n\n---\n\n(score=0.6240, age=1d, stability=static)\nJohn and Damien made an informed decision regarding the Beamtree trial.\n\n---\n\n(score=0.5995, age=1d, stability=static)\nCalvary has a proven success with the Phoebe implementation (downstream claim\u2011checking) and sees an opportunity to position Beamtree as an upstream quality/coding signal rather than a standalone island, creating a continuum: Beamtree (upstream) \u2192 Phoebe (downstream).\n\n---\n\n(score=0.5579, age=1d, stability=static)\nA Mutual Confidentiality Agreement between Calvary and Dromeda was finalized on September 19, 2025 by Matt Joyce.\n",
+    "category": "historical_context",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2597.994750016369,
+    "evaluation": {
+      "match_ratio": 0.6875,
+      "matches": 11,
+      "total_expected_words": 16,
+      "appears_relevant": true,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 18,
+    "question": "Who is transitioning the Heidi Health project from initial to ongoing leadership?",
+    "expected_answer": "Matt Joyce was the initial project lead, with Liam taking over for ongoing management",
+    "vestig_output": "vestig v0.1.0\n(score=0.7290, age=1d, stability=static)\nThe project type for Heidi Health - AI Scribe is \"pilot\".\n\n---\n\n(score=0.7259, age=1d, stability=static)\nDirect cost for the Heidi Health Team pilot subscription is $9,570 for a 3\u2011month period.\n\n---\n\n(score=0.6852, age=1d, stability=static)\nThe project lead is Bojan.\n\n---\n\n(score=0.6771, age=1d, stability=static)\nCommitment to Heidi Health as the sole long\u2011term provider is out of scope.\n\n---\n\n(score=0.6561, age=1d, stability=static)\nProject ownership changed: the Finance team now mostly manages the project, replacing the previous Health Informatics lead.\n",
+    "category": "basic_fact",
+    "project": "heidi_health_ai_scribe",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2543.984708026983,
+    "evaluation": {
+      "match_ratio": 0.1,
+      "matches": 1,
+      "total_expected_words": 10,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 19,
+    "question": "What service areas does the AI Adoption Survey cover?",
+    "expected_answer": "Private Hospitals, Home Care, Residential Aged Care, Retirement Living, Public Hospitals, Corporate/Support Functions, and Other",
+    "vestig_output": "vestig v0.1.0\n(score=0.8984, age=1d, stability=static)\nThe project is titled \"AI Adoption Survey\".\n\n---\n\n(score=0.7991, age=1d, stability=static)\nMatt Joyce is the project lead for the AI Adoption Survey.\n\n---\n\n(score=0.7611, age=1d, stability=static)\nOn 2025-08-05 the AI Adoption Survey was launched with an initial email sent to approximately 250 Calvary leaders; the survey focused on AI/technology usage and needs assessment for senior management, targeted senior managers and leaders across the Calvary organization, was designed to take less than 5 minutes, offered anonymous participation with optional voluntary contact sharing, and included a commitment to respond to participants with results and actions. The comprehensive survey consisted of 6 sections and 36 questions covering background, usage, skills, barriers, vision, and follow\u2011up.\n\n---\n\n(score=0.7535, age=1d, stability=static)\nThe AI Adoption Survey was structured into six sections: 1) Background Information (service area and role identification), 2) Current AI/LLM Usage (frequency, activities, subscription patterns), 3) Skills & Interest (confidence levels, learning interest, workshop participation), 4) Barriers & Support Needs (implementation barriers and required support types), 5) Future Vision (priority areas for AI integration and organizational opportunities), and 6) Close (contact information and follow\u2011up interest).\n\n---\n\n(score=0.7325, age=1d, stability=static)\nJohn Sutherland serves as the CIO and Executive Sponsor for the AI Adoption Survey.\n",
+    "category": "detailed_content",
+    "project": "ai_adoption_survey",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2576.121833990328,
+    "evaluation": {
+      "match_ratio": 0.0,
+      "matches": 0,
+      "total_expected_words": 12,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  },
+  {
+    "qa_id": 20,
+    "question": "Which project mentions integration with Phoebe?",
+    "expected_answer": "The BeamTree PICQ project mentions Phoebe as a proven success at Calvary for downstream claim-checking, and proposes positioning Beamtree as upstream quality/coding signal to integrate with Phoebe",
+    "vestig_output": "vestig v0.1.0\n(score=0.8329, age=1d, stability=static)\nPhoebe is currently in production status.\n\n---\n\n(score=0.7712, age=1d, stability=static)\nPhoebe is classified as software.\n\n---\n\n(score=0.7055, age=1d, stability=static)\nThe Phoebe project was successfully deployed to production and is operating in a stable state as of the last status update on December 10, 2025.\n\n---\n\n(score=0.6891, age=1d, stability=static)\nPhoebe provides downstream claim checking before claim submission.\n\n---\n\n(score=0.6880, age=1d, stability=static)\nThe project lead is Bojan.\n",
+    "category": "cross_project",
+    "project": "beamtree_picq",
+    "method": "recall",
+    "success": true,
+    "duration_ms": 2583.8063339469954,
+    "evaluation": {
+      "match_ratio": 0.29411764705882354,
+      "matches": 5,
+      "total_expected_words": 17,
+      "appears_relevant": false,
+      "has_output": true
+    }
+  }
+]
