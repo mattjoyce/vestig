@@ -176,6 +176,10 @@ def cmd_search(args):
     config = args.config_dict
     storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)
 
+    # M5: Entity-based retrieval config
+    entity_config = config.get("retrieval", {}).get("entity_path")
+    model = config.get("m4", {}).get("entity_extraction", {}).get("llm", {}).get("model")
+
     try:
         results = search_memories(
             query=args.query,
@@ -184,7 +188,9 @@ def cmd_search(args):
             limit=args.limit,
             event_storage=event_storage,
             tracerank_config=tracerank_config,
-            show_timing=getattr(args, 'timing', False),
+            show_timing=getattr(args, "timing", False),
+            entity_config=entity_config,
+            model=model,
         )
         print(format_search_results(results))
     finally:
@@ -202,6 +208,10 @@ def cmd_recall(args):
     config = args.config_dict
     storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)
 
+    # M5: Entity-based retrieval config
+    entity_config = config.get("retrieval", {}).get("entity_path")
+    model = config.get("m4", {}).get("entity_extraction", {}).get("llm", {}).get("model")
+
     try:
         results = search_memories(
             query=args.query,
@@ -210,7 +220,9 @@ def cmd_recall(args):
             limit=args.limit,
             event_storage=event_storage,
             tracerank_config=tracerank_config,
-            show_timing=getattr(args, 'timing', False),
+            show_timing=getattr(args, "timing", False),
+            entity_config=entity_config,
+            model=model,
         )
 
         # Format with or without explanation
@@ -429,6 +441,7 @@ def cmd_entity_purge(args):
     except Exception as e:
         print(f"\nError during purge: {e}", file=sys.stderr)
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
     finally:
@@ -465,7 +478,7 @@ def cmd_entity_extract(args):
             config=config,
             reprocess=args.reprocess,
             batch_size=args.batch_size,
-            verbose=args.verbose
+            verbose=args.verbose,
         )
 
         print("\n✓ Entity extraction completed successfully")
@@ -476,6 +489,7 @@ def cmd_entity_extract(args):
     except Exception as e:
         print(f"\nError during entity extraction: {e}", file=sys.stderr)
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
     finally:
@@ -495,6 +509,7 @@ def cmd_entity_regen_embeddings(args):
 
     # Build embedding engine
     from vestig.core.embeddings import EmbeddingEngine
+
     embedding_engine = EmbeddingEngine(
         model_name=config["embedding"]["model"],
         expected_dimension=config["embedding"]["dimension"],
@@ -517,7 +532,7 @@ def cmd_entity_regen_embeddings(args):
 
         # Apply limit if specified (for testing)
         if args.limit:
-            all_entities = all_entities[:args.limit]
+            all_entities = all_entities[: args.limit]
             print(f"Processing first {len(all_entities)} entities (--limit {args.limit})")
         else:
             print(f"Processing {len(all_entities)} entities")
@@ -532,8 +547,10 @@ def cmd_entity_regen_embeddings(args):
         updated = 0
 
         for i in range(0, total, batch_size):
-            batch = all_entities[i:i+batch_size]
-            print(f"Processing batch {i//batch_size + 1} ({i+1}-{min(i+batch_size, total)} of {total})...")
+            batch = all_entities[i : i + batch_size]
+            batch_num = i // batch_size + 1
+            batch_range = f"{i + 1}-{min(i + batch_size, total)}"
+            print(f"Processing batch {batch_num} ({batch_range} of {total})...")
 
             for entity in batch:
                 # Generate embedding (lowercase for consistency)
@@ -543,8 +560,7 @@ def cmd_entity_regen_embeddings(args):
 
                 # Update entity embedding
                 storage.conn.execute(
-                    "UPDATE entities SET embedding = ? WHERE id = ?",
-                    (embedding_json, entity.id)
+                    "UPDATE entities SET embedding = ? WHERE id = ?", (embedding_json, entity.id)
                 )
                 updated += 1
 
@@ -558,6 +574,7 @@ def cmd_entity_regen_embeddings(args):
     except Exception as e:
         print(f"\nError during regeneration: {e}", file=sys.stderr)
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
     finally:
@@ -706,7 +723,7 @@ def cmd_regen_embeddings(args):
 
         # Apply limit if specified (for testing)
         if args.limit:
-            all_memories = all_memories[:args.limit]
+            all_memories = all_memories[: args.limit]
             print(f"Processing first {len(all_memories)} memories (--limit {args.limit})")
         else:
             print(f"Processing {len(all_memories)} memories")
@@ -721,7 +738,7 @@ def cmd_regen_embeddings(args):
         total_errors = 0
 
         for i in range(0, len(all_memories), batch_size):
-            batch = all_memories[i:i + batch_size]
+            batch = all_memories[i : i + batch_size]
             batch_num = (i // batch_size) + 1
             total_batches = (len(all_memories) + batch_size - 1) // batch_size
 
@@ -743,7 +760,7 @@ def cmd_regen_embeddings(args):
                         embedding_json = json.dumps(embedding)
                         storage.conn.execute(
                             "UPDATE memories SET content_embedding = ? WHERE id = ?",
-                            (embedding_json, memory.id)
+                            (embedding_json, memory.id),
                         )
                         total_processed += 1
                     except Exception as e:
@@ -754,9 +771,9 @@ def cmd_regen_embeddings(args):
             progress_pct = (i + len(batch)) / len(all_memories) * 100
             print(f"Progress: {total_processed}/{len(all_memories)} ({progress_pct:.1f}%)")
 
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print("REGENERATION COMPLETE")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
         print(f"Total processed: {total_processed}")
         print(f"Total errors: {total_errors}")
         print(f"Model: {config['embedding']['model']}")

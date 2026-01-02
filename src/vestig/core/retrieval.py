@@ -1,5 +1,6 @@
-"""Retrieval logic for M1 (brute-force cosine similarity) with M3 TraceRank"""
+"""Retrieval: M1 semantic similarity + M3 TraceRank + M5 hybrid entity retrieval"""
 
+import json
 import time
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
@@ -39,6 +40,101 @@ def cosine_similarity(a: list[float], b: list[float]) -> float:
     return float(np.dot(a_arr, b_arr) / (norm_a * norm_b))
 
 
+def match_query_entities_to_db(
+    query_entities: list[tuple[str, str, float, str]],
+    storage: MemoryStorage,
+    embedding_engine: EmbeddingEngine,
+    similarity_threshold: float = 0.7,
+) -> list[tuple[str, str, float]]:
+    """
+    Match query entities to database entities using semantic similarity.
+
+    Args:
+        query_entities: Entities extracted from query (name, type, conf, evidence)
+        storage: Storage for entity lookup
+        embedding_engine: For embedding query entity names
+        similarity_threshold: Minimum similarity to consider a match
+
+    Returns:
+        List of (db_entity_id, query_entity_name, similarity_score) tuples
+    """
+    from vestig.core.models import compute_norm_key
+
+    matched_entities = []
+
+    for q_ent_name, q_ent_type, q_conf, q_evidence in query_entities:
+        # First try exact match via norm_key (fast path)
+        norm_key = compute_norm_key(q_ent_name, q_ent_type)
+        exact_match = storage.find_entity_by_norm_key(norm_key, include_expired=False)
+
+        if exact_match:
+            # Perfect match
+            matched_entities.append((exact_match.id, q_ent_name, 1.0))
+            continue
+
+        # No exact match - try semantic similarity
+        q_ent_embedding = embedding_engine.embed_text(q_ent_name.lower())
+
+        # Get all entities of same type
+        all_entities = storage.get_all_entities(include_expired=False)
+        type_entities = [e for e in all_entities if e.entity_type == q_ent_type]
+
+        # Find best match above threshold
+        best_match = None
+        best_similarity = 0.0
+
+        for db_entity in type_entities:
+            if db_entity.embedding:
+                db_embedding = json.loads(db_entity.embedding)
+                similarity = cosine_similarity(q_ent_embedding, db_embedding)
+
+                if similarity >= similarity_threshold and similarity > best_similarity:
+                    best_match = db_entity.id
+                    best_similarity = similarity
+
+        if best_match:
+            matched_entities.append((best_match, q_ent_name, best_similarity))
+
+    return matched_entities
+
+
+def retrieve_memories_by_entities(
+    matched_entities: list[tuple[str, float]],
+    storage: MemoryStorage,
+    include_expired: bool = False,
+) -> dict[str, float]:
+    """
+    Retrieve memories that mention matched entities via MENTIONS edges.
+
+    Args:
+        matched_entities: DB entities that matched query (entity_id, match_score)
+        storage: Storage for edge lookup
+        include_expired: Include expired memories
+
+    Returns:
+        Dict mapping memory_id to entity-based score
+    """
+    memory_scores = {}
+
+    for entity_id, entity_similarity in matched_entities:
+        # Get all MENTIONS edges pointing to this entity
+        # Schema: edges.from_node = memory_id, edges.to_node = entity_id
+        all_edges = storage.get_edges_to_entity(entity_id, include_expired=include_expired)
+        # Filter for MENTIONS edges only
+        edges = [e for e in all_edges if e.edge_type == "MENTIONS"]
+
+        for edge in edges:
+            memory_id = edge.from_node
+
+            # Score = entity_similarity × edge_confidence
+            score = entity_similarity * (edge.confidence or 1.0)
+
+            # If memory mentions multiple matched entities, keep max score
+            memory_scores[memory_id] = max(memory_scores.get(memory_id, 0.0), score)
+
+    return memory_scores
+
+
 def search_memories(
     query: str,
     storage: MemoryStorage,
@@ -48,9 +144,11 @@ def search_memories(
     tracerank_config: TraceRankConfig | None = None,  # M3
     include_expired: bool = False,  # M3
     show_timing: bool = False,  # Performance instrumentation
+    entity_config: dict | None = None,  # M5: Entity-based retrieval config
+    model: str | None = None,  # M5: Model for entity extraction
 ) -> list[tuple[MemoryNode, float]]:
     """
-    Search memories by semantic similarity (brute-force) with M3 TraceRank.
+    Search memories with hybrid semantic + entity-based retrieval (M5) and TraceRank (M3).
 
     Args:
         query: Search query text
@@ -61,10 +159,13 @@ def search_memories(
         tracerank_config: Optional TraceRank configuration (M3)
         include_expired: Include deprecated/expired memories (M3)
         show_timing: Display performance timing breakdown
+        entity_config: Optional config for entity-based retrieval (M5)
+            Expected keys: enabled (bool), entity_weight (float), similarity_threshold (float)
+        model: Optional LLM model name for entity extraction (M5)
 
     Returns:
         List of (MemoryNode, final_score) tuples, sorted by score descending
-        final_score = semantic_score * tracerank_multiplier
+        final_score = (semantic_score + entity_score) * tracerank_multiplier
     """
     t_start = time.perf_counter()
     timings = {}
@@ -72,7 +173,7 @@ def search_memories(
     # Generate query embedding
     t0 = time.perf_counter()
     query_embedding = embedding_engine.embed_text(query)
-    timings['1_embedding_generation'] = time.perf_counter() - t0
+    timings["1_embedding_generation"] = time.perf_counter() - t0
 
     # Load memories (active only or all) - M3
     t0 = time.perf_counter()
@@ -80,11 +181,11 @@ def search_memories(
         all_memories = storage.get_all_memories()
     else:
         all_memories = storage.get_active_memories()
-    timings['2_load_memories'] = time.perf_counter() - t0
+    timings["2_load_memories"] = time.perf_counter() - t0
 
     if not all_memories:
         if show_timing:
-            print(f"\n[TIMING] Total: {(time.perf_counter() - t_start)*1000:.0f}ms (no memories)")
+            print(f"\n[TIMING] Total: {(time.perf_counter() - t_start) * 1000:.0f}ms (no memories)")
         return []
 
     # Compute semantic scores
@@ -93,7 +194,59 @@ def search_memories(
     for memory in all_memories:
         semantic_score = cosine_similarity(query_embedding, memory.content_embedding)
         scored_memories.append((memory, semantic_score))
-    timings['3_semantic_scoring'] = time.perf_counter() - t0
+    timings["3_semantic_scoring"] = time.perf_counter() - t0
+
+    # M5: Entity-based retrieval (optional)
+    entity_scores = {}
+    if entity_config and entity_config.get("enabled", False) and model:
+        from vestig.core.entity_extraction import extract_entities_from_text
+
+        t0 = time.perf_counter()
+
+        # Extract entities from query
+        try:
+            query_entities = extract_entities_from_text(query, model)
+            timings["4_entity_extraction"] = time.perf_counter() - t0
+
+            if query_entities:
+                # Match to DB entities
+                t0 = time.perf_counter()
+                similarity_threshold = entity_config.get("similarity_threshold", 0.7)
+                matched_entities = match_query_entities_to_db(
+                    query_entities, storage, embedding_engine, similarity_threshold
+                )
+                timings["5_entity_matching"] = time.perf_counter() - t0
+
+                if matched_entities:
+                    # Get memories via MENTIONS edges
+                    t0 = time.perf_counter()
+                    entity_scores = retrieve_memories_by_entities(
+                        [(ent_id, similarity) for ent_id, _, similarity in matched_entities],
+                        storage,
+                        include_expired,
+                    )
+                    timings["6_entity_retrieval"] = time.perf_counter() - t0
+
+                    # Combine semantic + entity scores
+                    t0 = time.perf_counter()
+                    entity_weight = entity_config.get("entity_weight", 0.5)
+
+                    for i, (memory, semantic_score) in enumerate(scored_memories):
+                        entity_score = entity_scores.get(memory.id, 0.0)
+
+                        # Weighted combination
+                        combined_score = (
+                            1 - entity_weight
+                        ) * semantic_score + entity_weight * entity_score
+
+                        scored_memories[i] = (memory, combined_score)
+
+                    timings["7_score_combination"] = time.perf_counter() - t0
+        except Exception as e:
+            # Entity path failed - fall back to semantic only
+            if show_timing:
+                print(f"[WARNING] Entity retrieval failed: {e}")
+            timings["4_entity_extraction"] = time.perf_counter() - t0
 
     # M3: Apply Enhanced TraceRank if enabled
     if event_storage and tracerank_config and tracerank_config.enabled:
@@ -101,19 +254,19 @@ def search_memories(
 
         # Compute Enhanced TraceRank for all memories
         t0 = time.perf_counter()
-        tracerank_timings = {'events': 0, 'edges': 0, 'compute': 0}
+        tracerank_timings = {"events": 0, "edges": 0, "compute": 0}
 
         for i, (memory, semantic_score) in enumerate(scored_memories):
             # Get reinforcement events
             t1 = time.perf_counter()
             events = event_storage.get_reinforcement_events(memory.id)
-            tracerank_timings['events'] += time.perf_counter() - t1
+            tracerank_timings["events"] += time.perf_counter() - t1
 
             # Get inbound edge count (graph connectivity)
             t1 = time.perf_counter()
             inbound_edges = storage.get_edges_to_memory(memory.id, include_expired=False)
             edge_count = len(inbound_edges)
-            tracerank_timings['edges'] += time.perf_counter() - t1
+            tracerank_timings["edges"] += time.perf_counter() - t1
 
             # Compute comprehensive multiplier
             t1 = time.perf_counter()
@@ -125,34 +278,45 @@ def search_memories(
                 reinforcement_events=events,
                 config=tracerank_config,
             )
-            tracerank_timings['compute'] += time.perf_counter() - t1
+            tracerank_timings["compute"] += time.perf_counter() - t1
 
             # Multiply semantic score by enhanced multiplier
             scored_memories[i] = (memory, semantic_score * multiplier)
 
-        timings['4_tracerank_total'] = time.perf_counter() - t0
-        timings['4a_tracerank_events'] = tracerank_timings['events']
-        timings['4b_tracerank_edges'] = tracerank_timings['edges']
-        timings['4c_tracerank_compute'] = tracerank_timings['compute']
+        timings["4_tracerank_total"] = time.perf_counter() - t0
+        timings["4a_tracerank_events"] = tracerank_timings["events"]
+        timings["4b_tracerank_edges"] = tracerank_timings["edges"]
+        timings["4c_tracerank_compute"] = tracerank_timings["compute"]
 
     # Sort by final score descending and return top-K
     t0 = time.perf_counter()
     scored_memories.sort(key=lambda x: x[1], reverse=True)
     result = scored_memories[:limit]
-    timings['5_sort_and_slice'] = time.perf_counter() - t0
+    timings["5_sort_and_slice"] = time.perf_counter() - t0
 
-    timings['TOTAL'] = time.perf_counter() - t_start
+    timings["TOTAL"] = time.perf_counter() - t_start
 
     if show_timing:
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("PERFORMANCE BREAKDOWN")
-        print("="*60)
+        print("=" * 60)
+
+        # Show entity path status if configured
+        if entity_config and entity_config.get("enabled", False):
+            entity_weight = entity_config.get("entity_weight", 0.5)
+            print(f"Entity path: ENABLED (weight={entity_weight:.2f})")
+            if entity_scores:
+                print(f"  Memories with entity matches: {len(entity_scores)}")
+        else:
+            print("Entity path: DISABLED")
+        print()
+
         for key, duration in timings.items():
             ms = duration * 1000
-            pct = (duration / timings['TOTAL'] * 100) if timings['TOTAL'] > 0 else 0
-            indent = "  " if key.startswith(('4a', '4b', '4c')) else ""
+            pct = (duration / timings["TOTAL"] * 100) if timings["TOTAL"] > 0 else 0
+            indent = "  " if key.startswith(("4a", "4b", "4c")) else ""
             print(f"{indent}{key:30s} {ms:8.0f}ms  ({pct:5.1f}%)")
-        print("="*60 + "\n")
+        print("=" * 60 + "\n")
 
     return result
 
