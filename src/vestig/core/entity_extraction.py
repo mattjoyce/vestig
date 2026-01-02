@@ -353,7 +353,7 @@ def process_memories_for_entities(
         # Process all memories
         if verbose:
             print("Finding all memories for entity re-extraction...")
-        
+
         # Query all memories
         cursor = storage.conn.execute(
             "SELECT id, content FROM memories WHERE kind = 'MEMORY' ORDER BY created_at"
@@ -361,8 +361,22 @@ def process_memories_for_entities(
     else:
         # Process only memories without entity links
         if verbose:
+            # Count total memories and those with entities
+            total_memories = storage.conn.execute(
+                "SELECT COUNT(*) FROM memories WHERE kind = 'MEMORY'"
+            ).fetchone()[0]
+            memories_with_entities = storage.conn.execute("""
+                SELECT COUNT(DISTINCT m.id)
+                FROM memories m
+                INNER JOIN edges e ON e.from_node = m.id
+                WHERE m.kind = 'MEMORY' AND e.edge_type = 'MENTIONS'
+            """).fetchone()[0]
+
             print("Finding memories without entities...")
-        
+            print(f"  Total memories: {total_memories}")
+            print(f"  Memories with entities (skipping): {memories_with_entities}")
+            print(f"  Memories without entities (to process): {total_memories - memories_with_entities}")
+
         # Find memories with no MENTIONS edges
         cursor = storage.conn.execute("""
             SELECT m.id, m.content
@@ -376,9 +390,10 @@ def process_memories_for_entities(
         """)
 
     memories = cursor.fetchall()
-    
+
     if verbose:
         print(f"Found {len(memories)} memories to process")
+        print()
 
     # Process each memory
     stats = {"memories_processed": 0, "entities_created": 0, "edges_created": 0}
