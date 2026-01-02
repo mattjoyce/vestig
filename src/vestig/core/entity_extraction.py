@@ -10,9 +10,13 @@ import yaml
 from pydantic import BaseModel, ValidationError
 
 
+# Cache for loaded prompts to avoid file descriptor leak
+_PROMPTS_CACHE: dict[str, dict[str, Any]] = {}
+
+
 def load_prompts(prompts_path: str | None = None) -> dict[str, Any]:
     """
-    Load prompts from YAML file.
+    Load prompts from YAML file with caching to prevent file descriptor leaks.
 
     Args:
         prompts_path: Optional path to prompts.yaml. If None, uses prompts.yaml
@@ -30,11 +34,21 @@ def load_prompts(prompts_path: str | None = None) -> dict[str, Any]:
     else:
         path = Path(prompts_path)
 
+    # Convert to string for cache key
+    path_str = str(path.absolute())
+
+    # Return cached prompts if available
+    if path_str in _PROMPTS_CACHE:
+        return _PROMPTS_CACHE[path_str]
+
     if not path.exists():
         raise FileNotFoundError(f"Prompts file not found: {path}")
 
     with open(path) as f:
         prompts = yaml.safe_load(f)
+
+    # Cache the loaded prompts
+    _PROMPTS_CACHE[path_str] = prompts
 
     return prompts
 
