@@ -9,6 +9,44 @@ os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
+def get_llm_model_provider(model_name: str, model_type: str = "chat") -> dict[str, str]:
+    """
+    Query llm CLI to determine provider information for a model.
+
+    Args:
+        model_name: Model name to look up
+        model_type: "chat" or "embedding"
+
+    Returns:
+        dict with keys: provider_name, location (local/remote)
+    """
+    try:
+        if model_type == "embedding":
+            cmd = ["llm", "embed-models", "list"]
+        else:
+            cmd = ["llm", "models", "list"]
+
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
+
+        # Parse output: "ProviderClass: model_name (aliases: ...)"
+        for line in result.stdout.splitlines():
+            if model_name in line:
+                provider_prefix = line.split(":")[0].strip()
+                if "Ollama" in provider_prefix:
+                    return {"provider_name": "Ollama", "location": "local"}
+                elif "OpenAI" in provider_prefix:
+                    return {"provider_name": "OpenAI", "location": "remote"}
+                elif "Anthropic" in provider_prefix or "Claude" in provider_prefix:
+                    return {"provider_name": "Anthropic", "location": "remote"}
+                else:
+                    return {"provider_name": provider_prefix, "location": "unknown"}
+    except Exception:
+        pass
+
+    # Fallback if detection fails
+    return {"provider_name": "Unknown", "location": "unknown"}
+
+
 class EmbeddingEngine:
     """Wrapper for embedding generation with dimension validation
 
@@ -83,6 +121,18 @@ class EmbeddingEngine:
                 )
         else:
             raise ValueError(f"Unknown provider: {provider}. Use 'llm' or 'sentence-transformers'")
+
+    def get_provider_info(self) -> dict[str, str]:
+        """
+        Get provider information for the current model.
+
+        Returns:
+            dict with keys: provider_name, location (local/remote)
+        """
+        if self.provider == "sentence-transformers":
+            return {"provider_name": "SentenceTransformers", "location": "local"}
+
+        return get_llm_model_provider(self.model_name, model_type="embedding")
 
     def _truncate_text(self, text: str) -> str:
         """Truncate text to max_length if configured"""

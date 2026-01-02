@@ -927,6 +927,76 @@ def cmd_ingest(args):
         sys.exit(1)
 
 
+def cmd_config_show(args):
+    """Handle 'vestig config show' command"""
+    from vestig.core.embeddings import get_llm_model_provider
+
+    config = args.config_dict
+
+    print("Vestig Configuration")
+    print("=" * 70)
+
+    # Database
+    db_path = config.get("storage", {}).get("db_path", "N/A")
+    if db_path != "N/A":
+        db_path = str(Path(db_path).resolve())
+    print(f"\nDatabase:")
+    print(f"  Path: {db_path}")
+
+    # Embedding model
+    embedding = config.get("embedding", {})
+    emb_model = embedding.get('model', 'N/A')
+    if emb_model != 'N/A':
+        provider_info = get_llm_model_provider(emb_model, model_type="embedding")
+        emb_provider_display = f"{provider_info['provider_name']} ({provider_info['location']})"
+    else:
+        emb_provider_display = "N/A"
+    print(f"\nEmbedding Model:")
+    print(f"  Provider: {emb_provider_display}")
+    print(f"  Model: {emb_model}")
+    print(f"  Dimension: {embedding.get('dimension', 'N/A')}")
+
+    # Ingestion model
+    ingestion = config.get("ingestion", {})
+    ing_model = ingestion.get('model', 'N/A')
+    if ing_model != 'N/A':
+        provider_info = get_llm_model_provider(ing_model, model_type="chat")
+        ing_provider = f"{provider_info['provider_name']} ({provider_info['location']})"
+    else:
+        ing_provider = "N/A"
+    print(f"\nIngestion Model:")
+    print(f"  Provider: {ing_provider}")
+    print(f"  Model: {ing_model}")
+    print(f"  Chunk size: {ingestion.get('chunk_size', 'N/A')}")
+    print(f"  Chunk overlap: {ingestion.get('chunk_overlap', 'N/A')}")
+
+    # Entity extraction model
+    m4 = config.get("m4", {})
+    entity_extraction = m4.get("entity_extraction", {})
+    llm_config = entity_extraction.get("llm", {})
+    ent_model = llm_config.get('model', 'N/A')
+    if ent_model != 'N/A':
+        provider_info = get_llm_model_provider(ent_model, model_type="chat")
+        ent_provider = f"{provider_info['provider_name']} ({provider_info['location']})"
+    else:
+        ent_provider = "N/A"
+    print(f"\nEntity Extraction Model:")
+    print(f"  Enabled: {entity_extraction.get('enabled', False)}")
+    print(f"  Provider: {ent_provider}")
+    print(f"  Model: {ent_model}")
+
+    # Hybrid retrieval
+    retrieval = config.get("retrieval", {})
+    entity_path = retrieval.get("entity_path", {})
+    print(f"\nHybrid Retrieval:")
+    print(f"  Enabled: {entity_path.get('enabled', False)}")
+    if entity_path.get('enabled'):
+        print(f"  Entity weight: {entity_path.get('entity_weight', 'N/A')}")
+        print(f"  Similarity threshold: {entity_path.get('similarity_threshold', 'N/A')}")
+
+    print("=" * 70)
+
+
 def main():
     """Main CLI entry point"""
     parser = argparse.ArgumentParser(
@@ -1231,6 +1301,15 @@ def main():
     parser_edge_show.set_defaults(func=cmd_edge_show)
 
     parser_edge.set_defaults(func=cmd_memory, noun_parser=parser_edge)
+
+    # vestig config
+    parser_config = subparsers.add_parser("config", help="Configuration operations")
+    config_subparsers = parser_config.add_subparsers(dest="config_command", help="Config commands")
+
+    parser_config_show = config_subparsers.add_parser("show", help="Show current configuration")
+    parser_config_show.set_defaults(func=cmd_config_show)
+
+    parser_config.set_defaults(func=cmd_memory, noun_parser=parser_config)
 
     args = parser.parse_args()
 
