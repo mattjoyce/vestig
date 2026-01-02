@@ -327,7 +327,7 @@ def store_entities(
 
             # Generate embedding for entity (lowercase for consistency)
             embedding_text = name.lower()
-            embedding_vector = embedding_engine.embed(embedding_text)
+            embedding_vector = embedding_engine.embed_text(embedding_text)
             new_entity.embedding = json.dumps(embedding_vector)
 
             entity_id = storage.store_entity(new_entity)

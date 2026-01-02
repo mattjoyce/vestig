@@ -538,7 +538,7 @@ def cmd_entity_regen_embeddings(args):
             for entity in batch:
                 # Generate embedding (lowercase for consistency)
                 embedding_text = entity.canonical_name.lower()
-                embedding_vector = embedding_engine.embed(embedding_text)
+                embedding_vector = embedding_engine.embed_text(embedding_text)
                 embedding_json = json.dumps(embedding_vector)
 
                 # Update entity embedding
