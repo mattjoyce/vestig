@@ -143,7 +143,6 @@ class SummaryData(BaseModel):
     """The summary content"""
 
     title: str = Field(description="Short descriptive title")
-    scope: str = Field(description="Summary scope - typically INGEST_RUN")
     overview: str = Field(description="2-4 sentence overview in plain language")
     bullets: list[SummaryBullet] = Field(description="6-12 key insights with citations")
     themes: list[str] = Field(description="3-8 short theme tags")
@@ -200,9 +199,11 @@ def parse_force_entities(force_entities: list[str] | None) -> list[tuple[str, st
     return unique
 
 
-def chunk_text_by_chars(text: str, chunk_size: int = 20000, overlap: int = 500) -> list[str]:
+def chunk_text_by_chars(
+    text: str, chunk_size: int = 20000, overlap: int = 500
+) -> list[tuple[str, int, int]]:
     """
-    Chunk text by character count with overlap.
+    Chunk text by character count with overlap, tracking positions.
 
     Simple chunking strategy that tries to break at paragraph boundaries.
     Uses character count as proxy for tokens (roughly 1 token = 4 chars).
@@ -213,10 +214,10 @@ def chunk_text_by_chars(text: str, chunk_size: int = 20000, overlap: int = 500) 
         overlap: Character overlap between chunks (for context continuity)
 
     Returns:
-        List of text chunks
+        List of (chunk_text, start_position, length) tuples
     """
     if len(text) <= chunk_size:
-        return [text]
+        return [(text, 0, len(text))]
 
     chunks = []
     start = 0
@@ -227,7 +228,8 @@ def chunk_text_by_chars(text: str, chunk_size: int = 20000, overlap: int = 500) 
 
         if end >= len(text):
             # Last chunk
-            chunks.append(text[start:])
+            chunk_text = text[start:]
+            chunks.append((chunk_text, start, len(chunk_text)))
             break
 
         # Try to break at paragraph boundary (double newline)
@@ -242,12 +244,43 @@ def chunk_text_by_chars(text: str, chunk_size: int = 20000, overlap: int = 500) 
             # Hard break
             break_point = end
 
-        chunks.append(text[start:break_point])
+        chunk_text = text[start:break_point]
+        chunks.append((chunk_text, start, len(chunk_text)))
 
         # Next chunk starts with overlap
         start = max(start + 1, break_point - overlap)
 
     return chunks
+
+
+def link_entities_to_memories(
+    memories: list[tuple[str, float, str]],  # (content, confidence, rationale)
+    entities: list[tuple[str, str, float, str]],  # (name, type, confidence, evidence)
+) -> dict[int, list[tuple[str, str, float, str]]]:
+    """
+    Link chunk-level entities to memories via substring matching.
+
+    Args:
+        memories: List of (content, confidence, rationale) tuples
+        entities: List of (name, type, confidence, evidence) tuples from chunk
+
+    Returns:
+        Dict mapping memory index to list of entities that match that memory
+    """
+    memory_entities = {}
+
+    for mem_idx, (content, _, _) in enumerate(memories):
+        matched = []
+        content_lower = content.lower()
+
+        for entity_name, entity_type, confidence, evidence in entities:
+            # Case-insensitive substring match
+            if entity_name.lower() in content_lower:
+                matched.append((entity_name, entity_type, confidence, evidence))
+
+        memory_entities[mem_idx] = matched
+
+    return memory_entities
 
 
 def extract_memories_from_chunk(
@@ -257,15 +290,25 @@ def extract_memories_from_chunk(
     temporal_hints: TemporalHints | None = None,
     max_retries: int = 3,
     backoff_seconds: float = 1.0,
+    extraction_config: dict[str, Any] | None = None,
+    ontology=None,
 ) -> list[ExtractedMemory]:
     """
     Extract memories from a text chunk using LLM.
+
+    Supports both single-pass and two-pass extraction:
+    - Single-pass: Extract memories with entities in one LLM call
+    - Two-pass: Extract memories first, then entities separately (uses ontology)
 
     Args:
         chunk: Text chunk to extract from
         model: LLM model to use
         min_confidence: Minimum confidence threshold
         temporal_hints: Optional temporal context for this chunk
+        max_retries: Max retry attempts on JSON failures
+        backoff_seconds: Initial backoff delay for retries
+        extraction_config: Optional ingestion.two_pass_extraction config
+        ontology: Optional EntityOntology for two-pass entity extraction
 
     Returns:
         List of ExtractedMemory objects with temporal hints
@@ -273,14 +316,29 @@ def extract_memories_from_chunk(
     Raises:
         ValueError: If LLM returns invalid JSON
     """
+    # Check if two-pass extraction is enabled
+    two_pass_enabled = False
+    memory_prompt_name = "extract_memories_from_session"
+    entity_prompt_name = "extract_entities"
+
+    if extraction_config:
+        two_pass_enabled = extraction_config.get("enabled", False)
+        if two_pass_enabled:
+            memory_prompt_name = extraction_config.get("memory_prompt", "extract_memories_simple")
+            entity_prompt_name = extraction_config.get("entity_prompt", "extract_entities")
+
     # Load and substitute prompt
     prompts = load_prompts()
-    template = prompts.get("extract_memories_from_session")
+    template = prompts.get(memory_prompt_name)
 
     if not template:
-        raise ValueError("'extract_memories_from_session' prompt not found in prompts.yaml")
+        raise ValueError(f"'{memory_prompt_name}' prompt not found in prompts.yaml")
 
     prompt = substitute_tokens(template, content=chunk)
+
+    # Debug: Show extraction mode
+    print(f"    Using prompt: {memory_prompt_name} (two-pass: {two_pass_enabled})", flush=True)
+    print(f"    Calling LLM model: {model}...", flush=True)
 
     # Call LLM with schema for structured output and retry logic
     try:
@@ -295,6 +353,7 @@ def extract_memories_from_chunk(
         raise ValueError(f"LLM call failed: {e}")
 
     # Convert schema response to ExtractedMemory objects
+    # Note: For two-pass extraction, entities will be extracted later (after dedup check)
     memories = []
     for memory_schema in result.memories:
         content = memory_schema.content.strip()
@@ -309,16 +368,21 @@ def extract_memories_from_chunk(
         if not content or len(content) < 10:
             continue
 
-        # Extract entities from schema
-        entities = [
-            (
-                entity.name.strip(),
-                entity.type.strip().upper(),
-                entity.confidence,
-                entity.evidence.strip(),
-            )
-            for entity in memory_schema.entities
-        ]
+        # Get entities (only for single-pass)
+        if two_pass_enabled:
+            # Two-pass: Skip entity extraction here (done after commit in caller)
+            entities = []
+        else:
+            # Single-pass: Extract entities from schema (if present)
+            entities = [
+                (
+                    entity.name.strip(),
+                    entity.type.strip().upper(),
+                    entity.confidence,
+                    entity.evidence.strip(),
+                )
+                for entity in memory_schema.entities
+            ]
 
         # Attach temporal hints to each extracted memory
         t_valid_hint = None
@@ -495,7 +559,6 @@ def commit_summary(
         "source": "summary_generation",
         "artifact_ref": artifact_ref,
         "source_label": source_label,
-        "scope": summary_data.scope,
         "title": summary_data.title,
         "themes": summary_data.themes,
         "memory_count": len(memory_ids),
@@ -566,6 +629,7 @@ def ingest_document(
     event_storage: MemoryEventStorage | None = None,
     m4_config: dict[str, Any] | None = None,
     prompts_config: dict[str, Any] | None = None,
+    ingestion_config: dict[str, Any] | None = None,
     chunk_size: int = 20000,
     chunk_overlap: int = 500,
     min_confidence: float = 0.6,
@@ -585,6 +649,7 @@ def ingest_document(
         event_storage: Optional event storage
         m4_config: Optional M4 config (for entity extraction)
         prompts_config: Optional prompts config (for selecting prompt versions)
+        ingestion_config: Optional ingestion config (for two-pass extraction)
         chunk_size: Characters per chunk (default 20k ≈ 5k tokens)
         chunk_overlap: Character overlap between chunks
         extraction_model: LLM model for memory extraction
@@ -607,6 +672,26 @@ def ingest_document(
     if not path.exists():
         raise FileNotFoundError(f"Document not found: {document_path}")
 
+    # Load ontology for entity extraction (if M4 enabled)
+    ontology = None
+    if m4_config and m4_config.get("entity_extraction", {}).get("enabled", False):
+        print("Loading entity ontology...", flush=True)
+        from vestig.core.entity_ontology import EntityOntology
+
+        try:
+            ontology = EntityOntology.from_config(m4_config)
+            print(f"Ontology loaded: {len(ontology.types)} entity types", flush=True)
+        except Exception as e:
+            print(f"Warning: Failed to load entity ontology: {e}")
+
+    # Extract two-pass extraction config
+    extraction_config = None
+    if ingestion_config:
+        two_pass = ingestion_config.get("two_pass_extraction")
+        if two_pass and two_pass.get("enabled", False):
+            extraction_config = two_pass
+            print(f"Two-pass extraction enabled: {two_pass.get('memory_prompt')} + {two_pass.get('entity_prompt')}", flush=True)
+
     raw_text = path.read_text(encoding="utf-8")
 
     text, resolved_format, document_temporal_hints = normalize_document_text(
@@ -626,6 +711,9 @@ def ingest_document(
         if document_temporal_hints.evidence:
             print(f"  Evidence: {document_temporal_hints.evidence}")
 
+    # Get absolute path for chunk references
+    document_path_abs = str(path.absolute())
+
     # Chunk text
     if resolved_format == "claude-session":
         chunks_with_hints = extract_claude_session_chunks(
@@ -635,9 +723,20 @@ def ingest_document(
             chunk_overlap,
         )
         chunks = [chunk for chunk, _ in chunks_with_hints]
+        # Add chunk metadata (text, start, length) with hints
+        chunks_with_metadata = []
+        for chunk_text, hints in chunks_with_hints:
+            # For claude-session, we don't have position tracking yet
+            # Use placeholder positions (will be improved later)
+            chunks_with_metadata.append((chunk_text, 0, len(chunk_text), hints))
     else:
-        chunks = chunk_text_by_chars(text, chunk_size=chunk_size, overlap=chunk_overlap)
-        chunks_with_hints = [(chunk, document_temporal_hints) for chunk in chunks]
+        chunks_with_positions = chunk_text_by_chars(text, chunk_size=chunk_size, overlap=chunk_overlap)
+        chunks = [chunk_text for chunk_text, _, _ in chunks_with_positions]
+        # Create (text, start, length, hints) tuples
+        chunks_with_metadata = [
+            (chunk_text, start_pos, length, document_temporal_hints)
+            for chunk_text, start_pos, length in chunks_with_positions
+        ]
 
     print(f"Processing {path.name}: {len(text):,} chars → {len(chunks)} chunks")
 
@@ -651,22 +750,27 @@ def ingest_document(
     entities_before = len(storage.get_all_entities())
 
     # Process each chunk
-    for i, (chunk, chunk_hints) in enumerate(chunks_with_hints, 1):
+    for i, (chunk_text, start_pos, length, chunk_hints) in enumerate(chunks_with_metadata, 1):
+        # Create chunk reference: "path:start:length"
+        chunk_ref = f"{document_path_abs}:{start_pos}:{length}"
+
         print(f"  Chunk {i}/{len(chunks)}: ", end="", flush=True)
 
         try:
             # Extract memories from chunk
             extracted = extract_memories_from_chunk(
-                chunk,
+                chunk_text,
                 model=extraction_model,
                 min_confidence=min_confidence,
                 temporal_hints=chunk_hints,
+                extraction_config=extraction_config,
+                ontology=ontology,
             )
 
             print(f"{len(extracted)} memories extracted", flush=True)
             memories_extracted += len(extracted)
 
-            # Show extracted memories in verbose mode
+            # Show extracted memories in verbose mode (without entities for two-pass)
             if verbose and extracted:
                 for idx, memory in enumerate(extracted, 1):
                     print(f"    Memory {idx}:")
@@ -677,19 +781,11 @@ def ingest_document(
                     )
                     print(f"      Confidence: {memory.confidence:.2f}")
                     print(f"      Rationale: {memory.rationale}")
-                    if memory.entities:
-                        print(f"      Entities ({len(memory.entities)}):")
-                        for name, entity_type, conf, evidence in memory.entities:
-                            evid_str = (
-                                f', evidence="{evidence[:50]}..."'
-                                if len(evidence) > 50
-                                else f', evidence="{evidence}"'
-                            )
-                            print(
-                                f"        - {name} ({entity_type}, confidence={conf:.2f}{evid_str})"
-                            )
 
-            # Commit each memory
+            # Commit each memory (without entities for two-pass)
+            # Track which memories were actually inserted (not duplicates)
+            committed_memories = []  # List of (memory_id, memory_content) tuples
+
             for idx, memory in enumerate(extracted, 1):
                 try:
                     combined_entities = []
@@ -718,44 +814,75 @@ def ingest_document(
                         artifact_ref=path.name,
                         pre_extracted_entities=combined_entities or None,
                         temporal_hints=memory,  # Pass ExtractedMemory with temporal fields
+                        chunk_ref=chunk_ref,  # NEW: Add chunk provenance
                     )
 
                     if outcome.outcome == "INSERTED_NEW":
                         memories_committed += 1
+                        # Track committed memory for later entity extraction
+                        committed_memories.append((outcome.memory_id, memory.content))
 
-                        # Show entities in verbose mode
                         if verbose:
-                            # Get MENTIONS edges for this memory
-                            edges = storage.get_edges_from_memory(
-                                outcome.memory_id, edge_type="MENTIONS", include_expired=False
-                            )
-                            if edges:
-                                print(f"    Memory {idx} - Entities committed ({len(edges)}):")
-                                for edge in edges:
-                                    entity = storage.get_entity(edge.to_node)
-                                    if entity:
-                                        conf_str = (
-                                            f", confidence={edge.confidence:.2f}"
-                                            if edge.confidence
-                                            else ""
-                                        )
-                                        evid_str = (
-                                            f', evidence="{edge.evidence[:50]}..."'
-                                            if edge.evidence and len(edge.evidence) > 50
-                                            else f', evidence="{edge.evidence}"'
-                                            if edge.evidence
-                                            else ""
-                                        )
-                                        print(
-                                            f"      - {entity.canonical_name} ({entity.entity_type}{conf_str}{evid_str})"
-                                        )
+                            print(f"    Memory {idx} - COMMITTED")
                     else:
                         memories_deduplicated += 1
+                        if verbose:
+                            print(f"    Memory {idx} - DUPLICATE (not committed)")
 
                 except Exception as e:
                     error_msg = f"Failed to commit memory: {e}"
                     errors.append(error_msg)
                     print(f"    Error: {error_msg}")
+
+            # Extract and link entities from chunk (only if we have committed memories)
+            if extraction_config and extraction_config.get("enabled") and ontology and committed_memories:
+                try:
+                    print(f"    Extracting entities from chunk ({len(committed_memories)} memories committed)...", flush=True)
+                    from vestig.core.entity_extraction import extract_entities_from_text
+
+                    entity_prompt = extraction_config.get("entity_prompt", "extract_entities")
+                    chunk_entities = extract_entities_from_text(
+                        text=chunk_text,
+                        model=extraction_model,
+                        ontology=ontology,
+                        prompt_name=entity_prompt,
+                        max_retries=3,
+                        backoff_seconds=1.0,
+                    )
+                    print(f"    Found {len(chunk_entities)} entities in chunk", flush=True)
+
+                    # Link entities to committed memories
+                    memory_contents = [(mem_content, 0.0, "") for _, mem_content in committed_memories]
+                    memory_entity_map = link_entities_to_memories(memory_contents, chunk_entities)
+
+                    # Store entities for each committed memory
+                    from vestig.core.entity_extraction import store_entities
+
+                    for mem_idx, (memory_id, _) in enumerate(committed_memories):
+                        entities = memory_entity_map.get(mem_idx, [])
+                        if entities:
+                            try:
+                                store_entities(
+                                    entities=entities,
+                                    memory_id=memory_id,
+                                    storage=storage,
+                                    config=m4_config,
+                                    embedding_engine=embedding_engine,
+                                )
+                                if verbose:
+                                    print(f"    Memory {mem_idx + 1} - Entities committed ({len(entities)}):")
+                                    for name, entity_type, conf, evidence in entities:
+                                        evid_str = (
+                                            f', evidence="{evidence[:50]}..."'
+                                            if len(evidence) > 50
+                                            else f', evidence="{evidence}"'
+                                        )
+                                        print(f"      - {name} ({entity_type}, confidence={conf:.2f}{evid_str})")
+                            except Exception as e:
+                                print(f"    Warning: Failed to store entities for memory {memory_id}: {e}")
+
+                except Exception as e:
+                    print(f"    Warning: Entity extraction failed for chunk: {e}", flush=True)
 
         except Exception as e:
             error_msg = f"Chunk {i} extraction failed: {e}"

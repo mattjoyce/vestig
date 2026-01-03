@@ -98,6 +98,7 @@ def commit_memory(
     m4_config: dict[str, Any] | None = None,  # M4: Graph config
     pre_extracted_entities: list[tuple[str, str, float, str]] | None = None,  # M4: Pre-extracted entities
     temporal_hints: Any | None = None,  # ExtractedMemory with temporal fields
+    chunk_ref: str | None = None,  # NEW: Chunk provenance reference
 ) -> CommitOutcome:
     """
     Commit a memory to storage with M2 quality firewall, M3 event logging, M4 entity extraction, and temporal hints.
@@ -116,6 +117,7 @@ def commit_memory(
         pre_extracted_entities: Optional pre-extracted entities (name, type, confidence, evidence)
                                 Skips LLM extraction if provided
         temporal_hints: Optional ExtractedMemory with temporal fields (t_valid_hint, temporal_stability_hint)
+        chunk_ref: Optional chunk provenance reference in format "path:start:length"
 
     Returns:
         CommitOutcome with decision details
@@ -288,6 +290,10 @@ def commit_memory(
                 temporal_stability_hint=temporal_stability_hint,  # Temporal classification
             )
 
+            # Add chunk provenance reference to metadata if provided
+            if chunk_ref:
+                node.metadata["chunk_ref"] = chunk_ref
+
             # Store (exact dedupe handled in storage layer)
             stored_id = storage.store_memory(node)
 
@@ -328,6 +334,7 @@ def commit_memory(
                 extraction_model=extraction_model,
                 prompt_hash=prompt_hash,
                 min_confidence=extraction_min_confidence,
+                embedding_engine=embedding_engine,
             )
 
             # M4: RELATED edge creation (Memory → Memory)
@@ -365,6 +372,7 @@ def _extract_and_link_entities(
     extraction_model: str | None = None,
     prompt_hash: str | None = None,
     min_confidence: float | None = None,
+    embedding_engine: EmbeddingEngine | None = None,
 ) -> None:
     """
     Store entities and create MENTIONS edges (M4).
@@ -398,6 +406,7 @@ def _extract_and_link_entities(
         memory_id=memory_id,
         storage=storage,
         config=m4_config,
+        embedding_engine=embedding_engine,
     )
 
     # Check if MENTIONS edge creation enabled
