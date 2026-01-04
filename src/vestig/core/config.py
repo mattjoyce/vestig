@@ -5,6 +5,8 @@ from typing import Any
 
 import yaml
 
+from vestig.core.entity_ontology import EntityOntology
+
 
 def load_config(config_path: str = "config.yaml") -> dict[str, Any]:
     """
@@ -35,3 +37,22 @@ def load_config(config_path: str = "config.yaml") -> dict[str, Any]:
         raise ValueError(f"Invalid config: missing storage.db_path in {config_path}")
 
     return config
+
+
+def load_entity_ontology(config: dict) -> EntityOntology:
+    """
+    Load entity ontology from config.
+
+    Args:
+        config: Full configuration dictionary
+
+    Returns:
+        EntityOntology instance
+
+    Raises:
+        ValueError: If m4.entity_types config is missing or malformed
+    """
+    if "m4" not in config:
+        raise ValueError("Config missing m4 section (required for entity ontology)")
+
+    return EntityOntology.from_config(config["m4"])

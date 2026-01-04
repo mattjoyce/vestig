@@ -299,7 +299,6 @@ summary_v1:
     {
       "summary": {
         "title": "string - short descriptive title for this document/session",
-        "scope": "INGEST_RUN",
         "overview": "string - 2-4 sentences in plain language",
         "bullets": [
           {
@@ -348,7 +347,7 @@ summary_v2:
           }
         ],
         "themes": ["string - searchable terms"],
-        "gaps": ["string - missing info"] 
+        "open_questions": ["string - missing info"]
       }
     }
 
@@ -357,7 +356,7 @@ summary_v2:
     - overview: Front-load key terms, entities, dates, locations
     - bullets: 6-10 items. Cite 1-3 memory_ids each. Use specific nouns/verbs.
     - themes: 4-8 terms optimized for semantic search
-    - gaps: Empty unless critical information missing
+    - open_questions: Empty unless critical information missing
 
     Output JSON only.
 # Two-Pass Extraction: Phase 1 - Memory Extraction (No Entities)
@@ -437,68 +436,7 @@ extract_entities:
     Extract named entities from the following text.
 
     EXTRACTION PRIORITY TIERS:
-    Entities are organized in priority tiers - higher tiers have lower extraction thresholds.
-
-    TIER 1 (always extract when present):
-    - PERSON: Named individuals with full names when possible
-      Examples: "Matt Joyce", "Anthony Waddle", "Dr. Smith"
-      Normalize: "Matt" → "Matt Joyce" (use full name if available in context)
-      Skip: generic references like "the user", "a colleague", "someone"
-    
-    - ORG: Specific organizations, vendors, institutions, companies
-      Examples: "Calvary Health Care", "Macquarie University", "Heidi Health", "NSW Ports"
-      Normalize: "Calvary" → "Calvary Health Care" (use full canonical name)
-      Skip: generic terms like "the organization", "a vendor", "the company"
-    
-    - SYSTEM: Named software/hardware platforms, clinical systems, technical infrastructure
-      Examples: "AudioMoth", "Veeam", "Unraid", "Heidi Health AI Scribe", "Corporate Memory RAG"
-      Include version if specified: "Claude Sonnet 4.5", "Docker 24.0"
-      Skip: generic terms like "the system", "a database", "the platform"
-    
-    - PROJECT: Named initiatives, codenames, programs, research efforts
-      Examples: "Project Bronte", "BiophonyAI", "Vestig", "ChangeOfMind", "AI Adoption Survey"
-      Include internal codenames and formal project names
-      Skip: generic phrases like "the project", "an initiative", "the pilot"
-
-    TIER 2 (extract when contextually significant):
-    - TOOL: Specific software, hardware, instruments, applications
-      Examples: "Zoom 3DVR", "Docker", "Obsidian", "MPPT solar charging module", "Datalog"
-      Include both brand names and technical designations
-      Skip: generic categories like "a tool", "software", "equipment"
-    
-    - PLACE: Specific locations, sites, facilities, geographic entities
-      Examples: "Enfield Intermodal", "NSW", "Bay Ridge", "Macquarie University breeding pens"
-      Include both facility names and geographic locations
-      Skip: vague references like "the site", "a location", "the facility"
-    
-    - SKILL: Specialized capabilities, methodologies, technical approaches
-      Examples: "acoustic monitoring", "GPU-accelerated spectrogram generation", "M&A due diligence"
-      Must be multi-word technical/domain-specific phrases
-      Skip: single-word generic skills like "programming", "analysis", "management"
-    
-    - FILE: Named documents, artifacts, repositories with specific identifiers
-      Examples: "prompts.yaml", "SKILL.md", "SOW Number: 2", "Q3 Report"
-      Include file extensions and version identifiers when present
-      Skip: generic references like "the document", "a file", "the report"
-
-    TIER 3 (use sparingly - high bar for inclusion):
-    - CONCEPT: Domain-specific compound terms representing specialized knowledge
-      Must be multi-word phrases (typically 2+ words) from specialized domain vocabulary
-      
-      YES - Extract these:
-      * "ambient voice AI" (specialized AI application domain)
-      * "AI governance framework" (specific methodological construct)
-      * "GGBF acoustic detection" (domain-specific technique + species)
-      * "clinical AI scribe" (specialized healthcare AI category)
-      * "therapeutic robotics" (specific technology domain)
-      * "bioacoustic analysis" (scientific methodology)
-      
-      NO - Do NOT extract these:
-      * "AI", "governance", "framework" (too generic, single words)
-      * "detection", "analysis", "monitoring" (common verbs/nouns)
-      * "storage", "legal", "backup", "network" (generic IT terms)
-      * "training", "documentation", "management" (generic processes)
-      * "technology", "system", "solution" (abstract categories)
+    {{entity_types}}
 
     ENTITY QUALITY GATES (entity must pass ALL criteria):
     1. Specificity: Is this a proper noun OR a multi-word specialized term?
@@ -528,7 +466,7 @@ extract_entities:
       "entities": [
         {
           "name": "canonical entity name",
-          "type": "PERSON|ORG|SYSTEM|PROJECT|TOOL|PLACE|SKILL|CAPABILITY|FILE|CONCEPT",
+          "type": "{{entity_type_list}}",
           "confidence": 0.0-1.0,
           "evidence": "exact text snippet supporting this extraction",
           "normalization_notes": "optional: why this canonical form was chosen"

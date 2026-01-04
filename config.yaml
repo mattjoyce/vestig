@@ -101,6 +101,7 @@ m3:
 # v3: Stricter entity extraction to reduce noise
 m4:
   entity_types:
+    # Legacy format (still supported):
     allowed_types:
       - PERSON
       - ORG
@@ -111,6 +112,45 @@ m4:
       - TOOL
       - FILE
       - CONCEPT     # v3: Use sparingly, domain-specific only
+
+    # New ontology format (configurable entity types with rich metadata):
+    # Uncomment to use the new format. Supports:
+    # - name: Entity type name (UPPERCASE)
+    # - description: What this entity represents
+    # - tier: 1=always extract, 2=contextual, 3=high bar (default: 2)
+    # - synonyms: Alternative terms to help LLM identify entities
+    # - examples: Example entities for this type
+    #
+    # ontology:
+    #   - name: "PERSON"
+    #     description: "Named individuals"
+    #     tier: 1
+    #     synonyms: ["individual", "person"]
+    #     examples: ["Matt Joyce", "Dr. Smith"]
+    #
+    #   - name: "ORG"
+    #     description: "Organizations, companies, institutions"
+    #     tier: 1
+    #     synonyms: ["organization", "company", "institution"]
+    #     examples: ["Calvary Health Care", "Macquarie University"]
+    #
+    #   - name: "ANTIPATTERN"
+    #     description: "Practices, approaches, or patterns to avoid; mistakes or traps"
+    #     tier: 3
+    #     synonyms: ["code smell", "bad practice", "pitfall", "mistake"]
+    #     examples: ["using global state", "tight coupling"]
+    #
+    #   - name: "PRINCIPLE"
+    #     description: "Abstract rules, guidelines, or fundamental concepts"
+    #     tier: 2
+    #     synonyms: ["design principle", "guideline", "best practice"]
+    #     examples: ["separation of concerns", "single responsibility"]
+    #
+    #   - name: "HEURISTIC"
+    #     description: "Practical checks, indicators, or rules of thumb"
+    #     tier: 2
+    #     synonyms: ["rule of thumb", "check", "indicator", "warning sign"]
+    #     examples: ["code review checklist", "performance indicators"]
 
   entity_extraction:
     enabled: true

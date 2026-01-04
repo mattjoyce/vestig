@@ -180,6 +180,15 @@ def cmd_search(args):
     entity_config = config.get("retrieval", {}).get("entity_path")
     model = config.get("m4", {}).get("entity_extraction", {}).get("llm", {}).get("model")
 
+    # M4: Load entity ontology
+    from vestig.core.config import load_entity_ontology
+    ontology = None
+    try:
+        ontology = load_entity_ontology(config)
+    except (ValueError, KeyError):
+        # Ontology not configured - entity extraction will be skipped
+        pass
+
     try:
         results = search_memories(
             query=args.query,
@@ -191,6 +200,7 @@ def cmd_search(args):
             show_timing=getattr(args, "timing", False),
             entity_config=entity_config,
             model=model,
+            ontology=ontology,
         )
         print(format_search_results(results))
     finally:
@@ -212,6 +222,15 @@ def cmd_recall(args):
     entity_config = config.get("retrieval", {}).get("entity_path")
     model = config.get("m4", {}).get("entity_extraction", {}).get("llm", {}).get("model")
 
+    # M4: Load entity ontology
+    from vestig.core.config import load_entity_ontology
+    ontology = None
+    try:
+        ontology = load_entity_ontology(config)
+    except (ValueError, KeyError):
+        # Ontology not configured - entity extraction will be skipped
+        pass
+
     try:
         results = search_memories(
             query=args.query,
@@ -223,6 +242,7 @@ def cmd_recall(args):
             show_timing=getattr(args, "timing", False),
             entity_config=entity_config,
             model=model,
+            ontology=ontology,
         )
 
         # Format with or without explanation
@@ -462,11 +482,16 @@ def cmd_entity_extract(args):
     llm_config = entity_config.get("llm", {})
     model = llm_config.get("model", "claude-haiku-4.5")
 
+    # Load entity ontology
+    from vestig.core.config import load_entity_ontology
+    ontology = load_entity_ontology(config)
+
     try:
         print(f"vestig v{get_version()}")
         print("Extracting entities from memories...")
         print(f"Database: {Path(db_path).absolute()}")
         print(f"Model: {model}")
+        print(f"Entity types: {', '.join(ontology.get_type_names())}")
         print(f"Reprocess: {args.reprocess}")
         print(f"Batch size: {args.batch_size}")
         print(f"Verbose: {args.verbose}")
@@ -476,6 +501,7 @@ def cmd_entity_extract(args):
         stats = process_memories_for_entities(
             storage=storage,
             config=config,
+            ontology=ontology,
             reprocess=args.reprocess,
             batch_size=args.batch_size,
             verbose=args.verbose,
@@ -860,8 +886,9 @@ def cmd_ingest(args):
                 storage=storage,
                 embedding_engine=embedding_engine,
                 event_storage=event_storage,
-                m4_config=m4_config,
+                m4_config=m4_config if not args.no_entities else None,
                 prompts_config=prompts_config,
+                ingestion_config=ingestion_config if not args.no_entities else None,
                 chunk_size=chunk_size,
                 chunk_overlap=chunk_overlap,
                 extraction_model=model,
@@ -869,7 +896,7 @@ def cmd_ingest(args):
                 source="document_ingest",
                 source_format=source_format,
                 format_config=format_config,
-                force_entities=force_entities,
+                force_entities=force_entities if not args.no_entities else [],
                 verbose=args.verbose,
             )
 
@@ -1055,6 +1082,11 @@ def main():
         "--verbose",
         action="store_true",
         help="Show detailed extraction output (memories, entities, confidence values)",
+    )
+    parser_ingest.add_argument(
+        "--no-entities",
+        action="store_true",
+        help="Skip entity extraction during ingestion (extract later with 'vestig entity extract')",
     )
     parser_ingest.set_defaults(func=cmd_ingest)
 

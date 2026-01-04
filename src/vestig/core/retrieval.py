@@ -146,6 +146,7 @@ def search_memories(
     show_timing: bool = False,  # Performance instrumentation
     entity_config: dict | None = None,  # M5: Entity-based retrieval config
     model: str | None = None,  # M5: Model for entity extraction
+    ontology=None,  # M4: Entity ontology for extraction and validation
 ) -> list[tuple[MemoryNode, float]]:
     """
     Search memories with hybrid semantic + entity-based retrieval (M5) and TraceRank (M3).
@@ -162,6 +163,7 @@ def search_memories(
         entity_config: Optional config for entity-based retrieval (M5)
             Expected keys: enabled (bool), entity_weight (float), similarity_threshold (float)
         model: Optional LLM model name for entity extraction (M5)
+        ontology: Optional EntityOntology instance for entity extraction (M4)
 
     Returns:
         List of (MemoryNode, final_score) tuples, sorted by score descending
@@ -198,14 +200,14 @@ def search_memories(
 
     # M5: Entity-based retrieval (optional)
     entity_scores = {}
-    if entity_config and entity_config.get("enabled", False) and model:
+    if entity_config and entity_config.get("enabled", False) and model and ontology:
         from vestig.core.entity_extraction import extract_entities_from_text
 
         t0 = time.perf_counter()
 
         # Extract entities from query
         try:
-            query_entities = extract_entities_from_text(query, model)
+            query_entities = extract_entities_from_text(query, model, ontology)
             timings["4_entity_extraction"] = time.perf_counter() - t0
 
             if query_entities:

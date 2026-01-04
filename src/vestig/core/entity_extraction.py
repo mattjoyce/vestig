@@ -2,12 +2,17 @@
 
 import hashlib
 import json
+import logging
 import time
 from pathlib import Path
 from typing import Any
 
 import yaml
 from pydantic import BaseModel, ValidationError
+
+from vestig.core.entity_ontology import EntityOntology, EntityType
+
+logger = logging.getLogger(__name__)
 
 
 # Cache for loaded prompts to avoid file descriptor leak
@@ -93,12 +98,97 @@ def substitute_tokens(template: str | dict[str, str], **kwargs) -> str | dict[st
         return result
 
 
+def build_entity_type_section(entity_type: EntityType) -> str:
+    """
+    Format single entity type for prompt inclusion.
+
+    Args:
+        entity_type: EntityType to format
+
+    Returns:
+        Formatted string with type name, description, synonyms, examples
+    """
+    lines = [f"- {entity_type.name}: {entity_type.description}"]
+
+    if entity_type.synonyms:
+        lines.append(f"  Synonyms: {', '.join(entity_type.synonyms)}")
+
+    if entity_type.examples:
+        lines.append(f"  Examples: {', '.join(entity_type.examples)}")
+
+    return "\n".join(lines)
+
+
+def build_entity_guidelines_block(ontology: EntityOntology) -> str:
+    """
+    Generate tiered entity extraction guidelines from ontology.
+
+    Groups entity types by tier (1=always extract, 2=contextual, 3=high bar)
+    and formats them with descriptions, synonyms, and examples.
+
+    Args:
+        ontology: EntityOntology instance
+
+    Returns:
+        Formatted multi-line string for prompt inclusion
+    """
+    tier_names = {
+        1: "TIER 1 - Always Extract (High-value entities)",
+        2: "TIER 2 - Contextual Extraction (Extract when relevant)",
+        3: "TIER 3 - High Bar (Extract only when highly significant)",
+    }
+
+    sections = []
+
+    for tier in [1, 2, 3]:
+        types_in_tier = ontology.get_types_by_tier(tier)
+
+        if types_in_tier:
+            sections.append(tier_names[tier])
+            for entity_type in types_in_tier:
+                sections.append(build_entity_type_section(entity_type))
+            sections.append("")  # Blank line between tiers
+
+    return "\n".join(sections).rstrip()
+
+
+def substitute_entity_types(
+    template: str | dict[str, str], ontology: EntityOntology, **kwargs
+) -> str | dict[str, str]:
+    """
+    Substitute entity type tokens in template along with other tokens.
+
+    Handles two special tokens:
+    - {{entity_types}}: Full tiered guidelines block
+    - {{entity_type_list}}: Pipe-separated list of type names (e.g., "PERSON|ORG|SYSTEM")
+
+    Args:
+        template: Template string or dict with 'system'/'user' keys
+        ontology: EntityOntology instance
+        **kwargs: Additional token values
+
+    Returns:
+        Template with all tokens substituted (same type as input)
+    """
+    # Generate entity type tokens
+    entity_tokens = {
+        "entity_types": build_entity_guidelines_block(ontology),
+        "entity_type_list": "|".join(ontology.get_type_names()),
+    }
+
+    # Merge with user-provided tokens
+    all_tokens = {**entity_tokens, **kwargs}
+
+    # Delegate to existing substitute_tokens function
+    return substitute_tokens(template, **all_tokens)
+
+
 def call_llm(
     prompt: str | dict[str, str],
     model: str,
     schema: type[BaseModel] | None = None,
     max_retries: int = 3,
-    backoff_seconds: float = 1.0
+    backoff_seconds: float = 1.0,
 ):
     """
     Call LLM with prompt using llm module, with retry logic for JSON parsing failures.
@@ -142,6 +232,12 @@ def call_llm(
                     response = llm_model.prompt(user_text, system=system_text, schema=schema)
                     # Parse JSON response and validate with schema
                     json_text = response.text()
+                    if not json_text or not json_text.strip():
+                        raise json.JSONDecodeError(
+                            "Empty response from LLM",
+                            json_text or "",
+                            0
+                        )
                     data = json.loads(json_text)
                     return schema.model_validate(data)
                 else:
@@ -162,30 +258,71 @@ def call_llm(
                     response = llm_model.prompt(prompt)
                     return response.text()
 
-        except (json.JSONDecodeError, ValidationError) as e:
-            # JSON parsing or Pydantic validation failed
+        except (json.JSONDecodeError, ValidationError, ConnectionError, OSError, TimeoutError) as e:
+            # Retryable errors: JSON/validation failures, network issues, timeouts
             attempt += 1
             last_error = e
 
             if attempt < max_retries:
                 # Calculate backoff with exponential increase
                 delay = backoff_seconds * (2 ** (attempt - 1))
-                print(f"JSON parsing/validation failed (attempt {attempt}/{max_retries}). "
-                      f"Retrying in {delay:.1f}s... Error: {e}")
+                error_type = type(e).__name__
+
+                # Show more detail for JSON errors
+                error_detail = str(e)
+                if isinstance(e, json.JSONDecodeError):
+                    try:
+                        response_preview = json_text[:200] if 'json_text' in locals() else "N/A"
+                        error_detail = f"{e} | Response preview: {repr(response_preview)}"
+                    except:
+                        pass
+
+                print(
+                    f"{error_type} (attempt {attempt}/{max_retries}). "
+                    f"Retrying in {delay:.1f}s... Error: {error_detail}"
+                )
                 time.sleep(delay)
             else:
                 # All retries exhausted
                 raise Exception(
-                    f"LLM call failed after {max_retries} attempts. "
-                    f"Last error: {last_error}"
+                    f"LLM call failed after {max_retries} attempts. Last error: {last_error}"
                 )
 
         except Exception as e:
-            # Non-retryable error (API failure, connection issues, etc.)
+            # Non-retryable error (unexpected failures)
             raise Exception(f"LLM call failed: {e}")
 
     # Should never reach here, but satisfy type checker
     raise Exception(f"LLM call failed after {max_retries} attempts. Last error: {last_error}")
+
+
+def validate_and_log_entity_type(
+    entity_type: str, ontology: EntityOntology, source: str = "extraction"
+) -> str:
+    """
+    Validate entity type against ontology (soft validation).
+
+    Logs warning for unknown types but doesn't reject them.
+    This allows the LLM to discover new entity types while providing
+    observability into type drift.
+
+    Args:
+        entity_type: Entity type to validate (case-insensitive)
+        ontology: EntityOntology instance
+        source: Description of where entity came from (for logging)
+
+    Returns:
+        Normalized (uppercase) entity type
+    """
+    normalized = entity_type.strip().upper()
+
+    if not ontology.validate_type(normalized):
+        known_types = ", ".join(ontology.get_type_names())
+        logger.warning(
+            f"Unknown entity type: '{normalized}' (source: {source}). Known types: {known_types}"
+        )
+
+    return normalized
 
 
 def compute_prompt_hash(template: str) -> str:
@@ -195,12 +332,14 @@ def compute_prompt_hash(template: str) -> str:
 
 class EntityExtractionResult(BaseModel):
     """Schema for entity extraction response"""
+
     entities: list[dict[str, Any]]
 
 
 def extract_entities_from_text(
     text: str,
     model: str,
+    ontology: EntityOntology,
     prompt_name: str = "extract_entities",
     max_retries: int = 3,
     backoff_seconds: float = 1.0,
@@ -213,6 +352,7 @@ def extract_entities_from_text(
     Args:
         text: Text to extract entities from
         model: LLM model to use
+        ontology: EntityOntology instance for prompt generation and validation
         prompt_name: Name of prompt template in prompts.yaml (default: extract_entities)
         max_retries: Maximum retry attempts on JSON failures
         backoff_seconds: Initial backoff delay for retries
@@ -230,7 +370,8 @@ def extract_entities_from_text(
     if not template:
         raise ValueError(f"'{prompt_name}' prompt not found in prompts.yaml")
 
-    prompt = substitute_tokens(template, text=text)
+    # Use substitute_entity_types to inject ontology-based entity types
+    prompt = substitute_entity_types(template, ontology, text=text)
 
     # Call LLM with retry logic
     try:
@@ -239,22 +380,27 @@ def extract_entities_from_text(
             model=model,
             schema=EntityExtractionResult,
             max_retries=max_retries,
-            backoff_seconds=backoff_seconds
+            backoff_seconds=backoff_seconds,
         )
     except Exception as e:
         raise ValueError(f"Entity extraction failed: {e}")
 
-    # Convert to tuple format
+    # Convert to tuple format with validation
     entities = []
     for entity_dict in result.entities:
         name = entity_dict.get("name", "").strip()
-        entity_type = entity_dict.get("type", "").strip().upper()
+        entity_type = entity_dict.get("type", "").strip()
         confidence = entity_dict.get("confidence", 0.0)
         evidence = entity_dict.get("evidence", "").strip()
 
         # Skip empty or invalid entities
         if not name or not entity_type:
             continue
+
+        # Validate and normalize entity type (soft validation with logging)
+        entity_type = validate_and_log_entity_type(
+            entity_type, ontology, source=f"extract_entities_from_text({prompt_name})"
+        )
 
         entities.append((name, entity_type, confidence, evidence))
 
@@ -277,8 +423,9 @@ def store_entities(
         entities: List of (name, type, confidence, evidence) tuples
         memory_id: Memory ID (for event logging)
         storage: MemoryStorage instance
-        config: M4 config dict
+        config: Full config dict (or M4 config dict if embedding_engine provided)
         embedding_engine: Optional EmbeddingEngine for generating entity embeddings
+            If None, will be created from config.embedding settings
 
     Returns:
         List of (entity_id, entity_type, confidence, evidence) tuples
@@ -286,13 +433,25 @@ def store_entities(
     """
     from vestig.core.models import EntityNode, compute_norm_key
 
-    # Get config
-    min_confidence = config.get("entity_extraction", {}).get("llm", {}).get("min_confidence", 0.75)
+    # Get config - handle both full config and m4-only config
+    if "m4" in config:
+        # Full config
+        min_confidence = config.get("m4", {}).get("entity_extraction", {}).get("llm", {}).get("min_confidence", 0.75)
+    else:
+        # M4-only config
+        min_confidence = config.get("entity_extraction", {}).get("llm", {}).get("min_confidence", 0.75)
 
     # Import embedding engine if needed
     if embedding_engine is None:
         from vestig.core.embeddings import EmbeddingEngine
+
         embedding_config = config.get("embedding", {})
+        if not embedding_config or "model" not in embedding_config:
+            raise ValueError(
+                "store_entities requires either an embedding_engine parameter "
+                "or full config with embedding settings (not just m4 config)"
+            )
+
         embedding_engine = EmbeddingEngine(
             model_name=embedding_config["model"],
             expected_dimension=embedding_config["dimension"],
@@ -341,6 +500,7 @@ def store_entities(
 def process_memories_for_entities(
     storage,
     config: dict[str, Any],
+    ontology: EntityOntology,
     reprocess: bool = False,
     batch_size: int = 1,
     verbose: bool = True,
@@ -351,6 +511,7 @@ def process_memories_for_entities(
     Args:
         storage: MemoryStorage instance
         config: Full config dict with m4 settings
+        ontology: EntityOntology instance for entity extraction
         reprocess: If True, re-extract entities for ALL memories
         batch_size: Number of memories to process per batch (future: batch extraction)
         verbose: Print progress messages
@@ -362,7 +523,7 @@ def process_memories_for_entities(
     m4_config = config.get("m4", {})
     entity_config = m4_config.get("entity_extraction", {})
     llm_config = entity_config.get("llm", {})
-    
+
     model = llm_config.get("model", "claude-haiku-4.5")
     max_retries = config.get("ingestion", {}).get("retry", {}).get("max_attempts", 3)
     backoff = config.get("ingestion", {}).get("retry", {}).get("backoff_seconds", 1.0)
@@ -395,7 +556,9 @@ def process_memories_for_entities(
             print("Finding memories without entities...")
             print(f"  Total memories: {total_memories}")
             print(f"  Memories with entities (skipping): {memories_with_entities}")
-            print(f"  Memories without entities (to process): {total_memories - memories_with_entities}")
+            print(
+                f"  Memories without entities (to process): {total_memories - memories_with_entities}"
+            )
 
         # Find memories with no MENTIONS edges
         cursor = storage.conn.execute("""
@@ -424,7 +587,9 @@ def process_memories_for_entities(
             if verbose:
                 # Show progress periodically, or always if extracting entities
                 if stats["memories_processed"] % 10 == 0 or True:
-                    print(f"\n[{stats['memories_processed'] + 1}/{len(memories)}] Memory {memory_id}")
+                    print(
+                        f"\n[{stats['memories_processed'] + 1}/{len(memories)}] Memory {memory_id}"
+                    )
                     # Truncate content for display
                     display_content = content[:200] + "..." if len(content) > 200 else content
                     print(f"  Content: {display_content}")
@@ -433,8 +598,9 @@ def process_memories_for_entities(
             entities = extract_entities_from_text(
                 text=content,
                 model=model,
+                ontology=ontology,
                 max_retries=max_retries,
-                backoff_seconds=backoff
+                backoff_seconds=backoff,
             )
 
             if verbose:
@@ -444,8 +610,10 @@ def process_memories_for_entities(
                         print(f"    • {name} ({entity_type}) - confidence: {confidence:.2f}")
                         if evidence:
                             # Truncate evidence for display
-                            display_evidence = evidence[:100] + "..." if len(evidence) > 100 else evidence
-                            print(f"      Evidence: \"{display_evidence}\"")
+                            display_evidence = (
+                                evidence[:100] + "..." if len(evidence) > 100 else evidence
+                            )
+                            print(f'      Evidence: "{display_evidence}"')
                 else:
                     print(f"  No entities extracted")
 
@@ -456,16 +624,12 @@ def process_memories_for_entities(
             # If reprocessing, delete existing MENTIONS edges for this memory
             if reprocess:
                 storage.conn.execute(
-                    "DELETE FROM edges WHERE from_node = ? AND edge_type = 'MENTIONS'",
-                    (memory_id,)
+                    "DELETE FROM edges WHERE from_node = ? AND edge_type = 'MENTIONS'", (memory_id,)
                 )
 
             # Store entities and create MENTIONS edges
             stored_entities = store_entities(
-                entities=entities,
-                memory_id=memory_id,
-                storage=storage,
-                config=m4_config
+                entities=entities, memory_id=memory_id, storage=storage, config=config
             )
 
             # Create MENTIONS edges
@@ -479,13 +643,15 @@ def process_memories_for_entities(
                         edge_type="MENTIONS",
                         weight=1.0,
                         confidence=confidence,
-                        evidence=evidence
+                        evidence=evidence,
                     )
                     storage.store_edge(edge)
                     stats["edges_created"] += 1
 
             if verbose and stored_entities:
-                print(f"  Stored {len(stored_entities)} entities, created {len(stored_entities)} edges")
+                print(
+                    f"  Stored {len(stored_entities)} entities, created {len(stored_entities)} edges"
+                )
 
             stats["memories_processed"] += 1
 
