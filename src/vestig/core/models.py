@@ -30,6 +30,9 @@ class MemoryNode:
     last_seen_at: str | None = None  # Most recent reinforcement
     reinforce_count: int = 0  # Total reinforcement events
 
+    # M5: Chunk provenance (hub link)
+    chunk_id: str | None = None  # Foreign key to chunks table (nullable for manual adds)
+
     @classmethod
     def create(
         cls,
@@ -108,6 +111,9 @@ class EntityNode:
     embedding: str | None = None  # JSON-serialized embedding vector (for semantic matching)
     expired_at: str | None = None  # When entity was merged/deprecated
     merged_into: str | None = None  # ID of entity this was merged into
+
+    # M5: Chunk provenance (hub link)
+    chunk_id: str | None = None  # Foreign key to chunks table (nullable for cross-chunk entities)
 
     @classmethod
     def create(
@@ -264,6 +270,112 @@ class EventNode:
             actor=actor,
             artifact_ref=artifact_ref,
             payload=payload or {},
+        )
+
+
+@dataclass
+class FileNode:
+    """File node (M5: Hub Layer)
+
+    Represents a source document ingested into the system.
+    """
+
+    file_id: str  # file_<uuid>
+    path: str  # Absolute file path
+    created_at: str  # ISO 8601 timestamp (file creation/modification time)
+    ingested_at: str  # ISO 8601 timestamp (when file was processed)
+    file_hash: str | None = None  # SHA256 of file content (for change detection)
+    metadata: dict[str, Any] = field(default_factory=dict)  # Format, size, etc.
+
+    @classmethod
+    def create(
+        cls,
+        path: str,
+        file_id: str | None = None,
+        file_hash: str | None = None,
+        file_created_at: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> "FileNode":
+        """
+        Create a new file node.
+
+        Args:
+            path: Absolute file path
+            file_id: Optional file ID (generated if not provided)
+            file_hash: Optional SHA256 hash of file content
+            file_created_at: Optional file creation timestamp (uses file mtime if not provided)
+            metadata: Optional metadata dict (format, size, etc.)
+
+        Returns:
+            FileNode instance
+        """
+        if file_id is None:
+            file_id = f"file_{uuid.uuid4()}"
+
+        now = datetime.now(timezone.utc).isoformat()
+
+        # Use provided created_at or fallback to now
+        created_at = file_created_at if file_created_at else now
+
+        return cls(
+            file_id=file_id,
+            path=path,
+            created_at=created_at,
+            ingested_at=now,
+            file_hash=file_hash,
+            metadata=metadata or {},
+        )
+
+
+@dataclass
+class ChunkNode:
+    """Chunk node (M5: Hub Layer)
+
+    Represents a location pointer within a file (hub node in chunk-centric architecture).
+    Does NOT store the text itself - only the pointer (file_id, start, length).
+    """
+
+    chunk_id: str  # chunk_<uuid>
+    file_id: str  # Foreign key to files table
+    start: int  # Character position in file where chunk starts
+    length: int  # Number of characters in chunk
+    sequence: int  # Position in document (1st chunk, 2nd chunk, etc.)
+    created_at: str  # ISO 8601 timestamp (when chunk was created)
+
+    @classmethod
+    def create(
+        cls,
+        file_id: str,
+        start: int,
+        length: int,
+        sequence: int,
+        chunk_id: str | None = None,
+    ) -> "ChunkNode":
+        """
+        Create a new chunk node (location pointer).
+
+        Args:
+            file_id: File ID this chunk belongs to
+            start: Character position in file where chunk starts
+            length: Number of characters in chunk
+            sequence: Position in document (1st, 2nd chunk, etc.)
+            chunk_id: Optional chunk ID (generated if not provided)
+
+        Returns:
+            ChunkNode instance
+        """
+        if chunk_id is None:
+            chunk_id = f"chunk_{uuid.uuid4()}"
+
+        now = datetime.now(timezone.utc).isoformat()
+
+        return cls(
+            chunk_id=chunk_id,
+            file_id=file_id,
+            start=start,
+            length=length,
+            sequence=sequence,
+            created_at=now,
         )
 
 

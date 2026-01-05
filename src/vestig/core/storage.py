@@ -264,6 +264,95 @@ class MemoryStorage:
             """
         )
 
+        # M4: Add embedding column to entities (if missing)
+        cursor = self.conn.execute("PRAGMA table_info(entities)")
+        entity_columns = [row[1] for row in cursor.fetchall()]
+        if "embedding" not in entity_columns:
+            self.conn.execute("ALTER TABLE entities ADD COLUMN embedding TEXT")
+
+        # M5: Create files table (hub layer)
+        self.conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS files (
+                file_id TEXT PRIMARY KEY,
+                path TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                ingested_at TEXT NOT NULL,
+                file_hash TEXT,
+                metadata TEXT
+            )
+            """
+        )
+
+        # M5: Create chunks table (hub layer)
+        self.conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS chunks (
+                chunk_id TEXT PRIMARY KEY,
+                file_id TEXT NOT NULL,
+                start INTEGER NOT NULL,
+                length INTEGER NOT NULL,
+                sequence INTEGER NOT NULL,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY(file_id) REFERENCES files(file_id)
+            )
+            """
+        )
+
+        # M5: Add chunk_id column to memories (if missing)
+        cursor = self.conn.execute("PRAGMA table_info(memories)")
+        memory_columns = [row[1] for row in cursor.fetchall()]
+        if "chunk_id" not in memory_columns:
+            self.conn.execute("ALTER TABLE memories ADD COLUMN chunk_id TEXT")
+
+        # M5: Add chunk_id column to entities (if missing)
+        cursor = self.conn.execute("PRAGMA table_info(entities)")
+        entity_columns = [row[1] for row in cursor.fetchall()]
+        if "chunk_id" not in entity_columns:
+            self.conn.execute("ALTER TABLE entities ADD COLUMN chunk_id TEXT")
+
+        # M5: Create indexes for files table
+        self.conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_files_path
+            ON files(path)
+            """
+        )
+        self.conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_files_ingested_at
+            ON files(ingested_at DESC)
+            """
+        )
+
+        # M5: Create indexes for chunks table
+        self.conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_chunks_file
+            ON chunks(file_id, sequence)
+            """
+        )
+        self.conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_chunks_position
+            ON chunks(file_id, start, length)
+            """
+        )
+
+        # M5: Create indexes for chunk provenance
+        self.conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_memories_chunk
+            ON memories(chunk_id) WHERE chunk_id IS NOT NULL
+            """
+        )
+        self.conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_entities_chunk
+            ON entities(chunk_id) WHERE chunk_id IS NOT NULL
+            """
+        )
+
         self.conn.commit()
 
     def _validate_schema(self) -> None:
@@ -341,9 +430,9 @@ class MemoryStorage:
             INSERT INTO memories (
                 id, content, content_embedding, content_hash, created_at, metadata,
                 t_valid, t_invalid, t_created, t_expired, temporal_stability,
-                last_seen_at, reinforce_count, kind
+                last_seen_at, reinforce_count, kind, chunk_id
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 node.id,
@@ -360,6 +449,7 @@ class MemoryStorage:
                 node.last_seen_at,
                 node.reinforce_count,
                 kind,
+                node.chunk_id,
             ),
         )
         # NOTE: Caller manages transaction commit
@@ -379,7 +469,7 @@ class MemoryStorage:
             """
             SELECT id, content, content_embedding, content_hash, created_at, metadata,
                    t_valid, t_invalid, t_created, t_expired, temporal_stability,
-                   last_seen_at, reinforce_count
+                   last_seen_at, reinforce_count, chunk_id
             FROM memories
             WHERE id = ?
             """,
@@ -403,6 +493,7 @@ class MemoryStorage:
             temporal_stability=row[10] or "unknown",
             last_seen_at=row[11],
             reinforce_count=row[12] or 0,
+            chunk_id=row[13],
         )
 
     def get_all_memories(self) -> list[MemoryNode]:
@@ -416,7 +507,7 @@ class MemoryStorage:
             """
             SELECT id, content, content_embedding, content_hash, created_at, metadata,
                    t_valid, t_invalid, t_created, t_expired, temporal_stability,
-                   last_seen_at, reinforce_count
+                   last_seen_at, reinforce_count, chunk_id
             FROM memories
             ORDER BY created_at DESC
             """
@@ -438,9 +529,209 @@ class MemoryStorage:
                     temporal_stability=row[10] or "unknown",
                     last_seen_at=row[11],
                     reinforce_count=row[12] or 0,
+                    chunk_id=row[13],
                 )
             )
         return memories
+
+    # M5: File operations
+
+    def store_file(self, file_node: "FileNode") -> str:
+        """
+        Store a file node in the database.
+
+        Args:
+            file_node: FileNode to store
+
+        Returns:
+            file_id of the stored file
+        """
+        from vestig.core.models import FileNode
+
+        self.conn.execute(
+            """
+            INSERT INTO files (file_id, path, created_at, ingested_at, file_hash, metadata)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                file_node.file_id,
+                file_node.path,
+                file_node.created_at,
+                file_node.ingested_at,
+                file_node.file_hash,
+                json.dumps(file_node.metadata),
+            ),
+        )
+        self.conn.commit()
+        return file_node.file_id
+
+    def get_file(self, file_id: str) -> "FileNode | None":
+        """
+        Get a file by ID.
+
+        Args:
+            file_id: File ID to retrieve
+
+        Returns:
+            FileNode if found, None otherwise
+        """
+        from vestig.core.models import FileNode
+
+        cursor = self.conn.execute(
+            """
+            SELECT file_id, path, created_at, ingested_at, file_hash, metadata
+            FROM files
+            WHERE file_id = ?
+            """,
+            (file_id,),
+        )
+        row = cursor.fetchone()
+        if not row:
+            return None
+
+        return FileNode(
+            file_id=row[0],
+            path=row[1],
+            created_at=row[2],
+            ingested_at=row[3],
+            file_hash=row[4],
+            metadata=json.loads(row[5]) if row[5] else {},
+        )
+
+    def find_file_by_path(self, path: str) -> "FileNode | None":
+        """
+        Find a file by path.
+
+        Args:
+            path: File path to search for
+
+        Returns:
+            FileNode if found, None otherwise
+        """
+        from vestig.core.models import FileNode
+
+        cursor = self.conn.execute(
+            """
+            SELECT file_id, path, created_at, ingested_at, file_hash, metadata
+            FROM files
+            WHERE path = ?
+            ORDER BY ingested_at DESC
+            LIMIT 1
+            """,
+            (path,),
+        )
+        row = cursor.fetchone()
+        if not row:
+            return None
+
+        return FileNode(
+            file_id=row[0],
+            path=row[1],
+            created_at=row[2],
+            ingested_at=row[3],
+            file_hash=row[4],
+            metadata=json.loads(row[5]) if row[5] else {},
+        )
+
+    # M5: Chunk operations
+
+    def store_chunk(self, chunk_node: "ChunkNode") -> str:
+        """
+        Store a chunk node in the database.
+
+        Args:
+            chunk_node: ChunkNode to store
+
+        Returns:
+            chunk_id of the stored chunk
+        """
+        from vestig.core.models import ChunkNode
+
+        self.conn.execute(
+            """
+            INSERT INTO chunks (chunk_id, file_id, start, length, sequence, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                chunk_node.chunk_id,
+                chunk_node.file_id,
+                chunk_node.start,
+                chunk_node.length,
+                chunk_node.sequence,
+                chunk_node.created_at,
+            ),
+        )
+        self.conn.commit()
+        return chunk_node.chunk_id
+
+    def get_chunk(self, chunk_id: str) -> "ChunkNode | None":
+        """
+        Get a chunk by ID.
+
+        Args:
+            chunk_id: Chunk ID to retrieve
+
+        Returns:
+            ChunkNode if found, None otherwise
+        """
+        from vestig.core.models import ChunkNode
+
+        cursor = self.conn.execute(
+            """
+            SELECT chunk_id, file_id, start, length, sequence, created_at
+            FROM chunks
+            WHERE chunk_id = ?
+            """,
+            (chunk_id,),
+        )
+        row = cursor.fetchone()
+        if not row:
+            return None
+
+        return ChunkNode(
+            chunk_id=row[0],
+            file_id=row[1],
+            start=row[2],
+            length=row[3],
+            sequence=row[4],
+            created_at=row[5],
+        )
+
+    def get_chunks_by_file(self, file_id: str) -> list["ChunkNode"]:
+        """
+        Get all chunks for a file, ordered by sequence.
+
+        Args:
+            file_id: File ID to get chunks for
+
+        Returns:
+            List of ChunkNode objects ordered by sequence
+        """
+        from vestig.core.models import ChunkNode
+
+        cursor = self.conn.execute(
+            """
+            SELECT chunk_id, file_id, start, length, sequence, created_at
+            FROM chunks
+            WHERE file_id = ?
+            ORDER BY sequence ASC
+            """,
+            (file_id,),
+        )
+
+        chunks = []
+        for row in cursor.fetchall():
+            chunks.append(
+                ChunkNode(
+                    chunk_id=row[0],
+                    file_id=row[1],
+                    start=row[2],
+                    length=row[3],
+                    sequence=row[4],
+                    created_at=row[5],
+                )
+            )
+        return chunks
 
     def close(self):
         """Close database connection"""
@@ -554,6 +845,50 @@ class MemoryStorage:
 
         return None
 
+    def get_summary_for_chunk(self, chunk_id: str) -> MemoryNode | None:
+        """
+        Get summary node for a specific chunk (M5).
+
+        Args:
+            chunk_id: Chunk ID
+
+        Returns:
+            MemoryNode if summary exists, None otherwise
+        """
+        cursor = self.conn.execute(
+            """
+            SELECT id, content, content_embedding, content_hash, created_at, metadata,
+                   t_valid, t_invalid, t_created, t_expired, temporal_stability,
+                   last_seen_at, reinforce_count, chunk_id
+            FROM memories
+            WHERE kind = 'SUMMARY' AND chunk_id = ? AND t_expired IS NULL
+            ORDER BY created_at DESC
+            LIMIT 1
+            """,
+            (chunk_id,),
+        )
+
+        row = cursor.fetchone()
+        if row is None:
+            return None
+
+        return MemoryNode(
+            id=row[0],
+            content=row[1],
+            content_embedding=json.loads(row[2]),
+            content_hash=row[3],
+            created_at=row[4],
+            metadata=json.loads(row[5]),
+            t_valid=row[6],
+            t_invalid=row[7],
+            t_created=row[8],
+            t_expired=row[9],
+            temporal_stability=row[10] or "unknown",
+            last_seen_at=row[11],
+            reinforce_count=row[12] or 0,
+            chunk_id=row[13],
+        )
+
     # M4: Entity operations
 
     def store_entity(self, entity: EntityNode) -> str:
@@ -584,8 +919,8 @@ class MemoryStorage:
         # No duplicate - insert new entity
         self.conn.execute(
             """
-            INSERT INTO entities (id, entity_type, canonical_name, norm_key, created_at, embedding, expired_at, merged_into)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO entities (id, entity_type, canonical_name, norm_key, created_at, embedding, expired_at, merged_into, chunk_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 entity.id,
@@ -596,6 +931,7 @@ class MemoryStorage:
                 entity.embedding,
                 entity.expired_at,
                 entity.merged_into,
+                entity.chunk_id,
             ),
         )
         self.conn.commit()
@@ -613,7 +949,7 @@ class MemoryStorage:
         """
         cursor = self.conn.execute(
             """
-            SELECT id, entity_type, canonical_name, norm_key, created_at, embedding, expired_at, merged_into
+            SELECT id, entity_type, canonical_name, norm_key, created_at, embedding, expired_at, merged_into, chunk_id
             FROM entities
             WHERE id = ?
             """,
@@ -633,6 +969,7 @@ class MemoryStorage:
             embedding=row[5],
             expired_at=row[6],
             merged_into=row[7],
+            chunk_id=row[8],
         )
 
     def find_entity_by_norm_key(
@@ -649,9 +986,9 @@ class MemoryStorage:
             EntityNode if found, None otherwise
         """
         if include_expired:
-            query = "SELECT id, entity_type, canonical_name, norm_key, created_at, embedding, expired_at, merged_into FROM entities WHERE norm_key = ?"
+            query = "SELECT id, entity_type, canonical_name, norm_key, created_at, embedding, expired_at, merged_into, chunk_id FROM entities WHERE norm_key = ?"
         else:
-            query = "SELECT id, entity_type, canonical_name, norm_key, created_at, embedding, expired_at, merged_into FROM entities WHERE norm_key = ? AND expired_at IS NULL"
+            query = "SELECT id, entity_type, canonical_name, norm_key, created_at, embedding, expired_at, merged_into, chunk_id FROM entities WHERE norm_key = ? AND expired_at IS NULL"
 
         cursor = self.conn.execute(query, (norm_key,))
         row = cursor.fetchone()
@@ -668,6 +1005,7 @@ class MemoryStorage:
             embedding=row[5],
             expired_at=row[6],
             merged_into=row[7],
+            chunk_id=row[8],
         )
 
     def get_all_entities(self, include_expired: bool = False) -> list[EntityNode]:
@@ -682,13 +1020,13 @@ class MemoryStorage:
         """
         if include_expired:
             query = """
-                SELECT id, entity_type, canonical_name, norm_key, created_at, embedding, expired_at, merged_into
+                SELECT id, entity_type, canonical_name, norm_key, created_at, embedding, expired_at, merged_into, chunk_id
                 FROM entities
                 ORDER BY created_at DESC
             """
         else:
             query = """
-                SELECT id, entity_type, canonical_name, norm_key, created_at, embedding, expired_at, merged_into
+                SELECT id, entity_type, canonical_name, norm_key, created_at, embedding, expired_at, merged_into, chunk_id
                 FROM entities
                 WHERE expired_at IS NULL
                 ORDER BY created_at DESC
@@ -727,14 +1065,14 @@ class MemoryStorage:
         """
         if include_expired:
             query = """
-                SELECT id, entity_type, canonical_name, norm_key, created_at, embedding, expired_at, merged_into
+                SELECT id, entity_type, canonical_name, norm_key, created_at, embedding, expired_at, merged_into, chunk_id
                 FROM entities
                 WHERE entity_type = ?
                 ORDER BY created_at DESC
             """
         else:
             query = """
-                SELECT id, entity_type, canonical_name, norm_key, created_at, embedding, expired_at, merged_into
+                SELECT id, entity_type, canonical_name, norm_key, created_at, embedding, expired_at, merged_into, chunk_id
                 FROM entities
                 WHERE entity_type = ? AND expired_at IS NULL
                 ORDER BY created_at DESC

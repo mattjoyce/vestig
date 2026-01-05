@@ -1,6 +1,6 @@
 -- Vestig Schema v1.0
--- Milestone: M4 (Summary Nodes)
--- Last Updated: 2025-01-XX
+-- Milestone: M5 (Chunk-Centric Hub)
+-- Last Updated: 2025-01-05
 -- DO NOT MODIFY: This is the sovereign interface for Vestig's data model
 --
 -- This file defines the complete schema for fresh Vestig database creation.
@@ -11,6 +11,32 @@
 -- M2: Added content_hash for deduplication
 -- M3: Added bi-temporal fields (t_valid, t_invalid, t_created, t_expired) and events table
 -- M4: Added graph layer (entities, edges) and kind discriminator for MEMORY/SUMMARY nodes
+-- M5: Added files/chunks tables (chunk-centric hub architecture)
+
+-- =============================================================================
+-- M5 Hub Layer: Files and Chunks
+-- =============================================================================
+
+-- files: Source documents (files ingested into the system)
+CREATE TABLE files (
+    file_id TEXT PRIMARY KEY,            -- Unique identifier (file_<uuid>)
+    path TEXT NOT NULL,                  -- Absolute file path
+    created_at TEXT NOT NULL,            -- ISO 8601 timestamp (file creation/modification time)
+    ingested_at TEXT NOT NULL,           -- ISO 8601 timestamp (when file was processed)
+    file_hash TEXT,                      -- SHA256 of file content (for change detection)
+    metadata TEXT                        -- JSON-serialized file metadata (format, size, etc.)
+);
+
+-- chunks: Location pointers within files (hub node in chunk-centric architecture)
+CREATE TABLE chunks (
+    chunk_id TEXT PRIMARY KEY,           -- Unique identifier (chunk_<uuid>)
+    file_id TEXT NOT NULL,               -- Foreign key to files table
+    start INTEGER NOT NULL,              -- Character position in file where chunk starts
+    length INTEGER NOT NULL,             -- Number of characters in chunk
+    sequence INTEGER NOT NULL,           -- Position in document (1st chunk, 2nd chunk, etc.)
+    created_at TEXT NOT NULL,            -- ISO 8601 timestamp (when chunk was created)
+    FOREIGN KEY(file_id) REFERENCES files(file_id)
+);
 
 -- =============================================================================
 -- Core Tables: Memories and Events
@@ -39,7 +65,11 @@ CREATE TABLE memories (
     reinforce_count INTEGER DEFAULT 0, -- Total reinforcement events
 
     -- M4: Node type discriminator
-    kind TEXT DEFAULT 'MEMORY'        -- 'MEMORY' | 'SUMMARY'
+    kind TEXT DEFAULT 'MEMORY',       -- 'MEMORY' | 'SUMMARY'
+
+    -- M5: Chunk provenance (hub link)
+    chunk_id TEXT,                    -- Foreign key to chunks table (nullable for manual adds)
+    FOREIGN KEY(chunk_id) REFERENCES chunks(chunk_id)
 );
 
 -- memory_events: Event log for memory lifecycle tracking
@@ -68,7 +98,11 @@ CREATE TABLE entities (
     created_at TEXT NOT NULL,         -- ISO 8601 timestamp
     embedding TEXT,                   -- JSON-serialized embedding vector (for semantic matching)
     expired_at TEXT,                  -- When entity was merged/deprecated
-    merged_into TEXT                  -- ID of entity this was merged into
+    merged_into TEXT,                 -- ID of entity this was merged into
+
+    -- M5: Chunk provenance (hub link)
+    chunk_id TEXT,                    -- Foreign key to chunks table (nullable for cross-chunk entities)
+    FOREIGN KEY(chunk_id) REFERENCES chunks(chunk_id)
 );
 
 -- edges: Graph edges connecting memories and entities
@@ -166,3 +200,41 @@ WHERE t_expired IS NOT NULL;
 CREATE UNIQUE INDEX idx_edges_unique
 ON edges(from_node, to_node, edge_type)
 WHERE t_expired IS NULL;
+
+-- =============================================================================
+-- Indexes: Files Table
+-- =============================================================================
+
+-- M5: Index for querying files by path
+CREATE INDEX idx_files_path
+ON files(path);
+
+-- M5: Index for querying files by ingestion time
+CREATE INDEX idx_files_ingested_at
+ON files(ingested_at DESC);
+
+-- =============================================================================
+-- Indexes: Chunks Table
+-- =============================================================================
+
+-- M5: Index for querying chunks by file (ordered by sequence)
+CREATE INDEX idx_chunks_file
+ON chunks(file_id, sequence);
+
+-- M5: Index for querying chunks by position (for range lookups)
+CREATE INDEX idx_chunks_position
+ON chunks(file_id, start, length);
+
+-- =============================================================================
+-- Indexes: M5 Chunk Provenance
+-- =============================================================================
+
+-- M5: Index for querying memories by chunk
+CREATE INDEX idx_memories_chunk
+ON memories(chunk_id)
+WHERE chunk_id IS NOT NULL;
+
+-- M5: Index for querying entities by chunk
+CREATE INDEX idx_entities_chunk
+ON entities(chunk_id)
+WHERE chunk_id IS NOT NULL;

@@ -489,9 +489,10 @@ def commit_summary(
     storage: MemoryStorage,
     embedding_engine: EmbeddingEngine,
     event_storage: MemoryEventStorage | None = None,
+    chunk_id: str | None = None,  # M5: Link summary to chunk
 ) -> str | None:
     """
-    Commit summary node and create SUMMARIZES edges (M4).
+    Commit summary node and create SUMMARIZES edges (M4/M5).
 
     Idempotency: Uses deterministic lookup by (artifact_ref in metadata)
     to prevent duplicate summaries on re-runs.
@@ -504,6 +505,7 @@ def commit_summary(
         storage: Storage instance
         embedding_engine: Embedding engine
         event_storage: Optional event storage
+        chunk_id: M5 chunk ID (for per-chunk summaries)
 
     Returns:
         Summary memory ID if created/found, None if skipped
@@ -513,8 +515,13 @@ def commit_summary(
     import uuid
     from vestig.core.models import MemoryNode, EdgeNode, EventNode
 
-    # M4: Check if summary already exists for this artifact (idempotency)
-    existing_summary = storage.get_summary_for_artifact(artifact_ref)
+    # M5: Check if summary already exists (idempotency)
+    # For per-chunk summaries, check by chunk_id; otherwise check by artifact_ref
+    if chunk_id:
+        existing_summary = storage.get_summary_for_chunk(chunk_id)
+    else:
+        existing_summary = storage.get_summary_for_artifact(artifact_ref)
+
     if existing_summary:
         print(f"  Summary already exists: {existing_summary.id} (idempotent)")
         return existing_summary.id
@@ -582,6 +589,7 @@ def commit_summary(
         temporal_stability="static",  # Summaries are snapshots
         last_seen_at=None,
         reinforce_count=0,
+        chunk_id=chunk_id,  # M5: Link summary to chunk
     )
 
     # Atomic transaction for summary + edges + event
@@ -711,8 +719,32 @@ def ingest_document(
         if document_temporal_hints.evidence:
             print(f"  Evidence: {document_temporal_hints.evidence}")
 
-    # Get absolute path for chunk references
+    # M5: Create FILE record (hub-and-spoke model)
+    from vestig.core.models import FileNode
+    import hashlib
+    from datetime import datetime, timezone
+
     document_path_abs = str(path.absolute())
+
+    # Compute file hash for change detection
+    file_hash = hashlib.sha256(raw_text.encode("utf-8")).hexdigest()
+
+    # Get file creation time (use mtime as fallback)
+    file_created_at = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc).isoformat()
+
+    # Create FILE node
+    file_node = FileNode.create(
+        path=document_path_abs,
+        file_hash=file_hash,
+        file_created_at=file_created_at,
+        metadata={
+            "format": resolved_format,
+            "size": len(raw_text),
+            "ingestion_source": source,
+        },
+    )
+    file_id = storage.store_file(file_node)
+    print(f"Created file record: {file_id}")
 
     # Chunk text
     if resolved_format == "claude-session":
@@ -751,10 +783,18 @@ def ingest_document(
 
     # Process each chunk
     for i, (chunk_text, start_pos, length, chunk_hints) in enumerate(chunks_with_metadata, 1):
-        # Create chunk reference: "path:start:length"
-        chunk_ref = f"{document_path_abs}:{start_pos}:{length}"
+        # M5: Create CHUNK record (hub node with location pointer)
+        from vestig.core.models import ChunkNode
 
-        print(f"  Chunk {i}/{len(chunks)}: ", end="", flush=True)
+        chunk_node = ChunkNode.create(
+            file_id=file_id,
+            start=start_pos,
+            length=length,
+            sequence=i,  # 1-indexed sequence
+        )
+        chunk_id = storage.store_chunk(chunk_node)
+
+        print(f"  Chunk {i}/{len(chunks)} (chunk_id={chunk_id}): ", end="", flush=True)
 
         try:
             # Extract memories from chunk
@@ -814,7 +854,7 @@ def ingest_document(
                         artifact_ref=path.name,
                         pre_extracted_entities=combined_entities or None,
                         temporal_hints=memory,  # Pass ExtractedMemory with temporal fields
-                        chunk_ref=chunk_ref,  # NEW: Add chunk provenance
+                        chunk_id=chunk_id,  # M5: Link to chunk hub node
                     )
 
                     if outcome.outcome == "INSERTED_NEW":
@@ -868,6 +908,7 @@ def ingest_document(
                                     storage=storage,
                                     config=m4_config,
                                     embedding_engine=embedding_engine,
+                                    chunk_id=chunk_id,  # M5: Link entities to chunk hub
                                 )
                                 if verbose:
                                     print(f"    Memory {mem_idx + 1} - Entities committed ({len(entities)}):")
@@ -884,6 +925,52 @@ def ingest_document(
                 except Exception as e:
                     print(f"    Warning: Entity extraction failed for chunk: {e}", flush=True)
 
+            # M5: Generate per-chunk summary (if chunk has ≥2 committed memories)
+            chunk_memory_count = len(committed_memories)
+            if chunk_memory_count >= 2 and extraction_model:
+                try:
+                    print(f"    Generating chunk summary ({chunk_memory_count} memories)...", flush=True)
+
+                    # Get summary prompt name from config
+                    prompt_name = "summary_v1"
+                    if prompts_config:
+                        prompt_name = prompts_config.get("summary", "summary_v1")
+
+                    # Get committed memory nodes for this chunk
+                    chunk_memory_nodes = []
+                    for mem_id, _ in committed_memories:
+                        mem_node = storage.get_memory(mem_id)
+                        if mem_node:
+                            chunk_memory_nodes.append(mem_node)
+
+                    if chunk_memory_nodes:
+                        # Generate summary from chunk memories
+                        summary_result = generate_summary(
+                            memories=chunk_memory_nodes,
+                            model=extraction_model,
+                            source_label=f"{path.name} (chunk {i})",
+                            ingest_run_id=f"{path.name}_chunk_{i}",
+                            prompt_name=prompt_name,
+                        )
+
+                        # Commit summary with chunk_id
+                        summary_id = commit_summary(
+                            summary_result=summary_result,
+                            memory_ids=[m.id for m in chunk_memory_nodes],
+                            artifact_ref=path.name,
+                            source_label=f"{path.name} (chunk {i})",
+                            storage=storage,
+                            embedding_engine=embedding_engine,
+                            event_storage=event_storage,
+                            chunk_id=chunk_id,  # M5: Link summary to chunk
+                        )
+
+                        if verbose and summary_id:
+                            print(f"    Summary: {summary_result.summary.title}", flush=True)
+
+                except Exception as e:
+                    print(f"    Warning: Summary generation failed for chunk: {e}", flush=True)
+
         except Exception as e:
             error_msg = f"Chunk {i} extraction failed: {e}"
             errors.append(error_msg)
@@ -893,85 +980,8 @@ def ingest_document(
     entities_after = len(storage.get_all_entities())
     entities_created = entities_after - entities_before
 
-    # M4: Generate summary if ≥5 memories committed
-    if memories_committed >= 5 and extraction_model:
-        print(f"\nGenerating summary ({memories_committed} memories extracted)...")
-
-        try:
-            # Get all memories committed during this ingest (by artifact_ref)
-            # Query events to find memories from this ingest run
-            cursor = storage.conn.execute(
-                """
-                SELECT DISTINCT m.id, m.content, m.content_embedding, m.content_hash,
-                       m.created_at, m.metadata, m.t_valid, m.t_invalid,
-                       m.t_created, m.t_expired, m.temporal_stability,
-                       m.last_seen_at, m.reinforce_count
-                FROM memories m
-                JOIN memory_events e ON e.memory_id = m.id
-                WHERE e.artifact_ref = ?
-                  AND e.event_type = 'ADD'
-                  AND m.kind = 'MEMORY'
-                ORDER BY m.created_at ASC
-                """,
-                (path.name,),
-            )
-
-            import json
-
-            committed_memories = []
-            for row in cursor.fetchall():
-                committed_memories.append(
-                    MemoryNode(
-                        id=row[0],
-                        content=row[1],
-                        content_embedding=json.loads(row[2]),
-                        content_hash=row[3],
-                        created_at=row[4],
-                        metadata=json.loads(row[5]),
-                        t_valid=row[6],
-                        t_invalid=row[7],
-                        t_created=row[8],
-                        t_expired=row[9],
-                        temporal_stability=row[10] or "unknown",
-                        last_seen_at=row[11],
-                        reinforce_count=row[12] or 0,
-                    )
-                )
-
-            if len(committed_memories) >= 5:
-                # Get summary prompt name from config (default: summary_v1)
-                prompt_name = "summary_v1"
-                if prompts_config:
-                    prompt_name = prompts_config.get("summary", "summary_v1")
-
-                # Generate summary
-                summary_result = generate_summary(
-                    memories=committed_memories,
-                    model=extraction_model,
-                    source_label=path.name,
-                    ingest_run_id=path.name,
-                    prompt_name=prompt_name,
-                )
-
-                # Commit summary with edges
-                summary_id = commit_summary(
-                    summary_result=summary_result,
-                    memory_ids=[m.id for m in committed_memories],
-                    artifact_ref=path.name,
-                    source_label=path.name,
-                    storage=storage,
-                    embedding_engine=embedding_engine,
-                    event_storage=event_storage,
-                )
-
-                if verbose and summary_id:
-                    print(f"\n  Summary title: {summary_result.summary.title}")
-                    print(f"  Themes: {', '.join(summary_result.summary.themes)}")
-
-        except Exception as e:
-            error_msg = f"Summary generation failed: {e}"
-            errors.append(error_msg)
-            print(f"  Warning: {error_msg}")
+    # M5: Per-chunk summaries are generated in the chunk loop above (not here)
+    # Removed old per-document summary generation
 
     return IngestionResult(
         document_path=document_path,

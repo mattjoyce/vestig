@@ -98,7 +98,7 @@ def commit_memory(
     m4_config: dict[str, Any] | None = None,  # M4: Graph config
     pre_extracted_entities: list[tuple[str, str, float, str]] | None = None,  # M4: Pre-extracted entities
     temporal_hints: Any | None = None,  # ExtractedMemory with temporal fields
-    chunk_ref: str | None = None,  # NEW: Chunk provenance reference
+    chunk_id: str | None = None,  # M5: Chunk ID (hub link for provenance)
 ) -> CommitOutcome:
     """
     Commit a memory to storage with M2 quality firewall, M3 event logging, M4 entity extraction, and temporal hints.
@@ -117,7 +117,7 @@ def commit_memory(
         pre_extracted_entities: Optional pre-extracted entities (name, type, confidence, evidence)
                                 Skips LLM extraction if provided
         temporal_hints: Optional ExtractedMemory with temporal fields (t_valid_hint, temporal_stability_hint)
-        chunk_ref: Optional chunk provenance reference in format "path:start:length"
+        chunk_id: Optional chunk ID (M5 hub link for provenance, NULL for manual adds)
 
     Returns:
         CommitOutcome with decision details
@@ -290,9 +290,9 @@ def commit_memory(
                 temporal_stability_hint=temporal_stability_hint,  # Temporal classification
             )
 
-            # Add chunk provenance reference to metadata if provided
-            if chunk_ref:
-                node.metadata["chunk_ref"] = chunk_ref
+            # M5: Set chunk_id for hub-and-spoke provenance
+            if chunk_id:
+                node.chunk_id = chunk_id
 
             # Store (exact dedupe handled in storage layer)
             stored_id = storage.store_memory(node)

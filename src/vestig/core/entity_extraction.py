@@ -413,6 +413,7 @@ def store_entities(
     storage,  # MemoryStorage instance
     config: dict[str, Any],
     embedding_engine=None,  # Optional EmbeddingEngine instance
+    chunk_id: str | None = None,  # M5: Optional chunk ID for hub-and-spoke provenance
 ) -> list[tuple]:
     """
     Store pre-extracted entities with deduplication and embeddings.
@@ -483,6 +484,10 @@ def store_entities(
                 entity_type=entity_type,
                 canonical_name=name,
             )
+
+            # M5: Set chunk_id for hub-and-spoke provenance
+            if chunk_id:
+                new_entity.chunk_id = chunk_id
 
             # Generate embedding for entity (lowercase for consistency)
             embedding_text = name.lower()

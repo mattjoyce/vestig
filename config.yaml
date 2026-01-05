@@ -1,6 +1,11 @@
 # Vestig v3 Config - Enhanced entity extraction with rate limiting
 # Uses improved entity guidelines to reduce generic CONCEPT noise
 
+# Environment variables (optional - set at runtime if not already set)
+# User's shell environment takes precedence
+# env:
+#   OLLAMA_HOST: "192.168.20.8"  # Uncomment to use remote Ollama
+
 # Embedding configuration
 embedding:
   provider: "llm"
