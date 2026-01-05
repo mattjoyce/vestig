@@ -18,6 +18,7 @@ class MemoryNode:
     content_hash: str  # SHA256 of normalized content (M2: dedupe)
     created_at: str  # ISO 8601 timestamp
     metadata: dict[str, Any] = field(default_factory=dict)
+    kind: str = "MEMORY"  # "MEMORY" | "SUMMARY" (M4: distinguishes summaries from atomic facts)
 
     # M3: Bi-temporal fields
     t_valid: str | None = None  # When fact became true (event time)

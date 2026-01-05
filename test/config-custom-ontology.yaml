@@ -1,0 +1,225 @@
+# Vestig Config - Custom Knowledge Entity Ontology
+# Database: vestig-custom.db
+# Focus: Antipatterns, Principles, Heuristics, Insights, Metalearning
+
+# Environment variables (set at runtime if not already set)
+# User's shell environment takes precedence
+env:
+  OLLAMA_HOST: "192.168.20.8"
+
+# Embedding configuration
+embedding:
+  provider: "llm"
+  model: "embeddinggemma:latest"
+  dimension: 768
+  normalize: true
+
+# Storage
+storage:
+  db_path: "test/custom-gpt-gemma.db"
+
+# Retrieval
+retrieval:
+  default_limit: 5
+
+  # M5: Entity-based retrieval (hybrid semantic + entity matching)
+  entity_path:
+    enabled: true
+    entity_weight: 0.5
+    similarity_threshold: 0.7
+
+# M2: Content hygiene (quality firewall)
+hygiene:
+  min_chars: 12
+  max_chars: 4000
+  normalize_whitespace: true
+  reject_exact_duplicates: true
+  near_duplicate:
+    enabled: true
+    threshold: 0.92
+    skip_manual_source: true
+
+# Document ingestion (LLM-based memory extraction)
+ingestion:
+  model: gpt-oss:latest
+  chunk_size: 4000
+  chunk_overlap: 400
+  min_confidence: 0.8
+  format: auto
+  force_entities: []
+
+  # Two-pass extraction: separate memory and entity extraction
+  two_pass_extraction:
+    enabled: true
+    memory_prompt: "extract_memories_simple"
+    entity_prompt: "extract_entities"
+    batch_entity_extraction: true
+    batch_size: 50
+
+  # JSON parsing retry logic
+  retry:
+    max_attempts: 3
+    backoff_seconds: 1.0
+
+  # Rate limiting
+  rate_limits:
+    requests_per_minute: 30
+    tokens_per_minute: 60000
+
+  claude_session:
+    include_roles:
+      - user
+      - assistant
+    include_message_types:
+      - text
+    drop_thinking: true
+    drop_tool_use: true
+
+# Prompt configuration
+prompts:
+  extract_memories: "extract_memories_v4"
+  summary: "summary_v2"
+
+# M3: Time & Truth (TraceRank, temporal ranking)
+m3:
+  event_logging:
+    enabled: true
+
+  tracerank:
+    enabled: true
+    tau_days: 21
+    cooldown_hours: 24
+    burst_discount: 0.2
+    k: 0.35
+    graph_connectivity_enabled: false
+    graph_k: 0.0
+
+  retrieval:
+    include_expired: false
+
+# M4: Graph Layer - Custom Knowledge Entity Types
+m4:
+  entity_types:
+    ontology:
+      # Core entities for tracking people, organizations, systems
+      - name: "PERSON"
+        description: "Named individuals"
+        tier: 1
+        synonyms: ["individual"]
+        examples: ["Matt Joyce", "Dr. Smith", "Anthony Waddle"]
+
+      - name: "ORG"
+        description: "Organizations, companies, institutions"
+        tier: 1
+        synonyms: ["organization", "company", "institution"]
+        examples: ["Calvary Health Care", "Macquarie University"]
+
+      - name: "SYSTEM"
+        description: "Named software/hardware platforms, technical infrastructure"
+        tier: 1
+        synonyms: ["platform", "infrastructure"]
+        examples: ["Vestig", "Claude", "AudioMoth"]
+
+      - name: "PROJECT"
+        description: "Named initiatives, programs, research efforts"
+        tier: 1
+        synonyms: ["initiative", "program"]
+        examples: ["BiophonyAI", "AI Adoption Survey"]
+
+      # Knowledge entities - what to avoid
+      - name: "ANTIPATTERN"
+        description: "Practices, approaches, or patterns to avoid; mistakes, traps, or known failure modes"
+        tier: 2
+        synonyms: ["code smell", "bad practice", "pitfall", "mistake", "anti-pattern", "trap", "failure mode"]
+        examples: ["using global state", "tight coupling", "premature optimization", "god object", "callback hell"]
+
+      # Knowledge entities - what to do
+      - name: "PRINCIPLE"
+        description: "Abstract rules, guidelines, or fundamental concepts that guide decision-making"
+        tier: 2
+        synonyms: ["design principle", "guideline", "best practice", "rule", "tenet", "axiom"]
+        examples: ["separation of concerns", "single responsibility", "DRY", "YAGNI", "composition over inheritance"]
+
+      - name: "HEURISTIC"
+        description: "Practical checks, indicators, rules of thumb, or warning signs"
+        tier: 2
+        synonyms: ["rule of thumb", "check", "indicator", "warning sign", "test", "smell test"]
+        examples: ["code review checklist", "performance indicators", "function too long", "too many parameters"]
+
+      # Knowledge entities - learnings and awareness
+      - name: "INSIGHT"
+        description: "Contextual understanding of when, why, or how to apply knowledge; situational wisdom"
+        tier: 2
+        synonyms: ["wisdom", "learning", "realization", "understanding", "lesson learned"]
+        examples: ["when to refactor vs rewrite", "choosing sync vs async", "balancing performance vs readability"]
+
+      - name: "METALEARNING"
+        description: "Self-awareness about one's own patterns, tendencies, blindspots, or learning process"
+        tier: 3
+        synonyms: ["self-awareness", "habit", "tendency", "blindspot", "bias", "personal pattern"]
+        examples: ["tendency to over-engineer", "blindspot for edge cases", "learning best through examples"]
+
+      # Problem-solution pairs
+      - name: "PROBLEM"
+        description: "Specific problems, challenges, issues, or obstacles encountered in any domain"
+        tier: 2
+        synonyms: ["issue", "challenge", "difficulty", "obstacle", "blocker", "pain point", "bottleneck", "barrier", "complication"]
+        examples: ["stakeholder misalignment", "budget overrun", "unclear requirements", "team burnout", "communication breakdown"]
+
+      - name: "SOLUTION"
+        description: "Specific solutions, fixes, resolutions, or approaches that addressed problems"
+        tier: 2
+        synonyms: ["fix", "resolution", "workaround", "remedy", "answer", "approach", "mitigation", "countermeasure"]
+        examples: ["weekly stakeholder sync", "phased delivery approach", "clarification workshop", "rotate on-call duties", "daily standups"]
+
+      # Supporting entities
+      - name: "TOOL"
+        description: "Specific software, hardware, instruments, applications"
+        tier: 2
+        synonyms: ["application", "instrument", "software"]
+        examples: ["Docker", "Obsidian", "ruff", "pytest"]
+
+      - name: "TECHNIQUE"
+        description: "Specific methods, approaches, or implementation strategies"
+        tier: 2
+        synonyms: ["method", "approach", "strategy", "tactic"]
+        examples: ["test-driven development", "pair programming", "code review", "incremental refactoring"]
+
+  entity_extraction:
+    enabled: true
+    mode: llm
+
+    llm:
+      model: gpt-oss:latest
+      max_entities_per_memory: 10
+      min_confidence: 0.75
+      store_low_confidence: false
+      max_evidence_length: 200
+
+      rate_limits:
+        requests_per_minute: 30
+        tokens_per_minute: 60000
+
+    heuristics:
+      strip_titles: true
+      normalize_org_suffixes: true
+      reject_garbage: true
+      split_lists: false
+
+  edge_creation:
+    mentions:
+      enabled: true
+      default_weight: 1.0
+      confidence_gated: true
+
+    related:
+      enabled: true
+      similarity_threshold: 0.7
+      max_edges_per_memory: 10
+
+  graph_expansion:
+    enabled: true
+    max_expand_via_entities: 3
+    max_expand_via_related: 3
+    include_expired: false
+    min_confidence: 0.75

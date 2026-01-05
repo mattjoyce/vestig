@@ -212,7 +212,7 @@ def cmd_recall(args):
     from vestig.core.retrieval import (
         format_recall_results,
         format_recall_results_with_explanation,
-        search_memories,
+        recall_with_chunk_expansion,
     )
 
     config = args.config_dict
@@ -232,7 +232,8 @@ def cmd_recall(args):
         pass
 
     try:
-        results = search_memories(
+        # M5: Use chunk-based expansion for recall (not just search)
+        results = recall_with_chunk_expansion(
             query=args.query,
             storage=storage,
             embedding_engine=embedding_engine,

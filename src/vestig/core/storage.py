@@ -469,7 +469,7 @@ class MemoryStorage:
             """
             SELECT id, content, content_embedding, content_hash, created_at, metadata,
                    t_valid, t_invalid, t_created, t_expired, temporal_stability,
-                   last_seen_at, reinforce_count, chunk_id
+                   last_seen_at, reinforce_count, chunk_id, kind
             FROM memories
             WHERE id = ?
             """,
@@ -494,6 +494,7 @@ class MemoryStorage:
             last_seen_at=row[11],
             reinforce_count=row[12] or 0,
             chunk_id=row[13],
+            kind=row[14],
         )
 
     def get_all_memories(self) -> list[MemoryNode]:
@@ -507,7 +508,7 @@ class MemoryStorage:
             """
             SELECT id, content, content_embedding, content_hash, created_at, metadata,
                    t_valid, t_invalid, t_created, t_expired, temporal_stability,
-                   last_seen_at, reinforce_count, chunk_id
+                   last_seen_at, reinforce_count, chunk_id, kind
             FROM memories
             ORDER BY created_at DESC
             """
@@ -530,6 +531,7 @@ class MemoryStorage:
                     last_seen_at=row[11],
                     reinforce_count=row[12] or 0,
                     chunk_id=row[13],
+                    kind=row[14],
                 )
             )
         return memories
@@ -733,6 +735,54 @@ class MemoryStorage:
             )
         return chunks
 
+    def get_memories_by_chunk(self, chunk_id: str, include_expired: bool = False) -> list[MemoryNode]:
+        """
+        Get all memories linked to a specific chunk (M5).
+
+        Args:
+            chunk_id: Chunk ID
+            include_expired: Include expired memories
+
+        Returns:
+            List of MemoryNode objects in this chunk
+        """
+        expired_filter = "" if include_expired else "AND t_expired IS NULL"
+
+        cursor = self.conn.execute(
+            f"""
+            SELECT id, content, content_embedding, content_hash, created_at, metadata,
+                   t_valid, t_invalid, t_created, t_expired, temporal_stability,
+                   last_seen_at, reinforce_count, chunk_id, kind
+            FROM memories
+            WHERE chunk_id = ? {expired_filter}
+            ORDER BY created_at ASC
+            """,
+            (chunk_id,),
+        )
+
+        memories = []
+        for row in cursor.fetchall():
+            memories.append(
+                MemoryNode(
+                    id=row[0],
+                    content=row[1],
+                    content_embedding=json.loads(row[2]),
+                    content_hash=row[3],
+                    created_at=row[4],
+                    metadata=json.loads(row[5]),
+                    t_valid=row[6],
+                    t_invalid=row[7],
+                    t_created=row[8],
+                    t_expired=row[9],
+                    temporal_stability=row[10] or "unknown",
+                    last_seen_at=row[11],
+                    reinforce_count=row[12] or 0,
+                    chunk_id=row[13],
+                    kind=row[14],
+                )
+            )
+        return memories
+
     def close(self):
         """Close database connection"""
         self.conn.close()
@@ -776,7 +826,7 @@ class MemoryStorage:
             """
             SELECT id, content, content_embedding, content_hash, created_at, metadata,
                    t_valid, t_invalid, t_created, t_expired, temporal_stability,
-                   last_seen_at, reinforce_count
+                   last_seen_at, reinforce_count, chunk_id, kind
             FROM memories
             WHERE t_expired IS NULL
             ORDER BY created_at DESC
@@ -799,6 +849,8 @@ class MemoryStorage:
                     temporal_stability=row[10] or "unknown",
                     last_seen_at=row[11],
                     reinforce_count=row[12] or 0,
+                    chunk_id=row[13],
+                    kind=row[14],
                 )
             )
         return memories
@@ -817,7 +869,7 @@ class MemoryStorage:
             """
             SELECT id, content, content_embedding, content_hash, created_at, metadata,
                    t_valid, t_invalid, t_created, t_expired, temporal_stability,
-                   last_seen_at, reinforce_count
+                   last_seen_at, reinforce_count, chunk_id, kind
             FROM memories
             WHERE kind = 'SUMMARY' AND t_expired IS NULL
             ORDER BY created_at DESC
@@ -841,6 +893,8 @@ class MemoryStorage:
                     temporal_stability=row[10] or "unknown",
                     last_seen_at=row[11],
                     reinforce_count=row[12] or 0,
+                    chunk_id=row[13],
+                    kind=row[14],
                 )
 
         return None
@@ -859,7 +913,7 @@ class MemoryStorage:
             """
             SELECT id, content, content_embedding, content_hash, created_at, metadata,
                    t_valid, t_invalid, t_created, t_expired, temporal_stability,
-                   last_seen_at, reinforce_count, chunk_id
+                   last_seen_at, reinforce_count, chunk_id, kind
             FROM memories
             WHERE kind = 'SUMMARY' AND chunk_id = ? AND t_expired IS NULL
             ORDER BY created_at DESC
@@ -887,6 +941,7 @@ class MemoryStorage:
             last_seen_at=row[11],
             reinforce_count=row[12] or 0,
             chunk_id=row[13],
+            kind=row[14],
         )
 
     # M4: Entity operations

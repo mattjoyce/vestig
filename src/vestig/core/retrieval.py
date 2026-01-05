@@ -323,6 +323,99 @@ def search_memories(
     return result
 
 
+def recall_with_chunk_expansion(
+    query: str,
+    storage: MemoryStorage,
+    embedding_engine: EmbeddingEngine,
+    limit: int = 5,
+    event_storage: MemoryEventStorage | None = None,
+    tracerank_config: TraceRankConfig | None = None,
+    include_expired: bool = False,
+    show_timing: bool = False,
+    entity_config: dict | None = None,
+    model: str | None = None,
+    ontology=None,
+) -> list[tuple[MemoryNode, float]]:
+    """
+    Recall memories via chunk expansion: query → summaries → chunks → all memories.
+
+    This implements the M5 chunk hub-and-spoke model:
+    1. Search for relevant summaries (prioritized)
+    2. For each summary with chunk_id, retrieve all memories in that chunk
+    3. Return expanded set with provenance context
+
+    Args:
+        (Same as search_memories)
+
+    Returns:
+        List of (MemoryNode, score) tuples, expanded via chunk traversal
+    """
+    t_start = time.perf_counter()
+
+    # Generate query embedding once for re-ranking
+    query_embedding = embedding_engine.embed_text(query)
+
+    # Search with higher limit to find more potential summary chunks
+    initial_limit = limit * 5  # Cast wider net for chunk discovery
+
+    initial_results = search_memories(
+        query=query,
+        storage=storage,
+        embedding_engine=embedding_engine,
+        limit=initial_limit,
+        event_storage=event_storage,
+        tracerank_config=tracerank_config,
+        include_expired=include_expired,
+        show_timing=False,  # Don't show timing for initial search
+        entity_config=entity_config,
+        model=model,
+        ontology=ontology,
+    )
+
+    # Filter to SUMMARY kind only (chunk representatives)
+    summary_results = [(mem, score) for mem, score in initial_results if mem.kind == "SUMMARY"]
+
+    # Track which chunks we've expanded and collect all memories
+    expanded_chunks = set()
+    all_memories = {}  # memory_id → MemoryNode
+
+    # Expand via chunks from summaries
+    for summary, summary_score in summary_results:
+        # Include the summary itself
+        all_memories[summary.id] = summary
+
+        # Expand to get all memories in this chunk
+        if summary.chunk_id and summary.chunk_id not in expanded_chunks:
+            expanded_chunks.add(summary.chunk_id)
+
+            # Get all memories in this chunk
+            chunk_memories = storage.get_memories_by_chunk(summary.chunk_id, include_expired=include_expired)
+
+            # Add all chunk memories
+            for chunk_memory in chunk_memories:
+                all_memories[chunk_memory.id] = chunk_memory
+
+    # Re-rank all expanded memories by actual similarity to query
+    expanded_results = []
+    for memory in all_memories.values():
+        similarity = cosine_similarity(query_embedding, memory.content_embedding)
+        expanded_results.append((memory, similarity))
+
+    # Sort by similarity descending
+    expanded_results.sort(key=lambda x: x[1], reverse=True)
+
+    if show_timing:
+        elapsed = time.perf_counter() - t_start
+        print(f"\n[RECALL] {elapsed * 1000:.0f}ms total")
+        print(f"  Summaries found: {len(summary_results)}")
+        print(f"  Chunks expanded: {len(expanded_chunks)}")
+        print(f"  Total memories: {len(expanded_results)}")
+        print(f"  Re-ranked by similarity to query")
+        print()
+
+    return expanded_results
+
+
 def format_search_results(results: list[tuple[MemoryNode, float]]) -> str:
     """
     Format search results for display.
