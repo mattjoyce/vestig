@@ -401,16 +401,48 @@ def recall_with_chunk_expansion(
         similarity = cosine_similarity(query_embedding, memory.content_embedding)
         expanded_results.append((memory, similarity))
 
-    # Sort by similarity descending
+    # Apply TraceRank if enabled (M3)
+    if event_storage and tracerank_config and tracerank_config.enabled:
+        from vestig.core.tracerank import compute_enhanced_multiplier
+
+        for i, (memory, semantic_score) in enumerate(expanded_results):
+            # Get reinforcement events
+            events = event_storage.get_reinforcement_events(memory.id)
+
+            # Get inbound edge count (graph connectivity)
+            inbound_edges = storage.get_edges_to_memory(memory.id, include_expired=False)
+            edge_count = len(inbound_edges)
+
+            # Compute TraceRank multiplier
+            multiplier = compute_enhanced_multiplier(
+                memory_id=memory.id,
+                temporal_stability=memory.temporal_stability,
+                t_valid=memory.t_valid or memory.created_at,
+                inbound_edge_count=edge_count,
+                reinforcement_events=events,
+                config=tracerank_config,
+            )
+
+            # Apply multiplier to semantic score
+            final_score = semantic_score * multiplier
+            expanded_results[i] = (memory, final_score)
+
+    # Sort by final score descending
     expanded_results.sort(key=lambda x: x[1], reverse=True)
+
+    # Apply limit (top-k)
+    if limit:
+        expanded_results = expanded_results[:limit]
 
     if show_timing:
         elapsed = time.perf_counter() - t_start
         print(f"\n[RECALL] {elapsed * 1000:.0f}ms total")
         print(f"  Summaries found: {len(summary_results)}")
         print(f"  Chunks expanded: {len(expanded_chunks)}")
-        print(f"  Total memories: {len(expanded_results)}")
-        print(f"  Re-ranked by similarity to query")
+        print(f"  Total memories before limit: {len(all_memories)}")
+        print(f"  Results returned (top-{limit}): {len(expanded_results)}")
+        if event_storage and tracerank_config and tracerank_config.enabled:
+            print(f"  TraceRank applied: enabled")
         print()
 
     return expanded_results
