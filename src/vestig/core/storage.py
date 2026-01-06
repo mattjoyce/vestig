@@ -2,6 +2,7 @@
 
 import json
 import sqlite3
+from datetime import datetime, timezone
 from pathlib import Path
 
 from vestig.core.models import EdgeNode, EntityNode, MemoryNode
@@ -1222,6 +1223,99 @@ class MemoryStorage:
         self.conn.commit()
         return edge.edge_id
 
+    def migrate_fk_to_edges(self) -> dict[str, int]:
+        """
+        M5→M6 Migration: Convert chunk_id FKs to graph edges.
+
+        Creates:
+        - Chunk-(CONTAINS)→Memory edges from memory.chunk_id
+        - Chunk-(LINKED)→Entity edges from entity.chunk_id
+        - Chunk-(SUMMARIZED_BY)→Summary edges from summary.chunk_id
+        - Removes old Summary-(SUMMARIZES)→Memory edges
+
+        Returns:
+            Dict with counts: {contains: N, linked: N, summarized_by: N, removed_summarizes: N}
+        """
+        from vestig.core.models import EdgeNode
+
+        stats = {
+            "contains": 0,
+            "linked": 0,
+            "summarized_by": 0,
+            "removed_summarizes": 0
+        }
+
+        # 1. Create CONTAINS edges from memory.chunk_id
+        cursor = self.conn.execute("""
+            SELECT chunk_id, id FROM memories
+            WHERE chunk_id IS NOT NULL AND kind = 'MEMORY'
+        """)
+        for chunk_id, memory_id in cursor.fetchall():
+            edge = EdgeNode.create(
+                from_node=chunk_id,
+                to_node=memory_id,
+                edge_type="CONTAINS",
+                weight=1.0
+            )
+            # Check if edge already exists
+            existing = self.conn.execute(
+                "SELECT edge_id FROM edges WHERE from_node=? AND to_node=? AND edge_type=? AND t_expired IS NULL",
+                (edge.from_node, edge.to_node, edge.edge_type)
+            ).fetchone()
+            if not existing:
+                self.store_edge(edge)
+                stats["contains"] += 1
+
+        # 2. Create LINKED edges from entity.chunk_id
+        cursor = self.conn.execute("""
+            SELECT chunk_id, id FROM entities
+            WHERE chunk_id IS NOT NULL AND expired_at IS NULL
+        """)
+        for chunk_id, entity_id in cursor.fetchall():
+            edge = EdgeNode.create(
+                from_node=chunk_id,
+                to_node=entity_id,
+                edge_type="LINKED",
+                weight=1.0
+            )
+            existing = self.conn.execute(
+                "SELECT edge_id FROM edges WHERE from_node=? AND to_node=? AND edge_type=? AND t_expired IS NULL",
+                (edge.from_node, edge.to_node, edge.edge_type)
+            ).fetchone()
+            if not existing:
+                self.store_edge(edge)
+                stats["linked"] += 1
+
+        # 3. Create SUMMARIZED_BY edges from summary.chunk_id
+        cursor = self.conn.execute("""
+            SELECT chunk_id, id FROM memories
+            WHERE chunk_id IS NOT NULL AND kind = 'SUMMARY'
+        """)
+        for chunk_id, summary_id in cursor.fetchall():
+            edge = EdgeNode.create(
+                from_node=chunk_id,
+                to_node=summary_id,
+                edge_type="SUMMARIZED_BY",
+                weight=1.0
+            )
+            existing = self.conn.execute(
+                "SELECT edge_id FROM edges WHERE from_node=? AND to_node=? AND edge_type=? AND t_expired IS NULL",
+                (edge.from_node, edge.to_node, edge.edge_type)
+            ).fetchone()
+            if not existing:
+                self.store_edge(edge)
+                stats["summarized_by"] += 1
+
+        # 4. Remove old SUMMARIZES edges (Summary→Memory)
+        cursor = self.conn.execute("""
+            UPDATE edges SET t_expired = ?
+            WHERE edge_type = 'SUMMARIZES' AND t_expired IS NULL
+        """, (datetime.now(timezone.utc).isoformat(),))
+        stats["removed_summarizes"] = cursor.rowcount
+
+        self.conn.commit()
+        return stats
+
     def get_edges_from_memory(
         self,
         memory_id: str,
@@ -1439,6 +1533,123 @@ class MemoryStorage:
             )
 
         return edges
+
+    def get_chunk_for_memory(self, memory_id: str) -> ChunkNode | None:
+        """Get chunk containing this memory via CONTAINS edge (M6)."""
+        cursor = self.conn.execute("""
+            SELECT c.chunk_id, c.file_id, c.start, c.length, c.sequence, c.created_at
+            FROM chunks c
+            JOIN edges e ON e.from_node = c.chunk_id
+            WHERE e.to_node = ? AND e.edge_type = 'CONTAINS' AND e.t_expired IS NULL
+        """, (memory_id,))
+        row = cursor.fetchone()
+        if not row:
+            return None
+        return ChunkNode(
+            chunk_id=row[0],
+            file_id=row[1],
+            start=row[2],
+            length=row[3],
+            sequence=row[4],
+            created_at=row[5]
+        )
+
+    def get_memories_in_chunk(self, chunk_id: str, include_expired: bool = False) -> list[MemoryNode]:
+        """Get all memories in chunk via CONTAINS edges (M6, replaces get_memories_by_chunk)."""
+        expired_filter = "" if include_expired else "AND m.t_expired IS NULL"
+
+        cursor = self.conn.execute(f"""
+            SELECT m.id, m.content, m.content_embedding, m.content_hash, m.created_at, m.metadata,
+                   m.t_valid, m.t_invalid, m.t_created, m.t_expired, m.temporal_stability,
+                   m.last_seen_at, m.reinforce_count, m.chunk_id, m.kind
+            FROM memories m
+            JOIN edges e ON e.to_node = m.id
+            WHERE e.from_node = ? AND e.edge_type = 'CONTAINS' AND e.t_expired IS NULL {expired_filter}
+            ORDER BY m.created_at ASC
+        """, (chunk_id,))
+
+        memories = []
+        for row in cursor.fetchall():
+            memories.append(MemoryNode(
+                id=row[0],
+                content=row[1],
+                content_embedding=json.loads(row[2]),
+                content_hash=row[3],
+                created_at=row[4],
+                metadata=json.loads(row[5]),
+                t_valid=row[6],
+                t_invalid=row[7],
+                t_created=row[8],
+                t_expired=row[9],
+                temporal_stability=row[10] or "unknown",
+                last_seen_at=row[11],
+                reinforce_count=row[12] or 0,
+                chunk_id=row[13],
+                kind=row[14]
+            ))
+        return memories
+
+    def get_summary_for_chunk_via_edge(self, chunk_id: str) -> MemoryNode | None:
+        """Get chunk summary via SUMMARIZED_BY edge (M6)."""
+        cursor = self.conn.execute("""
+            SELECT m.id, m.content, m.content_embedding, m.content_hash, m.created_at, m.metadata,
+                   m.t_valid, m.t_invalid, m.t_created, m.t_expired, m.temporal_stability,
+                   m.last_seen_at, m.reinforce_count, m.chunk_id, m.kind
+            FROM memories m
+            JOIN edges e ON e.to_node = m.id
+            WHERE e.from_node = ? AND e.edge_type = 'SUMMARIZED_BY' AND e.t_expired IS NULL
+            LIMIT 1
+        """, (chunk_id,))
+
+        row = cursor.fetchone()
+        if not row:
+            return None
+
+        return MemoryNode(
+            id=row[0],
+            content=row[1],
+            content_embedding=json.loads(row[2]),
+            content_hash=row[3],
+            created_at=row[4],
+            metadata=json.loads(row[5]),
+            t_valid=row[6],
+            t_invalid=row[7],
+            t_created=row[8],
+            t_expired=row[9],
+            temporal_stability=row[10] or "unknown",
+            last_seen_at=row[11],
+            reinforce_count=row[12] or 0,
+            chunk_id=row[13],
+            kind=row[14]
+        )
+
+    def get_entities_in_chunk(self, chunk_id: str, include_expired: bool = False) -> list[EntityNode]:
+        """Get entities linked to chunk via LINKED edges (M6)."""
+        expired_filter = "" if include_expired else "AND ent.expired_at IS NULL"
+
+        cursor = self.conn.execute(f"""
+            SELECT ent.id, ent.entity_type, ent.canonical_name, ent.norm_key,
+                   ent.created_at, ent.embedding, ent.expired_at, ent.merged_into, ent.chunk_id
+            FROM entities ent
+            JOIN edges e ON e.to_node = ent.id
+            WHERE e.from_node = ? AND e.edge_type = 'LINKED' AND e.t_expired IS NULL {expired_filter}
+            ORDER BY ent.created_at ASC
+        """, (chunk_id,))
+
+        entities = []
+        for row in cursor.fetchall():
+            entities.append(EntityNode(
+                id=row[0],
+                entity_type=row[1],
+                canonical_name=row[2],
+                norm_key=row[3],
+                created_at=row[4],
+                embedding=row[5],
+                expired_at=row[6],
+                merged_into=row[7],
+                chunk_id=row[8]
+            ))
+        return entities
 
     def get_edge(self, edge_id: str) -> EdgeNode | None:
         """

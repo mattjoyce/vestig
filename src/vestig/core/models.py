@@ -207,7 +207,7 @@ class EdgeNode:
             ValueError: If edge_type is invalid
         """
         # Enforce edge type constraints
-        allowed_edge_types = {"MENTIONS", "RELATED", "SUMMARIZES"}
+        allowed_edge_types = {"MENTIONS", "RELATED", "SUMMARIZES", "CONTAINS", "LINKED", "SUMMARIZED_BY"}
         if edge_type not in allowed_edge_types:
             raise ValueError(f"Invalid edge_type: {edge_type}. Allowed: {allowed_edge_types}")
 

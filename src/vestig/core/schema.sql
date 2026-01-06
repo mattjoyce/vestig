@@ -110,7 +110,7 @@ CREATE TABLE edges (
     edge_id TEXT PRIMARY KEY,
     from_node TEXT NOT NULL,          -- Source node ID (mem_* or ent_*)
     to_node TEXT NOT NULL,            -- Target node ID (mem_* or ent_*)
-    edge_type TEXT NOT NULL,          -- MENTIONS | RELATED | SUMMARIZES
+    edge_type TEXT NOT NULL,          -- MENTIONS | RELATED | SUMMARIZES (deprecated) | CONTAINS | LINKED | SUMMARIZED_BY
     weight REAL NOT NULL,             -- Edge weight (1.0 default, or similarity score)
 
     -- M4: LLM extraction metadata

@@ -259,6 +259,31 @@ def cmd_recall(args):
         storage.close()
 
 
+def cmd_migrate_edges(args):
+    """Handle 'vestig migrate-edges' command (M5→M6 migration)"""
+    config = args.config_dict
+    storage, _, _, _ = build_runtime(config)
+
+    try:
+        print("Migrating chunk_id FKs to graph edges...")
+        print("This will:")
+        print("  - Create CONTAINS edges (Chunk→Memory)")
+        print("  - Create LINKED edges (Chunk→Entity)")
+        print("  - Create SUMMARIZED_BY edges (Chunk→Summary)")
+        print("  - Expire old SUMMARIZES edges (Summary→Memory)")
+        print()
+
+        stats = storage.migrate_fk_to_edges()
+
+        print("Migration complete!")
+        print(f"  CONTAINS edges created: {stats['contains']}")
+        print(f"  LINKED edges created: {stats['linked']}")
+        print(f"  SUMMARIZED_BY edges created: {stats['summarized_by']}")
+        print(f"  SUMMARIZES edges expired: {stats['removed_summarizes']}")
+    finally:
+        storage.close()
+
+
 def cmd_show(args):
     """Handle 'vestig memory show' command"""
     config = args.config_dict
@@ -1343,6 +1368,10 @@ def main():
     parser_config_show.set_defaults(func=cmd_config_show)
 
     parser_config.set_defaults(func=cmd_memory, noun_parser=parser_config)
+
+    # M6 Migration: Convert chunk_id FKs to graph edges
+    parser_migrate = subparsers.add_parser("migrate-edges", help="Migrate chunk_id FKs to graph edges (M5→M6)")
+    parser_migrate.set_defaults(func=cmd_migrate_edges)
 
     args = parser.parse_args()
 

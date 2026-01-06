@@ -384,12 +384,13 @@ def recall_with_chunk_expansion(
         # Include the summary itself
         all_memories[summary.id] = summary
 
-        # Expand to get all memories in this chunk
-        if summary.chunk_id and summary.chunk_id not in expanded_chunks:
-            expanded_chunks.add(summary.chunk_id)
+        # Expand to get all memories in this chunk (M6: via edges, not FK)
+        chunk = storage.get_chunk_for_memory(summary.id)
+        if chunk and chunk.chunk_id not in expanded_chunks:
+            expanded_chunks.add(chunk.chunk_id)
 
             # Get all memories in this chunk
-            chunk_memories = storage.get_memories_by_chunk(summary.chunk_id, include_expired=include_expired)
+            chunk_memories = storage.get_memories_in_chunk(chunk.chunk_id, include_expired=include_expired)
 
             # Add all chunk memories
             for chunk_memory in chunk_memories:

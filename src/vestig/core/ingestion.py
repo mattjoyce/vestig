@@ -597,15 +597,13 @@ def commit_summary(
         # Store summary with kind=SUMMARY
         storage.store_memory(summary_node, kind="SUMMARY")
 
-        # Create SUMMARIZES edges (Summary → Memory)
-        for memory_id in memory_ids:
+        # M6: Create SUMMARIZED_BY edge (Chunk → Summary, not Summary → Memory)
+        if chunk_id:
             edge = EdgeNode.create(
-                from_node=summary_id,
-                to_node=memory_id,
-                edge_type="SUMMARIZES",
-                weight=1.0,
-                confidence=None,  # Summaries don't have confidence scores
-                evidence=f"summary_of_{len(memory_ids)}_memories",
+                from_node=chunk_id,
+                to_node=summary_id,
+                edge_type="SUMMARIZED_BY",
+                weight=1.0
             )
             storage.store_edge(edge)
 
@@ -874,6 +872,18 @@ def ingest_document(
                     errors.append(error_msg)
                     print(f"    Error: {error_msg}")
 
+            # M6: Create CONTAINS edges (Chunk → Memory) for all committed memories
+            if committed_memories and chunk_id:
+                from vestig.core.models import EdgeNode
+                for memory_id, _ in committed_memories:
+                    edge = EdgeNode.create(
+                        from_node=chunk_id,
+                        to_node=memory_id,
+                        edge_type="CONTAINS",
+                        weight=1.0
+                    )
+                    storage.store_edge(edge)
+
             # Extract and link entities from chunk (only if we have committed memories)
             if extraction_config and extraction_config.get("enabled") and ontology and committed_memories:
                 try:
@@ -902,7 +912,8 @@ def ingest_document(
                         entities = memory_entity_map.get(mem_idx, [])
                         if entities:
                             try:
-                                store_entities(
+                                # Store entities and get back (entity_id, type, confidence, evidence)
+                                stored_entities = store_entities(
                                     entities=entities,
                                     memory_id=memory_id,
                                     storage=storage,
@@ -910,15 +921,51 @@ def ingest_document(
                                     embedding_engine=embedding_engine,
                                     chunk_id=chunk_id,  # M5: Link entities to chunk hub
                                 )
+
+                                # M6: Create edges for entities
+                                from vestig.core.models import EdgeNode
+
+                                min_confidence = m4_config.get("entity_extraction", {}).get("llm", {}).get("min_confidence", 0.75)
+                                mentions_edges = 0
+                                linked_edges = 0
+
+                                for entity_id, entity_type, confidence, evidence in stored_entities:
+                                    if confidence >= min_confidence:
+                                        # Create MENTIONS edge (Memory → Entity, 2nd class)
+                                        mentions_edge = EdgeNode.create(
+                                            from_node=memory_id,
+                                            to_node=entity_id,
+                                            edge_type="MENTIONS",
+                                            weight=1.0,
+                                            confidence=confidence,
+                                            evidence=evidence,
+                                        )
+                                        storage.store_edge(mentions_edge)
+                                        mentions_edges += 1
+
+                                        # Create LINKED edge (Chunk → Entity, 1st class)
+                                        if chunk_id:
+                                            linked_edge = EdgeNode.create(
+                                                from_node=chunk_id,
+                                                to_node=entity_id,
+                                                edge_type="LINKED",
+                                                weight=1.0,
+                                                confidence=confidence,
+                                                evidence=evidence,
+                                            )
+                                            storage.store_edge(linked_edge)
+                                            linked_edges += 1
+
                                 if verbose:
-                                    print(f"    Memory {mem_idx + 1} - Entities committed ({len(entities)}):")
-                                    for name, entity_type, conf, evidence in entities:
+                                    print(f"    Memory {mem_idx + 1} - Entities committed ({len(stored_entities)}):")
+                                    for entity_id, entity_type, conf, evidence in stored_entities:
                                         evid_str = (
                                             f', evidence="{evidence[:50]}..."'
                                             if len(evidence) > 50
                                             else f', evidence="{evidence}"'
                                         )
-                                        print(f"      - {name} ({entity_type}, confidence={conf:.2f}{evid_str})")
+                                        # Extract name from entity_id if needed, or use entity_type
+                                        print(f"      - {entity_type} (confidence={conf:.2f}{evid_str})")
                             except Exception as e:
                                 print(f"    Warning: Failed to store entities for memory {memory_id}: {e}")
 
