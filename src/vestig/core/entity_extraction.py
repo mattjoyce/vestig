@@ -233,11 +233,7 @@ def call_llm(
                     # Parse JSON response and validate with schema
                     json_text = response.text()
                     if not json_text or not json_text.strip():
-                        raise json.JSONDecodeError(
-                            "Empty response from LLM",
-                            json_text or "",
-                            0
-                        )
+                        raise json.JSONDecodeError("Empty response from LLM", json_text or "", 0)
                     data = json.loads(json_text)
                     return schema.model_validate(data)
                 else:
@@ -272,9 +268,9 @@ def call_llm(
                 error_detail = str(e)
                 if isinstance(e, json.JSONDecodeError):
                     try:
-                        response_preview = json_text[:200] if 'json_text' in locals() else "N/A"
+                        response_preview = json_text[:200] if "json_text" in locals() else "N/A"
                         error_detail = f"{e} | Response preview: {repr(response_preview)}"
-                    except:
+                    except Exception:
                         pass
 
                 print(
@@ -437,10 +433,17 @@ def store_entities(
     # Get config - handle both full config and m4-only config
     if "m4" in config:
         # Full config
-        min_confidence = config.get("m4", {}).get("entity_extraction", {}).get("llm", {}).get("min_confidence", 0.75)
+        min_confidence = (
+            config.get("m4", {})
+            .get("entity_extraction", {})
+            .get("llm", {})
+            .get("min_confidence", 0.75)
+        )
     else:
         # M4-only config
-        min_confidence = config.get("entity_extraction", {}).get("llm", {}).get("min_confidence", 0.75)
+        min_confidence = (
+            config.get("entity_extraction", {}).get("llm", {}).get("min_confidence", 0.75)
+        )
 
     # Import embedding engine if needed
     if embedding_engine is None:
@@ -620,7 +623,7 @@ def process_memories_for_entities(
                             )
                             print(f'      Evidence: "{display_evidence}"')
                 else:
-                    print(f"  No entities extracted")
+                    print("  No entities extracted")
 
             if not entities:
                 stats["memories_processed"] += 1
@@ -670,7 +673,7 @@ def process_memories_for_entities(
     stats["entities_created"] = entities_after - entities_before
 
     if verbose:
-        print(f"\nEntity extraction complete:")
+        print("\nEntity extraction complete:")
         print(f"  Memories processed: {stats['memories_processed']}")
         print(f"  Entities created: {stats['entities_created']}")
         print(f"  Edges created: {stats['edges_created']}")

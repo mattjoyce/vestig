@@ -390,7 +390,9 @@ def recall_with_chunk_expansion(
             expanded_chunks.add(chunk.chunk_id)
 
             # Get all memories in this chunk
-            chunk_memories = storage.get_memories_in_chunk(chunk.chunk_id, include_expired=include_expired)
+            chunk_memories = storage.get_memories_in_chunk(
+                chunk.chunk_id, include_expired=include_expired
+            )
 
             # Add all chunk memories
             for chunk_memory in chunk_memories:
@@ -443,7 +445,7 @@ def recall_with_chunk_expansion(
         print(f"  Total memories before limit: {len(all_memories)}")
         print(f"  Results returned (top-{limit}): {len(expanded_results)}")
         if event_storage and tracerank_config and tracerank_config.enabled:
-            print(f"  TraceRank applied: enabled")
+            print("  TraceRank applied: enabled")
         print()
 
     return expanded_results

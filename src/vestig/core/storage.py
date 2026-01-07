@@ -5,7 +5,7 @@ import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
-from vestig.core.models import EdgeNode, EntityNode, MemoryNode
+from vestig.core.models import ChunkNode, EdgeNode, EntityNode, FileNode, MemoryNode
 
 
 class MemoryStorage:
@@ -549,7 +549,6 @@ class MemoryStorage:
         Returns:
             file_id of the stored file
         """
-        from vestig.core.models import FileNode
 
         self.conn.execute(
             """
@@ -648,7 +647,6 @@ class MemoryStorage:
         Returns:
             chunk_id of the stored chunk
         """
-        from vestig.core.models import ChunkNode
 
         self.conn.execute(
             """
@@ -736,7 +734,9 @@ class MemoryStorage:
             )
         return chunks
 
-    def get_memories_by_chunk(self, chunk_id: str, include_expired: bool = False) -> list[MemoryNode]:
+    def get_memories_by_chunk(
+        self, chunk_id: str, include_expired: bool = False
+    ) -> list[MemoryNode]:
         """
         Get all memories linked to a specific chunk (M5).
 
@@ -808,7 +808,6 @@ class MemoryStorage:
 
     def deprecate_memory(self, memory_id: str, t_invalid: str | None = None) -> None:
         """Mark memory as deprecated/expired"""
-        from datetime import datetime, timezone
 
         now = datetime.now(timezone.utc).isoformat()
         self.conn.execute(
@@ -1160,7 +1159,6 @@ class MemoryStorage:
             entity_id: Entity ID to expire
             merged_into: Optional ID of entity this was merged into
         """
-        from datetime import datetime, timezone
 
         now = datetime.now(timezone.utc).isoformat()
 
@@ -1443,12 +1441,15 @@ class MemoryStorage:
 
     def get_chunk_for_memory(self, memory_id: str) -> ChunkNode | None:
         """Get chunk containing this memory via CONTAINS edge (M6)."""
-        cursor = self.conn.execute("""
+        cursor = self.conn.execute(
+            """
             SELECT c.chunk_id, c.file_id, c.start, c.length, c.sequence, c.created_at
             FROM chunks c
             JOIN edges e ON e.from_node = c.chunk_id
             WHERE e.to_node = ? AND e.edge_type = 'CONTAINS' AND e.t_expired IS NULL
-        """, (memory_id,))
+        """,
+            (memory_id,),
+        )
         row = cursor.fetchone()
         if not row:
             return None
@@ -1458,14 +1459,17 @@ class MemoryStorage:
             start=row[2],
             length=row[3],
             sequence=row[4],
-            created_at=row[5]
+            created_at=row[5],
         )
 
-    def get_memories_in_chunk(self, chunk_id: str, include_expired: bool = False) -> list[MemoryNode]:
+    def get_memories_in_chunk(
+        self, chunk_id: str, include_expired: bool = False
+    ) -> list[MemoryNode]:
         """Get all memories in chunk via CONTAINS edges (M6, replaces get_memories_by_chunk)."""
         expired_filter = "" if include_expired else "AND m.t_expired IS NULL"
 
-        cursor = self.conn.execute(f"""
+        cursor = self.conn.execute(
+            f"""
             SELECT m.id, m.content, m.content_embedding, m.content_hash, m.created_at, m.metadata,
                    m.t_valid, m.t_invalid, m.t_created, m.t_expired, m.temporal_stability,
                    m.last_seen_at, m.reinforce_count, m.chunk_id, m.kind
@@ -1473,32 +1477,37 @@ class MemoryStorage:
             JOIN edges e ON e.to_node = m.id
             WHERE e.from_node = ? AND e.edge_type = 'CONTAINS' AND e.t_expired IS NULL {expired_filter}
             ORDER BY m.created_at ASC
-        """, (chunk_id,))
+        """,
+            (chunk_id,),
+        )
 
         memories = []
         for row in cursor.fetchall():
-            memories.append(MemoryNode(
-                id=row[0],
-                content=row[1],
-                content_embedding=json.loads(row[2]),
-                content_hash=row[3],
-                created_at=row[4],
-                metadata=json.loads(row[5]),
-                t_valid=row[6],
-                t_invalid=row[7],
-                t_created=row[8],
-                t_expired=row[9],
-                temporal_stability=row[10] or "unknown",
-                last_seen_at=row[11],
-                reinforce_count=row[12] or 0,
-                chunk_id=row[13],
-                kind=row[14]
-            ))
+            memories.append(
+                MemoryNode(
+                    id=row[0],
+                    content=row[1],
+                    content_embedding=json.loads(row[2]),
+                    content_hash=row[3],
+                    created_at=row[4],
+                    metadata=json.loads(row[5]),
+                    t_valid=row[6],
+                    t_invalid=row[7],
+                    t_created=row[8],
+                    t_expired=row[9],
+                    temporal_stability=row[10] or "unknown",
+                    last_seen_at=row[11],
+                    reinforce_count=row[12] or 0,
+                    chunk_id=row[13],
+                    kind=row[14],
+                )
+            )
         return memories
 
     def get_summary_for_chunk_via_edge(self, chunk_id: str) -> MemoryNode | None:
         """Get chunk summary via SUMMARIZED_BY edge (M6)."""
-        cursor = self.conn.execute("""
+        cursor = self.conn.execute(
+            """
             SELECT m.id, m.content, m.content_embedding, m.content_hash, m.created_at, m.metadata,
                    m.t_valid, m.t_invalid, m.t_created, m.t_expired, m.temporal_stability,
                    m.last_seen_at, m.reinforce_count, m.chunk_id, m.kind
@@ -1506,7 +1515,9 @@ class MemoryStorage:
             JOIN edges e ON e.to_node = m.id
             WHERE e.from_node = ? AND e.edge_type = 'SUMMARIZED_BY' AND e.t_expired IS NULL
             LIMIT 1
-        """, (chunk_id,))
+        """,
+            (chunk_id,),
+        )
 
         row = cursor.fetchone()
         if not row:
@@ -1527,35 +1538,42 @@ class MemoryStorage:
             last_seen_at=row[11],
             reinforce_count=row[12] or 0,
             chunk_id=row[13],
-            kind=row[14]
+            kind=row[14],
         )
 
-    def get_entities_in_chunk(self, chunk_id: str, include_expired: bool = False) -> list[EntityNode]:
+    def get_entities_in_chunk(
+        self, chunk_id: str, include_expired: bool = False
+    ) -> list[EntityNode]:
         """Get entities linked to chunk via LINKED edges (M6)."""
         expired_filter = "" if include_expired else "AND ent.expired_at IS NULL"
 
-        cursor = self.conn.execute(f"""
+        cursor = self.conn.execute(
+            f"""
             SELECT ent.id, ent.entity_type, ent.canonical_name, ent.norm_key,
                    ent.created_at, ent.embedding, ent.expired_at, ent.merged_into, ent.chunk_id
             FROM entities ent
             JOIN edges e ON e.to_node = ent.id
             WHERE e.from_node = ? AND e.edge_type = 'LINKED' AND e.t_expired IS NULL {expired_filter}
             ORDER BY ent.created_at ASC
-        """, (chunk_id,))
+        """,
+            (chunk_id,),
+        )
 
         entities = []
         for row in cursor.fetchall():
-            entities.append(EntityNode(
-                id=row[0],
-                entity_type=row[1],
-                canonical_name=row[2],
-                norm_key=row[3],
-                created_at=row[4],
-                embedding=row[5],
-                expired_at=row[6],
-                merged_into=row[7],
-                chunk_id=row[8]
-            ))
+            entities.append(
+                EntityNode(
+                    id=row[0],
+                    entity_type=row[1],
+                    canonical_name=row[2],
+                    norm_key=row[3],
+                    created_at=row[4],
+                    embedding=row[5],
+                    expired_at=row[6],
+                    merged_into=row[7],
+                    chunk_id=row[8],
+                )
+            )
         return entities
 
     def get_edge(self, edge_id: str) -> EdgeNode | None:
@@ -1603,7 +1621,6 @@ class MemoryStorage:
         Args:
             edge_id: Edge ID to expire
         """
-        from datetime import datetime, timezone
 
         now = datetime.now(timezone.utc).isoformat()
 

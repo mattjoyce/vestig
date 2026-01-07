@@ -85,9 +85,7 @@ class EmbeddingEngine:
             # No model loading - llm CLI handles it
             # Validate that llm is available
             try:
-                subprocess.run(
-                    ["llm", "--version"], capture_output=True, check=True, timeout=5
-                )
+                subprocess.run(["llm", "--version"], capture_output=True, check=True, timeout=5)
             except (subprocess.CalledProcessError, FileNotFoundError):
                 raise RuntimeError(
                     "llm CLI not found. Install with: pip install llm\n"
@@ -107,9 +105,7 @@ class EmbeddingEngine:
             from sentence_transformers import SentenceTransformer
 
             # Some models (e.g., BAAI/bge-m3) do not ship safetensors
-            self.model = SentenceTransformer(
-                model_name, model_kwargs={"use_safetensors": False}
-            )
+            self.model = SentenceTransformer(model_name, model_kwargs={"use_safetensors": False})
 
             # Validate dimension on initialization
             test_embedding = self.model.encode("test", normalize_embeddings=self.normalize)

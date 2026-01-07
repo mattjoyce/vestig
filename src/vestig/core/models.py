@@ -44,7 +44,8 @@ class MemoryNode:
         tags: list[str] = None,
         content_hash: str | None = None,  # M3 FIX: Allow passing pre-computed hash
         t_valid_hint: str | None = None,  # Temporal hint: when fact became true
-        temporal_stability_hint: str | None = None,  # Temporal hint: static/dynamic/ephemeral/unknown
+        temporal_stability_hint: str
+        | None = None,  # Temporal hint: static/dynamic/ephemeral/unknown
     ) -> "MemoryNode":
         """
         Create a new memory node with M3 temporal initialization.
@@ -207,7 +208,14 @@ class EdgeNode:
             ValueError: If edge_type is invalid
         """
         # Enforce edge type constraints
-        allowed_edge_types = {"MENTIONS", "RELATED", "SUMMARIZES", "CONTAINS", "LINKED", "SUMMARIZED_BY"}
+        allowed_edge_types = {
+            "MENTIONS",
+            "RELATED",
+            "SUMMARIZES",
+            "CONTAINS",
+            "LINKED",
+            "SUMMARIZED_BY",
+        }
         if edge_type not in allowed_edge_types:
             raise ValueError(f"Invalid edge_type: {edge_type}. Allowed: {allowed_edge_types}")
 
@@ -242,9 +250,7 @@ class EventNode:
 
     event_id: str  # evt_<uuid>
     memory_id: str  # FK to memories table
-    event_type: (
-        str  # ADD | REINFORCE_EXACT | REINFORCE_NEAR | DEPRECATE | SUPERSEDE | ENTITY_EXTRACTED | SUMMARY_CREATED
-    )
+    event_type: str  # ADD | REINFORCE_EXACT | REINFORCE_NEAR | DEPRECATE | SUPERSEDE | ENTITY_EXTRACTED | SUMMARY_CREATED
     occurred_at: str  # UTC timestamp (ISO 8601)
     source: str  # manual | hook | import | batch | llm | summary_generation
     actor: str | None = None  # User/agent identifier

@@ -126,14 +126,14 @@ class VestigServer:
                 pass
 
         server = HTTPServer((self.host, self.port), RequestHandler)
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"Vestig server running on http://{self.host}:{self.port}")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
         print("Endpoints:")
-        print(f"  POST /query    - Search/recall memories")
-        print(f"  POST /health   - Health check")
-        print(f"\nPress Ctrl+C to stop")
-        print(f"{'='*60}\n")
+        print("  POST /query    - Search/recall memories")
+        print("  POST /health   - Health check")
+        print("\nPress Ctrl+C to stop")
+        print(f"{'=' * 60}\n")
 
         try:
             server.serve_forever()

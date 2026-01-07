@@ -319,13 +319,11 @@ def extract_memories_from_chunk(
     # Check if two-pass extraction is enabled
     two_pass_enabled = False
     memory_prompt_name = "extract_memories_from_session"
-    entity_prompt_name = "extract_entities"
 
     if extraction_config:
         two_pass_enabled = extraction_config.get("enabled", False)
         if two_pass_enabled:
             memory_prompt_name = extraction_config.get("memory_prompt", "extract_memories_simple")
-            entity_prompt_name = extraction_config.get("entity_prompt", "extract_entities")
 
     # Load and substitute prompt
     prompts = load_prompts()
@@ -347,7 +345,7 @@ def extract_memories_from_chunk(
             model=model,
             schema=MemoryExtractionResult,
             max_retries=max_retries,
-            backoff_seconds=backoff_seconds
+            backoff_seconds=backoff_seconds,
         )
     except Exception as e:
         raise ValueError(f"LLM call failed: {e}")
@@ -474,7 +472,7 @@ def generate_summary(
             model=model,
             schema=SummaryResult,
             max_retries=max_retries,
-            backoff_seconds=backoff_seconds
+            backoff_seconds=backoff_seconds,
         )
         return result
     except Exception as e:
@@ -510,10 +508,11 @@ def commit_summary(
     Returns:
         Summary memory ID if created/found, None if skipped
     """
-    from datetime import datetime, timezone
     import hashlib
     import uuid
-    from vestig.core.models import MemoryNode, EdgeNode, EventNode
+    from datetime import datetime, timezone
+
+    from vestig.core.models import EdgeNode, EventNode, MemoryNode
 
     # M5: Check if summary already exists (idempotency)
     # For per-chunk summaries, check by chunk_id; otherwise check by artifact_ref
@@ -600,10 +599,7 @@ def commit_summary(
         # M6: Create SUMMARIZED_BY edge (Chunk → Summary, not Summary → Memory)
         if chunk_id:
             edge = EdgeNode.create(
-                from_node=chunk_id,
-                to_node=summary_id,
-                edge_type="SUMMARIZED_BY",
-                weight=1.0
+                from_node=chunk_id, to_node=summary_id, edge_type="SUMMARIZED_BY", weight=1.0
             )
             storage.store_edge(edge)
 
@@ -696,7 +692,10 @@ def ingest_document(
         two_pass = ingestion_config.get("two_pass_extraction")
         if two_pass and two_pass.get("enabled", False):
             extraction_config = two_pass
-            print(f"Two-pass extraction enabled: {two_pass.get('memory_prompt')} + {two_pass.get('entity_prompt')}", flush=True)
+            print(
+                f"Two-pass extraction enabled: {two_pass.get('memory_prompt')} + {two_pass.get('entity_prompt')}",
+                flush=True,
+            )
 
     raw_text = path.read_text(encoding="utf-8")
 
@@ -718,9 +717,10 @@ def ingest_document(
             print(f"  Evidence: {document_temporal_hints.evidence}")
 
     # M5: Create FILE record (hub-and-spoke model)
-    from vestig.core.models import FileNode
     import hashlib
     from datetime import datetime, timezone
+
+    from vestig.core.models import FileNode
 
     document_path_abs = str(path.absolute())
 
@@ -760,7 +760,9 @@ def ingest_document(
             # Use placeholder positions (will be improved later)
             chunks_with_metadata.append((chunk_text, 0, len(chunk_text), hints))
     else:
-        chunks_with_positions = chunk_text_by_chars(text, chunk_size=chunk_size, overlap=chunk_overlap)
+        chunks_with_positions = chunk_text_by_chars(
+            text, chunk_size=chunk_size, overlap=chunk_overlap
+        )
         chunks = [chunk_text for chunk_text, _, _ in chunks_with_positions]
         # Create (text, start, length, hints) tuples
         chunks_with_metadata = [
@@ -875,19 +877,25 @@ def ingest_document(
             # M6: Create CONTAINS edges (Chunk → Memory) for all committed memories
             if committed_memories and chunk_id:
                 from vestig.core.models import EdgeNode
+
                 for memory_id, _ in committed_memories:
                     edge = EdgeNode.create(
-                        from_node=chunk_id,
-                        to_node=memory_id,
-                        edge_type="CONTAINS",
-                        weight=1.0
+                        from_node=chunk_id, to_node=memory_id, edge_type="CONTAINS", weight=1.0
                     )
                     storage.store_edge(edge)
 
             # Extract and link entities from chunk (only if we have committed memories)
-            if extraction_config and extraction_config.get("enabled") and ontology and committed_memories:
+            if (
+                extraction_config
+                and extraction_config.get("enabled")
+                and ontology
+                and committed_memories
+            ):
                 try:
-                    print(f"    Extracting entities from chunk ({len(committed_memories)} memories committed)...", flush=True)
+                    print(
+                        f"    Extracting entities from chunk ({len(committed_memories)} memories committed)...",
+                        flush=True,
+                    )
                     from vestig.core.entity_extraction import extract_entities_from_text
 
                     entity_prompt = extraction_config.get("entity_prompt", "extract_entities")
@@ -902,7 +910,9 @@ def ingest_document(
                     print(f"    Found {len(chunk_entities)} entities in chunk", flush=True)
 
                     # Link entities to committed memories
-                    memory_contents = [(mem_content, 0.0, "") for _, mem_content in committed_memories]
+                    memory_contents = [
+                        (mem_content, 0.0, "") for _, mem_content in committed_memories
+                    ]
                     memory_entity_map = link_entities_to_memories(memory_contents, chunk_entities)
 
                     # Store entities for each committed memory
@@ -925,7 +935,11 @@ def ingest_document(
                                 # M6: Create edges for entities
                                 from vestig.core.models import EdgeNode
 
-                                min_confidence = m4_config.get("entity_extraction", {}).get("llm", {}).get("min_confidence", 0.75)
+                                min_confidence = (
+                                    m4_config.get("entity_extraction", {})
+                                    .get("llm", {})
+                                    .get("min_confidence", 0.75)
+                                )
                                 mentions_edges = 0
                                 linked_edges = 0
 
@@ -957,7 +971,9 @@ def ingest_document(
                                             linked_edges += 1
 
                                 if verbose:
-                                    print(f"    Memory {mem_idx + 1} - Entities committed ({len(stored_entities)}):")
+                                    print(
+                                        f"    Memory {mem_idx + 1} - Entities committed ({len(stored_entities)}):"
+                                    )
                                     for entity_id, entity_type, conf, evidence in stored_entities:
                                         evid_str = (
                                             f', evidence="{evidence[:50]}..."'
@@ -965,9 +981,13 @@ def ingest_document(
                                             else f', evidence="{evidence}"'
                                         )
                                         # Extract name from entity_id if needed, or use entity_type
-                                        print(f"      - {entity_type} (confidence={conf:.2f}{evid_str})")
+                                        print(
+                                            f"      - {entity_type} (confidence={conf:.2f}{evid_str})"
+                                        )
                             except Exception as e:
-                                print(f"    Warning: Failed to store entities for memory {memory_id}: {e}")
+                                print(
+                                    f"    Warning: Failed to store entities for memory {memory_id}: {e}"
+                                )
 
                 except Exception as e:
                     print(f"    Warning: Entity extraction failed for chunk: {e}", flush=True)
@@ -976,7 +996,10 @@ def ingest_document(
             chunk_memory_count = len(committed_memories)
             if chunk_memory_count >= 2 and extraction_model:
                 try:
-                    print(f"    Generating chunk summary ({chunk_memory_count} memories)...", flush=True)
+                    print(
+                        f"    Generating chunk summary ({chunk_memory_count} memories)...",
+                        flush=True,
+                    )
 
                     # Get summary prompt name from config
                     prompt_name = "summary_v1"

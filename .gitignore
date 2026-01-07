@@ -35,6 +35,8 @@ ENV/
 
 # Vestig data (runtime)
 data/
+*.db
+logs/
 
 # Agent guidance (local)
 AGENTS.md

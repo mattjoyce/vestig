@@ -25,7 +25,7 @@ def normalize_document_text(
     source_format: str = "auto",
     format_config: dict[str, Any] | None = None,
     path: Path | None = None,
-) -> tuple[str, str, "TemporalHints"]:
+) -> tuple[str, str, TemporalHints]:
     """
     Normalize document text and extract temporal hints.
 
@@ -166,9 +166,8 @@ def extract_claude_session_text(raw_text: str, config: dict[str, Any]) -> str:
 
 
 def extract_claude_session_text_with_temporal(
-    raw_text: str,
-    config: dict[str, Any]
-) -> tuple[str, "TemporalHints"]:
+    raw_text: str, config: dict[str, Any]
+) -> tuple[str, TemporalHints]:
     """
     Extract text from claude-session JSONL with temporal metadata.
 
@@ -232,7 +231,7 @@ def extract_claude_session_text_with_temporal(
         earliest = _earliest_timestamp(timestamps) or timestamps[0]
         temporal_hints = TemporalHints.from_timestamp(
             timestamp=earliest,
-            evidence=f"Extracted from claude-session JSONL (earliest of {len(timestamps)} events)"
+            evidence=f"Extracted from claude-session JSONL (earliest of {len(timestamps)} events)",
         )
     else:
         # No timestamps found - fallback to now
@@ -246,7 +245,7 @@ def extract_claude_session_chunks(
     config: dict[str, Any],
     chunk_size: int,
     chunk_overlap: int,
-) -> list[tuple[str, "TemporalHints"]]:
+) -> list[tuple[str, TemporalHints]]:
     """
     Extract chunks from claude-session JSONL with per-chunk temporal hints.
     """
@@ -304,7 +303,7 @@ def extract_claude_session_chunks(
         if earliest:
             hints = TemporalHints.from_timestamp(
                 timestamp=earliest,
-                evidence=f"Extracted from claude-session JSONL chunk ({len(timestamps)} events)"
+                evidence=f"Extracted from claude-session JSONL chunk ({len(timestamps)} events)",
             )
         else:
             hints = TemporalHints.from_now()

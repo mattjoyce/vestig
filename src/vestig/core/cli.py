@@ -182,6 +182,7 @@ def cmd_search(args):
 
     # M4: Load entity ontology
     from vestig.core.config import load_entity_ontology
+
     ontology = None
     try:
         ontology = load_entity_ontology(config)
@@ -224,6 +225,7 @@ def cmd_recall(args):
 
     # M4: Load entity ontology
     from vestig.core.config import load_entity_ontology
+
     ontology = None
     try:
         ontology = load_entity_ontology(config)
@@ -485,6 +487,7 @@ def cmd_entity_extract(args):
 
     # Load entity ontology
     from vestig.core.config import load_entity_ontology
+
     ontology = load_entity_ontology(config)
 
     try:
@@ -499,7 +502,7 @@ def cmd_entity_extract(args):
         print()
 
         # Process memories for entity extraction
-        stats = process_memories_for_entities(
+        process_memories_for_entities(
             storage=storage,
             config=config,
             ontology=ontology,
@@ -968,31 +971,31 @@ def cmd_config_show(args):
     db_path = config.get("storage", {}).get("db_path", "N/A")
     if db_path != "N/A":
         db_path = str(Path(db_path).resolve())
-    print(f"\nDatabase:")
+    print("\nDatabase:")
     print(f"  Path: {db_path}")
 
     # Embedding model
     embedding = config.get("embedding", {})
-    emb_model = embedding.get('model', 'N/A')
-    if emb_model != 'N/A':
+    emb_model = embedding.get("model", "N/A")
+    if emb_model != "N/A":
         provider_info = get_llm_model_provider(emb_model, model_type="embedding")
         emb_provider_display = f"{provider_info['provider_name']} ({provider_info['location']})"
     else:
         emb_provider_display = "N/A"
-    print(f"\nEmbedding Model:")
+    print("\nEmbedding Model:")
     print(f"  Provider: {emb_provider_display}")
     print(f"  Model: {emb_model}")
     print(f"  Dimension: {embedding.get('dimension', 'N/A')}")
 
     # Ingestion model
     ingestion = config.get("ingestion", {})
-    ing_model = ingestion.get('model', 'N/A')
-    if ing_model != 'N/A':
+    ing_model = ingestion.get("model", "N/A")
+    if ing_model != "N/A":
         provider_info = get_llm_model_provider(ing_model, model_type="chat")
         ing_provider = f"{provider_info['provider_name']} ({provider_info['location']})"
     else:
         ing_provider = "N/A"
-    print(f"\nIngestion Model:")
+    print("\nIngestion Model:")
     print(f"  Provider: {ing_provider}")
     print(f"  Model: {ing_model}")
     print(f"  Chunk size: {ingestion.get('chunk_size', 'N/A')}")
@@ -1002,13 +1005,13 @@ def cmd_config_show(args):
     m4 = config.get("m4", {})
     entity_extraction = m4.get("entity_extraction", {})
     llm_config = entity_extraction.get("llm", {})
-    ent_model = llm_config.get('model', 'N/A')
-    if ent_model != 'N/A':
+    ent_model = llm_config.get("model", "N/A")
+    if ent_model != "N/A":
         provider_info = get_llm_model_provider(ent_model, model_type="chat")
         ent_provider = f"{provider_info['provider_name']} ({provider_info['location']})"
     else:
         ent_provider = "N/A"
-    print(f"\nEntity Extraction Model:")
+    print("\nEntity Extraction Model:")
     print(f"  Enabled: {entity_extraction.get('enabled', False)}")
     print(f"  Provider: {ent_provider}")
     print(f"  Model: {ent_model}")
@@ -1016,9 +1019,9 @@ def cmd_config_show(args):
     # Hybrid retrieval
     retrieval = config.get("retrieval", {})
     entity_path = retrieval.get("entity_path", {})
-    print(f"\nHybrid Retrieval:")
+    print("\nHybrid Retrieval:")
     print(f"  Enabled: {entity_path.get('enabled', False)}")
-    if entity_path.get('enabled'):
+    if entity_path.get("enabled"):
         print(f"  Entity weight: {entity_path.get('entity_weight', 'N/A')}")
         print(f"  Similarity threshold: {entity_path.get('similarity_threshold', 'N/A')}")
 

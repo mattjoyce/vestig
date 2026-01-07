@@ -236,9 +236,7 @@ def compute_enhanced_multiplier(
         # Returns ~1.5 (reinforcement × graph × temporal_decay)
     """
     # Component 1: Reinforcement boost (existing TraceRank)
-    reinforcement_boost = compute_tracerank_multiplier(
-        reinforcement_events, config, query_time
-    )
+    reinforcement_boost = compute_tracerank_multiplier(reinforcement_events, config, query_time)
 
     # Component 2: Graph connectivity boost
     graph_boost = compute_graph_connectivity_boost(inbound_edge_count, config)

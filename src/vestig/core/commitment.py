@@ -96,7 +96,8 @@ def commit_memory(
     on_commit: OnCommitHook | None = None,
     event_storage: MemoryEventStorage | None = None,  # M3: Event logging
     m4_config: dict[str, Any] | None = None,  # M4: Graph config
-    pre_extracted_entities: list[tuple[str, str, float, str]] | None = None,  # M4: Pre-extracted entities
+    pre_extracted_entities: list[tuple[str, str, float, str]]
+    | None = None,  # M4: Pre-extracted entities
     temporal_hints: Any | None = None,  # ExtractedMemory with temporal fields
     chunk_id: str | None = None,  # M5: Chunk ID (hub link for provenance)
 ) -> CommitOutcome:
@@ -157,9 +158,7 @@ def commit_memory(
 
             # Get extraction model from M4 config
             extraction_model = extraction_config.get("llm", {}).get("model")
-            extraction_min_confidence = extraction_config.get("llm", {}).get(
-                "min_confidence", 0.75
-            )
+            extraction_min_confidence = extraction_config.get("llm", {}).get("min_confidence", 0.75)
 
             if extraction_model:
                 try:
@@ -184,7 +183,7 @@ def commit_memory(
                     else:
                         pre_extracted_entities = []
 
-                except Exception as e:
+                except Exception:
                     # Fall back to empty entities if extraction fails
                     pre_extracted_entities = []
 
