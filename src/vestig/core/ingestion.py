@@ -592,7 +592,7 @@ def commit_summary(
     )
 
     # Atomic transaction for summary + edges + event
-    with storage.conn:
+    with storage.transaction():
         # Store summary with kind=SUMMARY
         storage.store_memory(summary_node, kind="SUMMARY")
 

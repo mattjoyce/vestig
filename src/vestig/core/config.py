@@ -33,9 +33,20 @@ def load_config(config_path: str = "config.yaml") -> dict[str, Any]:
     with open(path) as f:
         config = yaml.safe_load(f)
 
-    # Validate db_path exists in config
-    if "storage" not in config or "db_path" not in config["storage"]:
-        raise ValueError(f"Invalid config: missing storage.db_path in {config_path}")
+    # Validate storage config exists
+    if "storage" not in config:
+        raise ValueError(f"Invalid config: missing storage section in {config_path}")
+
+    # Backend-specific validation
+    backend = config["storage"].get("backend", "sqlite")
+    if backend == "sqlite":
+        if "db_path" not in config["storage"]:
+            raise ValueError(f"Invalid config: missing storage.db_path in {config_path}")
+    elif backend == "falkordb":
+        falkor_cfg = config["storage"].get("falkordb", {})
+        for key in ["host", "port", "graph_name"]:
+            if key not in falkor_cfg:
+                raise ValueError(f"Invalid config: missing storage.falkordb.{key} in {config_path}")
 
     # Set up environment variables from config (if section exists)
     # User's shell environment takes precedence (don't override existing vars)

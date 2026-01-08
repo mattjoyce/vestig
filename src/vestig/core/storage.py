@@ -890,6 +890,23 @@ class MemoryStorage:
         """Close database connection"""
         self.conn.close()
 
+    def transaction(self):
+        """Context manager for atomic transactions.
+
+        Usage:
+            with storage.transaction():
+                storage.store_memory(...)
+                storage.store_edge(...)
+                # Commits on exit, rolls back on exception
+
+        Note: This method is added for compatibility with DatabaseInterface.
+        """
+        return self.conn  # SQLite connection is already a context manager
+
+    def commit(self):
+        """Explicit commit for operations outside transaction context."""
+        self.conn.commit()
+
     # M3: Temporal operations
 
     def increment_reinforce_count(self, memory_id: str) -> None:

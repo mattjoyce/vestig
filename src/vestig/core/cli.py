@@ -11,9 +11,9 @@ from typing import Any
 
 from vestig.core.commitment import commit_memory
 from vestig.core.config import load_config
+from vestig.core.db_interface import DatabaseInterface, EventStorageInterface
+from vestig.core.db_sqlite import SQLiteDatabase
 from vestig.core.embeddings import EmbeddingEngine
-from vestig.core.event_storage import MemoryEventStorage
-from vestig.core.storage import MemoryStorage
 from vestig.core.tracerank import TraceRankConfig
 
 
@@ -39,7 +39,6 @@ def validate_config(config: dict[str, Any]) -> None:
         ("embedding", "model"),
         ("embedding", "dimension"),
         ("embedding", "normalize"),
-        ("storage", "db_path"),
     ]
 
     for *path, key in required_keys:
@@ -51,6 +50,17 @@ def validate_config(config: dict[str, Any]) -> None:
         if key not in current:
             raise ValueError(f"Missing required config key: {'.'.join(path)}.{key}")
 
+    # Backend-specific validation
+    backend = config.get("storage", {}).get("backend", "sqlite")
+    if backend == "sqlite":
+        if "db_path" not in config.get("storage", {}):
+            raise ValueError("Missing required config key: storage.db_path")
+    elif backend == "falkordb":
+        falkor_cfg = config.get("storage", {}).get("falkordb", {})
+        for key in ["host", "port", "graph_name"]:
+            if key not in falkor_cfg:
+                raise ValueError(f"Missing required config key: storage.falkordb.{key}")
+
 
 def _truncate(text: str, length: int = 80) -> str:
     if len(text) <= length:
@@ -58,7 +68,7 @@ def _truncate(text: str, length: int = 80) -> str:
     return text[: max(0, length - 3)] + "..."
 
 
-def _resolve_node_label(storage: MemoryStorage, node_id: str, length: int = 80) -> str:
+def _resolve_node_label(storage: DatabaseInterface, node_id: str, length: int = 80) -> str:
     if node_id.startswith("mem_"):
         memory = storage.get_memory(node_id)
         if memory:
@@ -86,9 +96,39 @@ def expand_ingest_paths(pattern: str, recursive: bool = False) -> list[str]:
     return [expanded]
 
 
+def create_database(config: dict[str, Any]) -> DatabaseInterface:
+    """Factory function for database backend selection.
+
+    Args:
+        config: Configuration dictionary
+
+    Returns:
+        DatabaseInterface implementation based on config
+
+    Raises:
+        ValueError: If unknown backend specified
+    """
+    backend = config.get("storage", {}).get("backend", "sqlite")
+
+    if backend == "sqlite":
+        return SQLiteDatabase(config["storage"]["db_path"])
+    elif backend == "falkordb":
+        # Import here to avoid dependency if not used
+        from vestig.core.db_falkordb import FalkorDBDatabase
+
+        falkor_cfg = config["storage"]["falkordb"]
+        return FalkorDBDatabase(
+            host=falkor_cfg["host"],
+            port=falkor_cfg["port"],
+            graph_name=falkor_cfg["graph_name"],
+        )
+    else:
+        raise ValueError(f"Unknown storage backend: {backend}")
+
+
 def build_runtime(
     config: dict[str, Any],
-) -> tuple[MemoryStorage, EmbeddingEngine, MemoryEventStorage, TraceRankConfig]:
+) -> tuple[DatabaseInterface, EmbeddingEngine, EventStorageInterface, TraceRankConfig]:
     """
     Build storage, embedding engine, event storage, and TraceRank config from config.
 
@@ -105,8 +145,8 @@ def build_runtime(
         provider=config["embedding"].get("provider", "llm"),  # Default to llm
         max_length=config["embedding"].get("max_length"),  # Optional truncation
     )
-    storage = MemoryStorage(config["storage"]["db_path"])
-    event_storage = MemoryEventStorage(storage.conn)  # M3: Share DB connection
+    storage = create_database(config)
+    event_storage = storage.event_storage  # Composed into DatabaseInterface
 
     # M3: Build TraceRank config
     m3_config = config.get("m3", {})
@@ -264,7 +304,7 @@ def cmd_recall(args):
 def cmd_show(args):
     """Handle 'vestig memory show' command"""
     config = args.config_dict
-    storage = MemoryStorage(config["storage"]["db_path"])
+    storage = create_database(config)
 
     try:
         if args.expand > 1:
@@ -324,7 +364,7 @@ def cmd_show(args):
 def cmd_memory_list(args):
     """Handle 'vestig memory list' command"""
     config = args.config_dict
-    storage = MemoryStorage(config["storage"]["db_path"])
+    storage = create_database(config)
 
     try:
         rows = storage.list_memories(include_expired=args.include_expired, limit=args.limit)
@@ -343,7 +383,7 @@ def cmd_memory_list(args):
 def cmd_entity_list(args):
     """Handle 'vestig entity list' command"""
     config = args.config_dict
-    storage = MemoryStorage(config["storage"]["db_path"])
+    storage = create_database(config)
 
     try:
         rows = storage.list_entities_with_mention_counts(
@@ -364,7 +404,7 @@ def cmd_entity_list(args):
 def cmd_entity_show(args):
     """Handle 'vestig entity show' command"""
     config = args.config_dict
-    storage = MemoryStorage(config["storage"]["db_path"])
+    storage = create_database(config)
 
     try:
         if args.expand > 1:
@@ -403,7 +443,7 @@ def cmd_entity_purge(args):
     """Handle 'vestig entity purge --force' command"""
     config = args.config_dict
     db_path = config["storage"]["db_path"]
-    storage = MemoryStorage(db_path)
+    storage = create_database(config)
 
     try:
         if not args.force:
@@ -452,7 +492,7 @@ def cmd_entity_extract(args):
 
     config = args.config_dict
     db_path = config["storage"]["db_path"]
-    storage = MemoryStorage(db_path)
+    storage = create_database(config)
 
     # Get model from config
     m4_config = config.get("m4", {})
@@ -522,7 +562,7 @@ def cmd_entity_regen_embeddings(args):
         provider=config["embedding"].get("provider", "llm"),
         max_length=config["embedding"].get("max_length"),
     )
-    storage = MemoryStorage(config["storage"]["db_path"])
+    storage = create_database(config)
 
     try:
         print(f"vestig v{get_version()}")
@@ -567,7 +607,7 @@ def cmd_entity_regen_embeddings(args):
                 storage.update_node_embedding(entity.id, embedding_json, "entity")
                 updated += 1
 
-            storage.conn.commit()
+            storage.commit()
 
         print(f"\n✓ Regenerated embeddings for {updated} entities")
 
@@ -587,36 +627,25 @@ def cmd_entity_regen_embeddings(args):
 def cmd_edge_list(args):
     """Handle 'vestig edge list' command"""
     config = args.config_dict
-    storage = MemoryStorage(config["storage"]["db_path"])
+    storage = create_database(config)
 
     try:
-        query = (
-            "SELECT edge_id, from_node, to_node, edge_type, weight, confidence, "
-            "t_created, t_expired FROM edges "
+        edge_type = args.type if args.type != "ALL" else None
+        rows = storage.list_edges(
+            edge_type=edge_type,
+            include_expired=args.include_expired,
+            limit=args.limit,
         )
-        params = []
-        if args.type != "ALL":
-            query += "WHERE edge_type = ? "
-            params.append(args.type)
-            if not args.include_expired:
-                query += "AND t_expired IS NULL "
-        else:
-            if not args.include_expired:
-                query += "WHERE t_expired IS NULL "
-        query += "ORDER BY t_created DESC LIMIT ?"
-        params.append(args.limit)
-
-        cursor = storage.conn.execute(query, params)
-        rows = cursor.fetchall()
         for row in rows:
             edge_id, from_node, to_node, edge_type, weight, confidence, t_created, t_expired = row
             from_label = _resolve_node_label(storage, from_node, args.snippet_len)
             to_label = _resolve_node_label(storage, to_node, args.snippet_len)
+            weight_str = f"{weight:.2f}" if weight is not None else "n/a"
             conf = f"{confidence:.2f}" if confidence is not None else "n/a"
             status = "expired" if t_expired else "active"
             print(
                 f"{edge_id} | {edge_type} | {status} | {from_node} -> {to_node} | "
-                f"weight={weight:.2f} | confidence={conf}"
+                f"weight={weight_str} | confidence={conf}"
             )
             print(f"  from: {from_label}")
             print(f"  to:   {to_label}")
@@ -627,7 +656,7 @@ def cmd_edge_list(args):
 def cmd_edge_show(args):
     """Handle 'vestig edge show' command"""
     config = args.config_dict
-    storage = MemoryStorage(config["storage"]["db_path"])
+    storage = create_database(config)
 
     try:
         edge = storage.get_edge(args.id)
@@ -678,7 +707,7 @@ def cmd_deprecate(args):
             sys.exit(1)
 
         # M3 FIX #5: Atomic transaction for event + deprecation
-        with storage.conn:
+        with storage.transaction():
             # Create DEPRECATE event
             event = EventNode.create(
                 memory_id=args.id,
@@ -757,7 +786,7 @@ def cmd_regen_embeddings(args):
                 continue
 
             # Update database with new embeddings
-            with storage.conn:
+            with storage.transaction():
                 for memory, embedding in zip(batch, embeddings):
                     try:
                         embedding_json = json.dumps(embedding)

@@ -265,7 +265,7 @@ def commit_memory(
 
     # M3 FIX: Atomic transaction for store + event + cache updates
     # All DB writes happen in one transaction to prevent partial state
-    with storage.conn:
+    with storage.transaction():
         # M3 FIX (Option A): Near-dupe reinforces canonical, doesn't create new memory
         if matched_id is not None:
             # Near-duplicate detected - reinforce canonical memory, don't insert new
