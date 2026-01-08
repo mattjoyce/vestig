@@ -327,15 +327,7 @@ def cmd_memory_list(args):
     storage = MemoryStorage(config["storage"]["db_path"])
 
     try:
-        query = "SELECT id, content, created_at, t_expired, metadata FROM memories "
-        params = []
-        if not args.include_expired:
-            query += "WHERE t_expired IS NULL "
-        query += "ORDER BY created_at DESC LIMIT ?"
-        params.append(args.limit)
-
-        cursor = storage.conn.execute(query, params)
-        rows = cursor.fetchall()
+        rows = storage.list_memories(include_expired=args.include_expired, limit=args.limit)
 
         for row in rows:
             memory_id, content, created_at, t_expired, metadata_json = row
@@ -354,22 +346,9 @@ def cmd_entity_list(args):
     storage = MemoryStorage(config["storage"]["db_path"])
 
     try:
-        query = (
-            "SELECT e.id, e.entity_type, e.canonical_name, e.created_at, "
-            "e.expired_at, e.merged_into, "
-            "COUNT(ed.edge_id) AS mentions "
-            "FROM entities e "
-            "LEFT JOIN edges ed ON ed.to_node = e.id "
-            "AND ed.edge_type = 'MENTIONS' AND ed.t_expired IS NULL "
+        rows = storage.list_entities_with_mention_counts(
+            include_expired=args.include_expired, limit=args.limit
         )
-        params = []
-        if not args.include_expired:
-            query += "WHERE e.expired_at IS NULL "
-        query += "GROUP BY e.id ORDER BY mentions DESC, e.created_at DESC LIMIT ?"
-        params.append(args.limit)
-
-        cursor = storage.conn.execute(query, params)
-        rows = cursor.fetchall()
         for row in rows:
             entity_id, entity_type, name, created_at, expired_at, merged_into, mentions = row
             status = "expired" if expired_at else "active"
@@ -437,22 +416,18 @@ def cmd_entity_purge(args):
         print()
 
         # Count before deletion
-        entity_count = storage.conn.execute("SELECT COUNT(*) FROM entities").fetchone()[0]
-        mentions_count = storage.conn.execute(
-            "SELECT COUNT(*) FROM edges WHERE edge_type = 'MENTIONS'"
-        ).fetchone()[0]
+        entity_count = storage.count_entities()
+        mentions_count = storage.count_edges(edge_type="MENTIONS")
 
         print(f"  Entities to delete: {entity_count}")
         print(f"  MENTIONS edges to delete: {mentions_count}")
         print()
 
         # Delete all MENTIONS edges first (referential integrity)
-        storage.conn.execute("DELETE FROM edges WHERE edge_type = 'MENTIONS'")
+        storage.delete_edges_by_type("MENTIONS")
 
         # Delete all entities
-        storage.conn.execute("DELETE FROM entities")
-
-        storage.conn.commit()
+        storage.delete_all_entities()
 
         print("✓ Purge completed successfully")
         print(f"  Deleted {entity_count} entities")
@@ -589,9 +564,7 @@ def cmd_entity_regen_embeddings(args):
                 embedding_json = json.dumps(embedding_vector)
 
                 # Update entity embedding
-                storage.conn.execute(
-                    "UPDATE entities SET embedding = ? WHERE id = ?", (embedding_json, entity.id)
-                )
+                storage.update_node_embedding(entity.id, embedding_json, "entity")
                 updated += 1
 
             storage.conn.commit()
@@ -788,10 +761,7 @@ def cmd_regen_embeddings(args):
                 for memory, embedding in zip(batch, embeddings):
                     try:
                         embedding_json = json.dumps(embedding)
-                        storage.conn.execute(
-                            "UPDATE memories SET content_embedding = ? WHERE id = ?",
-                            (embedding_json, memory.id),
-                        )
+                        storage.update_node_embedding(memory.id, embedding_json, "memory")
                         total_processed += 1
                     except Exception as e:
                         print(f"Error updating memory {memory.id}: {e}", file=sys.stderr)

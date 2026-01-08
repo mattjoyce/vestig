@@ -537,6 +537,108 @@ class MemoryStorage:
             )
         return memories
 
+    # M4: List/Read operations for CLI and bulk processing
+
+    def list_memories(self, include_expired: bool = False, limit: int | None = None) -> list[tuple]:
+        """
+        List memories with metadata for CLI display.
+
+        Returns: List of (id, content, created_at, t_expired, metadata_json) tuples
+        """
+        query = "SELECT id, content, created_at, t_expired, metadata FROM memories "
+        params = []
+
+        if not include_expired:
+            query += "WHERE t_expired IS NULL "
+
+        query += "ORDER BY created_at DESC"
+
+        if limit is not None:
+            query += " LIMIT ?"
+            params.append(limit)
+
+        cursor = self.conn.execute(query, params)
+        return cursor.fetchall()
+
+    def get_memories_for_entity_extraction(self, reprocess: bool = False) -> list[tuple[str, str]]:
+        """
+        Get memories that need entity extraction.
+
+        Args:
+            reprocess: If True, return ALL memories. If False, only those without MENTIONS edges.
+
+        Returns: List of (memory_id, content) tuples
+        """
+        if reprocess:
+            cursor = self.conn.execute(
+                "SELECT id, content FROM memories WHERE kind = 'MEMORY' ORDER BY created_at"
+            )
+        else:
+            cursor = self.conn.execute(
+                """
+                SELECT m.id, m.content
+                FROM memories m
+                WHERE m.kind = 'MEMORY'
+                  AND NOT EXISTS (
+                      SELECT 1 FROM edges e
+                      WHERE e.from_node = m.id AND e.edge_type = 'MENTIONS'
+                  )
+                ORDER BY m.created_at
+                """
+            )
+
+        return cursor.fetchall()
+
+    def get_memories_without_edge_type(
+        self, edge_type: str = "MENTIONS", kind: str = "MEMORY"
+    ) -> list[tuple[str, str]]:
+        """
+        Get memories that don't have outgoing edges of specified type.
+
+        Returns: List of (memory_id, content) tuples
+        """
+        cursor = self.conn.execute(
+            """
+            SELECT m.id, m.content
+            FROM memories m
+            WHERE m.kind = ?
+              AND NOT EXISTS (
+                  SELECT 1 FROM edges e
+                  WHERE e.from_node = m.id AND e.edge_type = ?
+              )
+            ORDER BY m.created_at
+            """,
+            (kind, edge_type),
+        )
+
+        return cursor.fetchall()
+
+    # M4: Update operations for embedding regeneration
+
+    def update_node_embedding(self, node_id: str, embedding_json: str, node_type: str) -> None:
+        """
+        Update embedding for a node (memory or entity).
+
+        Args:
+            node_id: Memory or entity ID
+            embedding_json: JSON-serialized embedding vector
+            node_type: "memory" or "entity"
+        """
+        if node_type == "memory":
+            self.conn.execute(
+                "UPDATE memories SET content_embedding = ? WHERE id = ?",
+                (embedding_json, node_id),
+            )
+        elif node_type == "entity":
+            self.conn.execute(
+                "UPDATE entities SET embedding = ? WHERE id = ?",
+                (embedding_json, node_id),
+            )
+        else:
+            raise ValueError(f"Unknown node_type: {node_type}")
+
+        # Note: Caller manages commit for batch operations
+
     # M5: File operations
 
     def store_file(self, file_node: "FileNode") -> str:
@@ -1168,6 +1270,73 @@ class MemoryStorage:
         )
         self.conn.commit()
 
+    # M4: Count operations for CLI and statistics
+
+    def count_entities(self) -> int:
+        """Count all entities (active and expired)."""
+        return self.conn.execute("SELECT COUNT(*) FROM entities").fetchone()[0]
+
+    def count_edges(self, edge_type: str | None = None) -> int:
+        """Count edges, optionally filtered by type."""
+        if edge_type:
+            return self.conn.execute(
+                "SELECT COUNT(*) FROM edges WHERE edge_type = ?", (edge_type,)
+            ).fetchone()[0]
+        else:
+            return self.conn.execute("SELECT COUNT(*) FROM edges").fetchone()[0]
+
+    def count_memories(self, kind: str | None = None) -> int:
+        """Count memories, optionally filtered by kind."""
+        if kind:
+            return self.conn.execute(
+                "SELECT COUNT(*) FROM memories WHERE kind = ?", (kind,)
+            ).fetchone()[0]
+        else:
+            return self.conn.execute("SELECT COUNT(*) FROM memories").fetchone()[0]
+
+    def count_memories_with_edge_type(self, edge_type: str) -> int:
+        """Count distinct memories that have outgoing edges of specified type."""
+        return self.conn.execute(
+            """
+            SELECT COUNT(DISTINCT m.id)
+            FROM memories m
+            INNER JOIN edges e ON e.from_node = m.id
+            WHERE m.kind = 'MEMORY' AND e.edge_type = ?
+            """,
+            (edge_type,),
+        ).fetchone()[0]
+
+    def list_entities_with_mention_counts(
+        self, include_expired: bool = False, limit: int | None = None
+    ) -> list[tuple]:
+        """
+        List entities with mention counts, sorted by mentions DESC.
+
+        Returns: List of (id, entity_type, canonical_name, created_at,
+                          expired_at, merged_into, mention_count) tuples
+        """
+        query = (
+            "SELECT e.id, e.entity_type, e.canonical_name, e.created_at, "
+            "e.expired_at, e.merged_into, "
+            "COUNT(ed.edge_id) AS mentions "
+            "FROM entities e "
+            "LEFT JOIN edges ed ON ed.to_node = e.id "
+            "AND ed.edge_type = 'MENTIONS' AND ed.t_expired IS NULL "
+        )
+        params = []
+
+        if not include_expired:
+            query += "WHERE e.expired_at IS NULL "
+
+        query += "GROUP BY e.id ORDER BY mentions DESC, e.created_at DESC"
+
+        if limit is not None:
+            query += " LIMIT ?"
+            params.append(limit)
+
+        cursor = self.conn.execute(query, params)
+        return cursor.fetchall()
+
     # M4: Edge operations
 
     def store_edge(self, edge: EdgeNode) -> str:
@@ -1629,3 +1798,46 @@ class MemoryStorage:
             (now, edge_id),
         )
         self.conn.commit()
+
+    # M4: Bulk deletion operations (used by CLI purge commands)
+
+    def delete_edges_by_type(self, edge_type: str) -> int:
+        """
+        Delete all edges of specified type (hard delete).
+        Auto-commits transaction.
+
+        Returns: Number of edges deleted
+        """
+        cursor = self.conn.execute("DELETE FROM edges WHERE edge_type = ?", (edge_type,))
+        self.conn.commit()
+        return cursor.rowcount
+
+    def delete_all_entities(self) -> int:
+        """
+        Delete all entities (hard delete).
+        Auto-commits transaction.
+        WARNING: Should delete referencing MENTIONS edges first for referential integrity.
+
+        Returns: Number of entities deleted
+        """
+        cursor = self.conn.execute("DELETE FROM entities")
+        self.conn.commit()
+        return cursor.rowcount
+
+    def delete_edges_from_node(self, node_id: str, edge_type: str | None = None) -> int:
+        """
+        Delete outgoing edges from a node, optionally filtered by edge type.
+        Auto-commits transaction.
+
+        Returns: Number of edges deleted
+        """
+        if edge_type:
+            cursor = self.conn.execute(
+                "DELETE FROM edges WHERE from_node = ? AND edge_type = ?",
+                (node_id, edge_type),
+            )
+        else:
+            cursor = self.conn.execute("DELETE FROM edges WHERE from_node = ?", (node_id,))
+
+        self.conn.commit()
+        return cursor.rowcount
