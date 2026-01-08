@@ -1,0 +1,86 @@
+# Vestig Test Config - Minimal config for smoke tests
+# db_path will be overridden by test scripts
+
+# Embedding configuration
+embedding:
+  provider: "llm"
+  model: "embeddinggemma:latest"
+  dimension: 768
+  normalize: true
+
+# Storage (overridden by tests)
+storage:
+  db_path: "test.db"
+
+# Retrieval
+retrieval:
+  default_limit: 5
+  entity_path:
+    enabled: false  # Disable for basic smoke tests
+
+# M2: Content hygiene (quality firewall)
+hygiene:
+  min_chars: 12
+  max_chars: 4000
+  normalize_whitespace: true
+  reject_exact_duplicates: true
+  near_duplicate:
+    enabled: true
+    threshold: 0.92
+    skip_manual_source: true
+
+# Document ingestion (LLM-based memory extraction)
+ingestion:
+  model: phi3:latest
+  chunk_size: 4000
+  chunk_overlap: 400
+  min_confidence: 0.8
+  format: auto
+
+# M3: Temporal tracking
+m3:
+  event_logging:
+    enabled: true
+  tracerank:
+    enabled: true
+    tau_days: 21
+    cooldown_hours: 24
+    burst_discount: 0.2
+    k: 0.35
+    graph_connectivity_enabled: false
+    graph_k: 0.0
+  retrieval:
+    include_expired: false
+
+# M4: Graph Layer (entities, edges, traversal)
+m4:
+  entity_types:
+    allowed_types:
+      - PERSON
+      - ORG
+      - SYSTEM
+      - PROJECT
+      - TOOL
+
+  entity_extraction:
+    enabled: true
+    mode: llm
+    llm:
+      model: phi3:latest
+      max_entities_per_memory: 10
+      min_confidence: 0.80
+      store_low_confidence: false
+      max_evidence_length: 200
+
+  edge_creation:
+    mentions:
+      enabled: true
+      default_weight: 1.0
+      confidence_gated: true
+    related:
+      enabled: true
+      similarity_threshold: 0.7
+      max_edges_per_memory: 10
+
+  graph_expansion:
+    enabled: true

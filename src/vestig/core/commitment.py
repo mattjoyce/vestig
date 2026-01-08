@@ -168,7 +168,15 @@ def commit_memory(
                         prompts = load_prompts()
                         template = prompts.get("extract_memories_from_session")
                         if template:
-                            prompt_hash = compute_prompt_hash(template)
+                            # Handle both string (legacy) and dict (M4+) template formats
+                            if isinstance(template, dict):
+                                # For dict format, concatenate system + user for hashing
+                                template_str = (
+                                    f"{template.get('system', '')}\n{template.get('user', '')}"
+                                )
+                            else:
+                                template_str = template
+                            prompt_hash = compute_prompt_hash(template_str)
 
                     # Extract entities one-shot (treating manual input as a chunk)
                     extracted = extract_memories_from_chunk(
