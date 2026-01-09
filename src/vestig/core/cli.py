@@ -248,8 +248,157 @@ def cmd_search(args):
         storage.close()
 
 
+def _synthesize_query_with_llm(conversation_text: str, model: str, max_query_len: int = 500) -> str:
+    """
+    Use LLM to synthesize a semantically strong query from conversation.
+
+    Args:
+        conversation_text: Extracted conversation text
+        model: LLM model to use for synthesis
+        max_query_len: Maximum length for the output query
+
+    Returns:
+        Synthesized query optimized for semantic search
+    """
+    from vestig.core.entity_extraction import call_llm
+
+    # Truncate conversation for LLM context (keep recent)
+    max_context = 4000
+    if len(conversation_text) > max_context:
+        conversation_text = "...\n" + conversation_text[-max_context:]
+
+    prompt = {
+        "system": """You are a query synthesis assistant. Given a conversation, extract the key topics, entities, and current user intent into a focused search query.
+
+The query should:
+- Capture the main subjects being discussed (projects, tools, concepts, people)
+- Reflect the user's current need or question
+- Be optimized for semantic similarity search
+- Be concise but comprehensive (aim for 100-300 words)
+- Include relevant technical terms and proper nouns
+
+Output ONLY the query text, no explanations or formatting.""",
+        "user": f"""Synthesize a semantic search query from this conversation:
+
+{conversation_text}
+
+Query:""",
+    }
+
+    try:
+        result = call_llm(prompt, model=model, max_retries=2, backoff_seconds=0.5)
+        if result and isinstance(result, str):
+            # Trim to max length
+            result = result.strip()
+            if len(result) > max_query_len:
+                result = result[:max_query_len]
+            return result
+    except Exception:
+        # Fall back to truncated conversation on LLM failure
+        pass
+
+    return None
+
+
+def _extract_conversation_text(raw_input: str, config: dict) -> str | None:
+    """
+    Extract text from conversation JSON input.
+
+    Handles Claude Code conversation format (JSONL or JSON array).
+    Returns None if input is not a conversation format.
+    """
+    from vestig.core.ingest_sources import (
+        _looks_like_claude_session,
+        extract_claude_session_text,
+    )
+
+    # Check if input looks like JSON
+    stripped = raw_input.strip()
+    if not (stripped.startswith("{") or stripped.startswith("[")):
+        return None
+
+    # Try to detect claude session format (JSONL)
+    if _looks_like_claude_session(raw_input):
+        session_config = config.get("ingestion", {}).get("claude_session", {})
+        # Use defaults optimized for recall: include both roles, drop noise
+        session_config.setdefault("include_roles", ["user", "assistant"])
+        session_config.setdefault("include_message_types", ["text"])
+        session_config.setdefault("drop_thinking", True)
+        session_config.setdefault("drop_tool_use", True)
+
+        extracted = extract_claude_session_text(raw_input, session_config)
+        if extracted:
+            return extracted
+
+    # Try JSON array format (simple message list)
+    try:
+        data = json.loads(raw_input)
+        if isinstance(data, list):
+            messages = []
+            for item in data:
+                if isinstance(item, dict):
+                    role = item.get("role", "")
+                    content = item.get("content", "")
+                    if role in ("user", "assistant") and content:
+                        messages.append(f"{role}: {content}")
+            if messages:
+                return "\n".join(messages)
+    except json.JSONDecodeError:
+        pass
+
+    return None
+
+
+def _extract_query_from_conversation(raw_input: str, config: dict) -> str | None:
+    """
+    Extract a recall query from conversation JSON input.
+
+    Handles Claude Code conversation format (JSONL or JSON array).
+    Returns None if input is not a conversation format.
+
+    Strategy:
+    1. Extract conversation text from JSON
+    2. If LLM model configured, synthesize a focused query
+    3. Otherwise, truncate to recent context
+    """
+    conversation_text = _extract_conversation_text(raw_input, config)
+    if not conversation_text:
+        return None
+
+    # Try LLM synthesis if model is configured
+    recall_config = config.get("retrieval", {}).get("recall", {})
+    synthesis_model = recall_config.get("synthesis_model")
+
+    # Fall back to ingestion model if no specific recall model
+    if not synthesis_model:
+        synthesis_model = config.get("ingestion", {}).get("model")
+
+    if synthesis_model:
+        synthesized = _synthesize_query_with_llm(
+            conversation_text,
+            model=synthesis_model,
+            max_query_len=recall_config.get("max_query_len", 500),
+        )
+        if synthesized:
+            return synthesized
+
+    # Fallback: truncate to recent context
+    max_query_len = recall_config.get("max_query_len", 2000)
+    if len(conversation_text) > max_query_len:
+        conversation_text = "..." + conversation_text[-max_query_len:]
+
+    return conversation_text
+
+
 def cmd_recall(args):
-    """Handle 'vestig memory recall' command"""
+    """Handle 'vestig memory recall' command.
+
+    Accepts either:
+    - Plain text query: "What is BiophonyAI?"
+    - Conversation JSON: '[{"role":"user","content":"..."}]' or JSONL format
+
+    When given a conversation, extracts recent context as the query.
+    """
     from vestig.core.retrieval import (
         format_recall_results,
         format_recall_results_with_explanation,
@@ -257,6 +406,13 @@ def cmd_recall(args):
     )
 
     config = args.config_dict
+
+    # Detect and parse conversation input
+    query = _extract_query_from_conversation(args.query, config)
+    if query is None:
+        # Plain text query
+        query = args.query
+
     storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)
 
     # M5: Entity-based retrieval config
@@ -276,7 +432,7 @@ def cmd_recall(args):
     try:
         # M5: Use chunk-based expansion for recall (not just search)
         results = recall_with_chunk_expansion(
-            query=args.query,
+            query=query,
             storage=storage,
             embedding_engine=embedding_engine,
             limit=args.limit,
