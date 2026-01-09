@@ -62,6 +62,7 @@ class EmbeddingEngine:
         normalize: bool = True,
         provider: str = "llm",
         max_length: int | None = None,
+        timeout: int = 60,
     ):
         """
         Initialize embedding engine.
@@ -74,12 +75,14 @@ class EmbeddingEngine:
             normalize: Whether to normalize embeddings for cosine similarity
             provider: "llm" or "sentence-transformers"
             max_length: Maximum character length before truncation (None = no limit)
+            timeout: Timeout in seconds for embedding API calls (default: 60)
         """
         self.model_name = model_name
         self.expected_dimension = expected_dimension
         self.normalize = normalize
         self.provider = provider
         self.max_length = max_length
+        self.timeout = timeout
 
         if provider == "llm":
             # No model loading - llm CLI handles it
@@ -153,7 +156,7 @@ class EmbeddingEngine:
                 capture_output=True,
                 text=True,
                 check=True,
-                timeout=30,
+                timeout=self.timeout,
             )
             embedding = json.loads(result.stdout)
             return embedding

@@ -144,6 +144,7 @@ def build_runtime(
         normalize=config["embedding"]["normalize"],
         provider=config["embedding"].get("provider", "llm"),  # Default to llm
         max_length=config["embedding"].get("max_length"),  # Optional truncation
+        timeout=config["embedding"].get("timeout", 60),  # Default 60s for cold models
     )
     storage = create_database(config)
     event_storage = storage.event_storage  # Composed into DatabaseInterface
