@@ -983,7 +983,13 @@ def cmd_memory(args):
 
 
 def cmd_ingest(args):
-    """Handle 'vestig ingest' command"""
+    """Handle 'vestig ingest' command.
+
+    Supports reading from stdin using '-' as document path:
+        echo '{"role":"user",...}' | vestig ingest - --format claude-session
+    """
+    import tempfile
+
     from vestig.core.ingestion import ingest_document
 
     config = args.config_dict
@@ -1018,10 +1024,27 @@ def cmd_ingest(args):
             "Model must be specified in config (ingestion.model) or via --model argument"
         )
 
-    paths = expand_ingest_paths(args.document, recursive=args.recurse)
-    if not paths:
-        print(f"No files match: {args.document}", file=sys.stderr)
-        sys.exit(1)
+    # Handle stdin input (document path is '-')
+    temp_file = None
+    if args.document == "-":
+        # Read from stdin and write to temp file
+        stdin_content = sys.stdin.read()
+        if not stdin_content.strip():
+            print("Error: No input received from stdin", file=sys.stderr)
+            sys.exit(1)
+
+        # Create temp file with appropriate extension for format detection
+        suffix = ".jsonl" if source_format == "claude-session" else ".txt"
+        temp_file = tempfile.NamedTemporaryFile(mode="w", suffix=suffix, delete=False)
+        temp_file.write(stdin_content)
+        temp_file.close()
+        paths = [temp_file.name]
+        print(f"Reading from stdin ({len(stdin_content)} chars)...", flush=True)
+    else:
+        paths = expand_ingest_paths(args.document, recursive=args.recurse)
+        if not paths:
+            print(f"No files match: {args.document}", file=sys.stderr)
+            sys.exit(1)
 
     total = {
         "chunks": 0,
@@ -1103,6 +1126,13 @@ def cmd_ingest(args):
         print(f"Entities created: {total['entities']}")
         print(f"Errors: {total['errors']}")
         print("=" * 70)
+
+    # Cleanup temp file if used
+    if temp_file is not None:
+        try:
+            os.remove(temp_file.name)
+        except OSError:
+            pass
 
     if failures:
         print("\nErrors during ingestion:", file=sys.stderr)
