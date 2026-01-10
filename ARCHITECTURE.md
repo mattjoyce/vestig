@@ -1,14 +1,18 @@
-# Vestig Architecture: Chunk-Centric Knowledge Graph
+# Vestig Architecture: Source-Centric Knowledge Graph with Dual Linking
 
-**Version:** 1.0
-**Date:** 2025-01-04
-**Status:** Target Design (Migration Planned)
+**Version:** 2.0 (Phase 2 Complete)
+**Date:** 2026-01-11
+**Status:** Production (SQLite + FalkorDB backends)
 
 ## Executive Summary
 
-Vestig implements a **chunk-centric graph architecture** for knowledge management, where document chunks serve as hub nodes connecting files, memories, entities, and summaries. This design prioritizes **provenance**, **temporal tracking**, and **multi-resolution querying** over traditional entity-centric approaches.
+Vestig implements a **source-centric graph architecture** with **dual linking** for knowledge management, where unified source nodes provide primary provenance for all content origins (files, agent contributions, legacy data), while optional chunk nodes provide positional metadata. This design prioritizes **provenance**, **temporal tracking**, and **multi-resolution querying** over traditional entity-centric approaches.
 
-**Key Innovation:** CHUNK as the central organizing principle, enabling full traceability from any knowledge artifact back to exact source locations while supporting multiple levels of abstraction (entity/summary/memory).
+**Key Innovations:**
+1. **SOURCE as primary provenance** - Unified tracking for file, agentic, and legacy content
+2. **Dual linking model** - Memories link to both Source (primary provenance) AND Chunk (positional metadata)
+3. **Chunk as optional metadata** - Location pointers within sources, not required intermediary
+4. **Multi-backend support** - SQLite (relational) and FalkorDB (graph-native) implementations
 
 ---
 
@@ -34,40 +38,81 @@ Vestig implements a **chunk-centric graph architecture** for knowledge managemen
 3. **Multi-Resolution**: Support querying at multiple levels of abstraction from the same source
 4. **Re-extraction Friendly**: Enable reprocessing without re-ingesting source documents
 
-### Core Principles
+### Core Principles (Phase 2 Updated)
 
-- **Chunk as Hub**: Chunks are the central organizing nodes, not entities
+- **Source as Primary Provenance**: All content originates from unified Source nodes (file/agentic/legacy)
+- **Dual Linking**: Memories link to Source (always) AND Chunk (when chunked)
+- **Chunk as Optional Metadata**: Location pointers within sources, not required provenance chain
+- **Unified Provenance Model**: Files, agent contributions, and legacy data share common source abstraction
 - **Normalized Graph**: Avoid redundancy; use relationships over denormalized properties
 - **Bi-temporal Model**: Track t_valid (event time) and t_created (transaction time)
 - **Quality Firewall**: Hygiene checks and deduplication prevent low-quality data
 
 ---
 
-## Current State (SQLite)
+## Phase 2: Source Abstraction (Current State)
 
 ### Implementation
 
-**Storage:** SQLite with relational tables
-**Chunk References:** String properties in metadata
-**Format:** `"/absolute/path/to/file.md:start_position:length"`
+**Storage:** Dual-backend architecture
+- **SQLite**: Relational tables with foreign keys
+- **FalkorDB**: Graph-native with Cypher queries
 
-### Schema (Simplified)
+**Provenance Model:** Source → Memory (always) AND Source → Chunk → Memory (when chunked)
+
+**Source Types:**
+- `file`: Document ingestion (path-based)
+- `agentic`: AI agent contributions (agent name: claude-code, codex, goose, etc.)
+- `legacy`: Backfilled orphans from housekeeping
+
+### Schema (Phase 2 - SQLite)
 
 ```sql
--- Memories table
+-- Sources table (NEW in Phase 2)
+CREATE TABLE sources (
+    source_id TEXT PRIMARY KEY,
+    source_type TEXT NOT NULL,        -- 'file' | 'agentic' | 'legacy'
+    created_at TEXT NOT NULL,
+    ingested_at TEXT NOT NULL,
+    source_hash TEXT,
+    metadata TEXT,
+    -- Type-specific fields (nullable)
+    path TEXT,                        -- For 'file'
+    agent TEXT,                       -- For 'agentic'
+    session_id TEXT                   -- Optional session tracking
+);
+
+-- Chunks table (UPDATED in Phase 2)
+CREATE TABLE chunks (
+    chunk_id TEXT PRIMARY KEY,
+    source_id TEXT NOT NULL,          -- Changed from file_id
+    start INTEGER NOT NULL,
+    length INTEGER NOT NULL,
+    sequence INTEGER NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY(source_id) REFERENCES sources(source_id)
+);
+
+-- Memories table (UPDATED in Phase 2)
 CREATE TABLE memories (
     id TEXT PRIMARY KEY,
     content TEXT NOT NULL,
-    content_embedding BLOB NOT NULL,
-    content_hash TEXT NOT NULL,
+    content_embedding TEXT NOT NULL,
+    content_hash TEXT,
     created_at TEXT NOT NULL,
-    metadata TEXT NOT NULL,  -- JSON: {"source": "...", "chunk_ref": "path:start:length"}
+    metadata TEXT NOT NULL,
     -- Bi-temporal fields
     t_valid TEXT,
     t_invalid TEXT,
     t_created TEXT,
     t_expired TEXT,
-    temporal_stability TEXT DEFAULT 'unknown'
+    temporal_stability TEXT DEFAULT 'unknown',
+    last_seen_at TEXT,
+    reinforce_count INTEGER DEFAULT 0,
+    kind TEXT DEFAULT 'MEMORY',       -- 'MEMORY' | 'SUMMARY'
+    -- Phase 2: Dual linking
+    chunk_id TEXT,                    -- Optional positional metadata
+    source_id TEXT                    -- Primary provenance (ALWAYS set)
 );
 
 -- Entities table
@@ -77,15 +122,18 @@ CREATE TABLE entities (
     canonical_name TEXT NOT NULL,
     norm_key TEXT NOT NULL UNIQUE,
     created_at TEXT NOT NULL,
-    embedding TEXT  -- JSON-serialized vector
+    embedding TEXT,
+    expired_at TEXT,
+    merged_into TEXT,
+    chunk_id TEXT                     -- Optional chunk link
 );
 
--- Edges table (MENTIONS, RELATED, SUMMARIZES)
+-- Edges table
 CREATE TABLE edges (
     edge_id TEXT PRIMARY KEY,
     from_node TEXT NOT NULL,
     to_node TEXT NOT NULL,
-    edge_type TEXT NOT NULL,
+    edge_type TEXT NOT NULL,          -- MENTIONS | RELATED | SUMMARIZED_BY | CONTAINS
     weight REAL NOT NULL,
     confidence REAL,
     evidence TEXT,
@@ -95,70 +143,116 @@ CREATE TABLE edges (
     t_created TEXT,
     t_expired TEXT
 );
+
+-- Files table (DEPRECATED - kept for backward compatibility)
+CREATE TABLE files (
+    file_id TEXT PRIMARY KEY,
+    path TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    ingested_at TEXT NOT NULL,
+    file_hash TEXT,
+    metadata TEXT
+);
 ```
 
-### Chunk Provenance (Current)
+### Phase 2 Provenance Model (Dual Linking)
 
-```json
-// Memory metadata
-{
-  "source": "document_ingest",
-  "chunk_ref": "/Users/mattjoyce/Projects/vestig/docs/example.md:0:3933"
-}
+**Key Concept:** Memories have TWO provenance links:
+
+1. **Primary: source_id** → Always points to Source node (required)
+2. **Secondary: chunk_id** → Points to Chunk node (optional, for chunked content)
+
+**File Ingestion Example:**
+```
+Source{type='file', path='/path/to/doc.md'}
+    └──→ Chunk{sequence=1, start=0, length=5000}
+            └──→ Memory{content='...', source_id, chunk_id}
+                    ↑
+                    └── Both source_id AND chunk_id are set
 ```
 
-**Limitations:**
-- No CHUNK or FILE nodes (just string references)
-- Can't query "show all chunks from this file"
-- Can't track file-level metadata
-- No explicit chunk-to-chunk sequential linking
+**Agentic Content Example:**
+```
+Source{type='agentic', agent='claude-code', session_id='abc123'}
+    └──→ Memory{content='...', source_id, chunk_id=NULL}
+            ↑
+            └── Only source_id is set (no chunking)
+```
+
+**Legacy/Orphan Example:**
+```
+Source{type='legacy', agent='unknown'}
+    └──→ Memory{content='...', source_id, chunk_id=NULL}
+            ↑
+            └── Created by housekeeping backfill
+```
+
+**Benefits:**
+✅ All content has provenance (no orphans)
+✅ Session-level tracking for agentic sources
+✅ Trust signals (file vs agentic vs legacy)
+✅ Positional metadata when needed (chunks)
+✅ Backward compatible (Files table deprecated but kept)
 
 ---
 
-## Target State (Neo4j)
+## FalkorDB Backend (Graph-Native Implementation)
 
-### Graph Database Migration
+### Status: Production
 
-**When:** Planned for Q1 2025
-**Why:** Native graph traversal, better relationship modeling, scalable querying
+**Implemented:** January 2026 (Phase 2)
+**Why:** Native graph traversal, Cypher query language, better relationship modeling, scalable querying
 
-### Node Types
+FalkorDB provides a graph-native backend alternative to SQLite, using edges for provenance relationships rather than foreign key properties.
 
-#### 1. FILE Node
+### Node Types (Phase 2)
+
+#### 1. SOURCE Node (Primary Provenance)
 
 ```cypher
-(:FILE {
-  file_id: "file_<uuid>",
-  path: "/absolute/path/to/document.md",
-  original_path: "/absolute/path/to/document.md",  // Track moves
-  file_type: "markdown",
+(:Source {
+  id: "source_<uuid>",
+  source_type: "file",            // 'file' | 'agentic' | 'legacy'
   created_at: "2024-01-15T10:30:00Z",
-  modified_at: "2024-01-20T14:22:00Z",
   ingested_at: "2024-01-20T15:00:00Z",
-  ingestion_version: "v2.0",
-  source_url: "https://...",  // If downloaded
-  author: "Matt Joyce",
-  tags: ["research", "ai", "knowledge-graph"]
+  source_hash: "sha256_...",
+  metadata: {...},
+  // Type-specific fields (nullable)
+  path: "/absolute/path/to/document.md",  // For 'file'
+  agent: NULL,                              // For 'agentic': 'claude-code', 'codex', etc.
+  session_id: NULL                          // Optional session tracking
 })
 ```
 
-**Purpose:** Represent source documents with file-level metadata and provenance.
+**Purpose:** Unified provenance for all content origins. Replaces FILE nodes with support for multiple source types.
 
-#### 2. CHUNK Node (Hub Node)
+**Example - Agentic Source:**
+```cypher
+(:Source {
+  id: "source_<uuid>",
+  source_type: "agentic",
+  agent: "claude-code",
+  session_id: "abc123",
+  created_at: "2026-01-11T14:30:00Z",
+  ingested_at: "2026-01-11T14:30:00Z",
+  metadata: {conversation_id: "xyz", turn: 42}
+})
+```
+
+#### 2. CHUNK Node (Optional Positional Metadata)
 
 ```cypher
-(:CHUNK {
-  chunk_id: "chunk_<uuid>",
-  start: 0,              // Character position in file
-  length: 3933,          // Length in characters
-  sequence: 1,           // Position in document (1-indexed)
-  text: "...",           // Optional: store chunk text for re-extraction
-  created_at: "2024-01-20T15:00:00Z",
-  chunk_overlap: 400     // Overlap with previous chunk (chars)
+(:Chunk {
+  id: "chunk_<uuid>",
+  source_id: "source_<uuid>",  // Phase 2: references Source, not File
+  start: 0,                     // Character position in source
+  length: 3933,                 // Length in characters
+  sequence: 1,                  // Position in document (1-indexed)
+  created_at: "2024-01-20T15:00:00Z"
 })
 ```
 
-**Purpose:** Central hub connecting files to extracted knowledge artifacts. Preserves document structure and enables precise provenance.
+**Purpose:** Location pointers within sources. Provides positional metadata for chunked content (primarily for files). Optional - not all memories have chunks (e.g., agentic sources).
 
 #### 3. MEMORY Node
 

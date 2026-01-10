@@ -487,7 +487,8 @@ def commit_summary(
     storage: MemoryStorage,
     embedding_engine: EmbeddingEngine,
     event_storage: MemoryEventStorage | None = None,
-    chunk_id: str | None = None,  # M5: Link summary to chunk
+    chunk_id: str | None = None,  # M5: Link summary to chunk (positional metadata)
+    source_id: str | None = None,  # Phase 2: Link summary to source (primary provenance)
 ) -> str | None:
     """
     Commit summary node and create SUMMARIZES edges (M4/M5).
@@ -503,7 +504,8 @@ def commit_summary(
         storage: Storage instance
         embedding_engine: Embedding engine
         event_storage: Optional event storage
-        chunk_id: M5 chunk ID (for per-chunk summaries)
+        chunk_id: M5 chunk ID (for per-chunk summaries, positional metadata)
+        source_id: Phase 2 source ID (primary provenance link)
 
     Returns:
         Summary memory ID if created/found, None if skipped
@@ -588,7 +590,8 @@ def commit_summary(
         temporal_stability="static",  # Summaries are snapshots
         last_seen_at=None,
         reinforce_count=0,
-        chunk_id=chunk_id,  # M5: Link summary to chunk
+        chunk_id=chunk_id,  # M5: Link summary to chunk (positional metadata)
+        source_id=source_id,  # Phase 2: Link summary to source (primary provenance)
     )
 
     # Atomic transaction for summary + edges + event
@@ -716,11 +719,11 @@ def ingest_document(
         if document_temporal_hints.evidence:
             print(f"  Evidence: {document_temporal_hints.evidence}")
 
-    # M5: Create FILE record (hub-and-spoke model)
+    # Phase 2: Create SOURCE record (file-type source)
     import hashlib
     from datetime import datetime, timezone
 
-    from vestig.core.models import FileNode
+    from vestig.core.models import SourceNode
 
     document_path_abs = str(path.absolute())
 
@@ -730,8 +733,8 @@ def ingest_document(
     # Get file creation time (use mtime as fallback)
     file_created_at = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc).isoformat()
 
-    # Create FILE node
-    file_node = FileNode.create(
+    # Create SOURCE node (file type)
+    source_node = SourceNode.from_file(
         path=document_path_abs,
         file_hash=file_hash,
         file_created_at=file_created_at,
@@ -741,8 +744,8 @@ def ingest_document(
             "ingestion_source": source,
         },
     )
-    file_id = storage.store_file(file_node)
-    print(f"Created file record: {file_id}")
+    source_id = storage.store_source(source_node)
+    print(f"Created source record: {source_id} (type: file)")
 
     # Chunk text
     if resolved_format == "claude-session":
@@ -783,11 +786,11 @@ def ingest_document(
 
     # Process each chunk
     for i, (chunk_text, start_pos, length, chunk_hints) in enumerate(chunks_with_metadata, 1):
-        # M5: Create CHUNK record (hub node with location pointer)
+        # Phase 2: Create CHUNK record (positional metadata for source)
         from vestig.core.models import ChunkNode
 
         chunk_node = ChunkNode.create(
-            file_id=file_id,
+            source_id=source_id,  # Phase 2: now source_id, not file_id
             start=start_pos,
             length=length,
             sequence=i,  # 1-indexed sequence
@@ -854,7 +857,8 @@ def ingest_document(
                         artifact_ref=path.name,
                         pre_extracted_entities=combined_entities or None,
                         temporal_hints=memory,  # Pass ExtractedMemory with temporal fields
-                        chunk_id=chunk_id,  # M5: Link to chunk hub node
+                        chunk_id=chunk_id,  # M5: Link to chunk (positional metadata)
+                        source_id=source_id,  # Phase 2: Link to source (primary provenance)
                     )
 
                     if outcome.outcome == "INSERTED_NEW":
@@ -1023,7 +1027,7 @@ def ingest_document(
                             prompt_name=prompt_name,
                         )
 
-                        # Commit summary with chunk_id
+                        # Commit summary with chunk_id and source_id (dual linking)
                         summary_id = commit_summary(
                             summary_result=summary_result,
                             memory_ids=[m.id for m in chunk_memory_nodes],
@@ -1032,7 +1036,8 @@ def ingest_document(
                             storage=storage,
                             embedding_engine=embedding_engine,
                             event_storage=event_storage,
-                            chunk_id=chunk_id,  # M5: Link summary to chunk
+                            chunk_id=chunk_id,  # M5: Link summary to chunk (positional metadata)
+                            source_id=source_id,  # Phase 2: Link summary to source (primary provenance)
                         )
 
                         if verbose and summary_id:

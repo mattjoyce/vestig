@@ -34,6 +34,9 @@ class MemoryNode:
     # M5: Chunk provenance (hub link)
     chunk_id: str | None = None  # Foreign key to chunks table (nullable for manual adds)
 
+    # Phase 2: Source abstraction - dual linking
+    source_id: str | None = None  # Direct link to source (primary provenance)
+
     @classmethod
     def create(
         cls,
@@ -335,38 +338,150 @@ class FileNode:
 
 
 @dataclass
-class ChunkNode:
-    """Chunk node (M5: Hub Layer)
+class SourceNode:
+    """Source node - unified provenance for all content origins.
 
-    Represents a location pointer within a file (hub node in chunk-centric architecture).
-    Does NOT store the text itself - only the pointer (file_id, start, length).
+    Replaces FileNode with support for multiple source types:
+    - file: Document ingestion
+    - agentic: AI agent contributions (claude-code, codex, goose, etc.)
+    - legacy: Backfilled orphans from housekeeping
     """
 
-    chunk_id: str  # chunk_<uuid>
-    file_id: str  # Foreign key to files table
-    start: int  # Character position in file where chunk starts
-    length: int  # Number of characters in chunk
-    sequence: int  # Position in document (1st chunk, 2nd chunk, etc.)
-    created_at: str  # ISO 8601 timestamp (when chunk was created)
+    source_id: str  # source_<uuid>
+    source_type: str  # 'file' | 'agentic' | 'legacy'
+    created_at: str  # ISO 8601 timestamp (source creation time)
+    ingested_at: str  # ISO 8601 timestamp (when processed)
+    source_hash: str | None = None  # SHA256 of content (for change detection)
+    metadata: dict[str, Any] = field(default_factory=dict)  # Type-specific metadata
+
+    # Type-specific fields (nullable)
+    path: str | None = None  # For 'file': absolute file path
+    agent: str | None = None  # For 'agentic': agent name (claude-code, codex, etc.)
+    session_id: str | None = None  # Optional: session tracking across types
 
     @classmethod
     def create(
         cls,
-        file_id: str,
-        start: int,
-        length: int,
-        sequence: int,
-        chunk_id: str | None = None,
-    ) -> "ChunkNode":
-        """
-        Create a new chunk node (location pointer).
+        source_type: str,
+        source_id: str | None = None,
+        source_hash: str | None = None,
+        created_at: str | None = None,
+        metadata: dict[str, Any] | None = None,
+        # Type-specific parameters
+        path: str | None = None,
+        agent: str | None = None,
+        session_id: str | None = None,
+    ) -> "SourceNode":
+        """Create a new source node.
 
         Args:
-            file_id: File ID this chunk belongs to
-            start: Character position in file where chunk starts
+            source_type: 'file', 'agentic', or 'legacy'
+            source_id: Optional source ID (generated if not provided)
+            source_hash: Optional SHA256 hash of content
+            created_at: Optional creation timestamp (uses now if not provided)
+            metadata: Optional metadata dict
+            path: For 'file' type: absolute file path
+            agent: For 'agentic' type: agent name
+            session_id: Optional session tracking
+
+        Returns:
+            SourceNode instance
+        """
+        if source_id is None:
+            source_id = f"source_{uuid.uuid4()}"
+
+        now = datetime.now(timezone.utc).isoformat()
+        created_at = created_at if created_at else now
+
+        return cls(
+            source_id=source_id,
+            source_type=source_type,
+            created_at=created_at,
+            ingested_at=now,
+            source_hash=source_hash,
+            metadata=metadata or {},
+            path=path,
+            agent=agent,
+            session_id=session_id,
+        )
+
+    @classmethod
+    def from_file(
+        cls,
+        path: str,
+        file_hash: str | None = None,
+        file_created_at: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> "SourceNode":
+        """Convenience method to create a file-type source."""
+        return cls.create(
+            source_type='file',
+            path=path,
+            source_hash=file_hash,
+            created_at=file_created_at,
+            metadata=metadata,
+        )
+
+    @classmethod
+    def from_agent(
+        cls,
+        agent: str,
+        session_id: str | None = None,
+        content_hash: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> "SourceNode":
+        """Convenience method to create an agentic-type source."""
+        return cls.create(
+            source_type='agentic',
+            agent=agent,
+            session_id=session_id,
+            source_hash=content_hash,
+            metadata=metadata,
+        )
+
+
+@dataclass
+class ChunkNode:
+    """Chunk node - optional positional metadata for chunked content.
+
+    Represents a location pointer within a source (position in document).
+    Does NOT store the text itself - only the pointer (source_id, start, length).
+
+    Updated for Source abstraction: file_id → source_id
+    """
+
+    chunk_id: str  # chunk_<uuid>
+    source_id: str  # Foreign key to sources table (was file_id)
+    start: int  # Character position in source where chunk starts
+    length: int  # Number of characters in chunk
+    sequence: int  # Position in document (1st chunk, 2nd chunk, etc.)
+    created_at: str  # ISO 8601 timestamp (when chunk was created)
+
+    # Backward compatibility alias
+    @property
+    def file_id(self) -> str:
+        """Backward compatibility: file_id is now source_id."""
+        return self.source_id
+
+    @classmethod
+    def create(
+        cls,
+        source_id: str | None = None,
+        start: int = 0,
+        length: int = 0,
+        sequence: int = 0,
+        chunk_id: str | None = None,
+        file_id: str | None = None,  # Backward compatibility
+    ) -> "ChunkNode":
+        """Create a new chunk node (location pointer).
+
+        Args:
+            source_id: Source ID this chunk belongs to
+            start: Character position in source where chunk starts
             length: Number of characters in chunk
             sequence: Position in document (1st, 2nd chunk, etc.)
             chunk_id: Optional chunk ID (generated if not provided)
+            file_id: Deprecated - use source_id (kept for backward compat)
 
         Returns:
             ChunkNode instance
@@ -374,11 +489,17 @@ class ChunkNode:
         if chunk_id is None:
             chunk_id = f"chunk_{uuid.uuid4()}"
 
+        # Backward compatibility: accept file_id as alias for source_id
+        if source_id is None and file_id is not None:
+            source_id = file_id
+        if source_id is None:
+            raise ValueError("source_id (or file_id for compat) is required")
+
         now = datetime.now(timezone.utc).isoformat()
 
         return cls(
             chunk_id=chunk_id,
-            file_id=file_id,
+            source_id=source_id,
             start=start,
             length=length,
             sequence=sequence,

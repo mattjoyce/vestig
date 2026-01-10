@@ -10,7 +10,7 @@ from contextlib import contextmanager
 
 from vestig.core.db_interface import DatabaseInterface, EventStorageInterface
 from vestig.core.event_storage import MemoryEventStorage
-from vestig.core.models import ChunkNode, EdgeNode, EntityNode, FileNode, MemoryNode
+from vestig.core.models import ChunkNode, EdgeNode, EntityNode, FileNode, MemoryNode, SourceNode
 from vestig.core.storage import MemoryStorage
 
 
@@ -223,7 +223,38 @@ class SQLiteDatabase(DatabaseInterface):
         return cursor.fetchall()
 
     # =========================================================================
-    # File and Chunk Operations
+    # Source Operations (Phase 2)
+    # =========================================================================
+
+    def store_source(self, source_node: SourceNode) -> str:
+        return self._storage.store_source(source_node)
+
+    def get_source(self, source_id: str) -> SourceNode | None:
+        return self._storage.get_source(source_id)
+
+    def find_source_by_path(self, path: str) -> SourceNode | None:
+        return self._storage.find_source_by_path(path)
+
+    def get_sources_by_type(
+        self, source_type: str, limit: int | None = None
+    ) -> list[SourceNode]:
+        return self._storage.get_sources_by_type(source_type, limit)
+
+    def get_sources_by_agent(
+        self, agent: str, limit: int | None = None
+    ) -> list[SourceNode]:
+        return self._storage.get_sources_by_agent(agent, limit)
+
+    def get_sources_by_session(self, session_id: str) -> list[SourceNode]:
+        return self._storage.get_sources_by_session(session_id)
+
+    def list_sources(
+        self, source_type: str | None = None, limit: int | None = None
+    ) -> list[tuple]:
+        return self._storage.list_sources(source_type, limit)
+
+    # =========================================================================
+    # File and Chunk Operations (DEPRECATED)
     # =========================================================================
 
     def store_file(self, file_node: FileNode) -> str:
@@ -240,6 +271,9 @@ class SQLiteDatabase(DatabaseInterface):
 
     def get_chunk(self, chunk_id: str) -> ChunkNode | None:
         return self._storage.get_chunk(chunk_id)
+
+    def get_chunks_by_source(self, source_id: str) -> list[ChunkNode]:
+        return self._storage.get_chunks_by_source(source_id)
 
     def get_chunks_by_file(self, file_id: str) -> list[ChunkNode]:
         return self._storage.get_chunks_by_file(file_id)

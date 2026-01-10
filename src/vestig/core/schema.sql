@@ -1,6 +1,6 @@
--- Vestig Schema v1.0
--- Milestone: M5 (Chunk-Centric Hub)
--- Last Updated: 2025-01-05
+-- Vestig Schema v2.0
+-- Milestone: Phase 2 (Source Abstraction)
+-- Last Updated: 2026-01-11
 -- DO NOT MODIFY: This is the sovereign interface for Vestig's data model
 --
 -- This file defines the complete schema for fresh Vestig database creation.
@@ -12,12 +12,33 @@
 -- M3: Added bi-temporal fields (t_valid, t_invalid, t_created, t_expired) and events table
 -- M4: Added graph layer (entities, edges) and kind discriminator for MEMORY/SUMMARY nodes
 -- M5: Added files/chunks tables (chunk-centric hub architecture)
+-- Phase 2: Source abstraction - unified provenance for all content origins
 
 -- =============================================================================
--- M5 Hub Layer: Files and Chunks
+-- Phase 2: Source Provenance Layer
 -- =============================================================================
 
--- files: Source documents (files ingested into the system)
+-- sources: Unified provenance for all content origins
+CREATE TABLE sources (
+    source_id TEXT PRIMARY KEY,          -- Unique identifier (source_<uuid>)
+    source_type TEXT NOT NULL,           -- 'file' | 'agentic' | 'legacy'
+    created_at TEXT NOT NULL,            -- ISO 8601 timestamp (source creation time)
+    ingested_at TEXT NOT NULL,           -- ISO 8601 timestamp (when processed)
+    source_hash TEXT,                    -- SHA256 of content (for change detection)
+    metadata TEXT,                       -- JSON-serialized type-specific metadata
+
+    -- Type-specific fields (nullable)
+    path TEXT,                           -- For 'file': absolute file path
+    agent TEXT,                          -- For 'agentic': agent name (claude-code, codex, etc.)
+    session_id TEXT                      -- Optional: session tracking across types
+);
+
+-- =============================================================================
+-- M5 Hub Layer: Files and Chunks (Backward Compatibility)
+-- =============================================================================
+
+-- files: DEPRECATED - use sources table for new code
+-- Kept for backward compatibility during migration
 CREATE TABLE files (
     file_id TEXT PRIMARY KEY,            -- Unique identifier (file_<uuid>)
     path TEXT NOT NULL,                  -- Absolute file path
@@ -27,15 +48,15 @@ CREATE TABLE files (
     metadata TEXT                        -- JSON-serialized file metadata (format, size, etc.)
 );
 
--- chunks: Location pointers within files (hub node in chunk-centric architecture)
+-- chunks: Location pointers within sources (optional positional metadata)
 CREATE TABLE chunks (
     chunk_id TEXT PRIMARY KEY,           -- Unique identifier (chunk_<uuid>)
-    file_id TEXT NOT NULL,               -- Foreign key to files table
-    start INTEGER NOT NULL,              -- Character position in file where chunk starts
+    source_id TEXT NOT NULL,             -- Foreign key to sources table (was file_id)
+    start INTEGER NOT NULL,              -- Character position in source where chunk starts
     length INTEGER NOT NULL,             -- Number of characters in chunk
     sequence INTEGER NOT NULL,           -- Position in document (1st chunk, 2nd chunk, etc.)
     created_at TEXT NOT NULL,            -- ISO 8601 timestamp (when chunk was created)
-    FOREIGN KEY(file_id) REFERENCES files(file_id)
+    FOREIGN KEY(source_id) REFERENCES sources(source_id)
 );
 
 -- =============================================================================
@@ -69,7 +90,9 @@ CREATE TABLE memories (
 
     -- M5: Chunk provenance (hub link)
     chunk_id TEXT,                    -- Foreign key to chunks table (nullable for manual adds)
-    FOREIGN KEY(chunk_id) REFERENCES chunks(chunk_id)
+
+    -- Phase 2: Source abstraction - dual linking
+    source_id TEXT                    -- Direct link to source (primary provenance)
 );
 
 -- memory_events: Event log for memory lifecycle tracking
@@ -202,7 +225,34 @@ ON edges(from_node, to_node, edge_type)
 WHERE t_expired IS NULL;
 
 -- =============================================================================
--- Indexes: Files Table
+-- Indexes: Sources Table
+-- =============================================================================
+
+-- Phase 2: Index for querying sources by type
+CREATE INDEX idx_sources_type
+ON sources(source_type);
+
+-- Phase 2: Index for querying sources by agent (for agentic sources)
+CREATE INDEX idx_sources_agent
+ON sources(agent)
+WHERE agent IS NOT NULL;
+
+-- Phase 2: Index for querying sources by path (for file sources)
+CREATE INDEX idx_sources_path
+ON sources(path)
+WHERE path IS NOT NULL;
+
+-- Phase 2: Index for querying sources by ingestion time
+CREATE INDEX idx_sources_ingested_at
+ON sources(ingested_at DESC);
+
+-- Phase 2: Index for querying sources by session
+CREATE INDEX idx_sources_session
+ON sources(session_id)
+WHERE session_id IS NOT NULL;
+
+-- =============================================================================
+-- Indexes: Files Table (DEPRECATED)
 -- =============================================================================
 
 -- M5: Index for querying files by path
@@ -217,19 +267,24 @@ ON files(ingested_at DESC);
 -- Indexes: Chunks Table
 -- =============================================================================
 
--- M5: Index for querying chunks by file (ordered by sequence)
-CREATE INDEX idx_chunks_file
-ON chunks(file_id, sequence);
+-- Phase 2: Index for querying chunks by source (ordered by sequence)
+CREATE INDEX idx_chunks_source
+ON chunks(source_id, sequence);
 
--- M5: Index for querying chunks by position (for range lookups)
+-- Phase 2: Index for querying chunks by position (for range lookups)
 CREATE INDEX idx_chunks_position
-ON chunks(file_id, start, length);
+ON chunks(source_id, start, length);
 
 -- =============================================================================
--- Indexes: M5 Chunk Provenance
+-- Indexes: Phase 2 Source Provenance
 -- =============================================================================
 
--- M5: Index for querying memories by chunk
+-- Phase 2: Index for querying memories by source (direct provenance)
+CREATE INDEX idx_memories_source
+ON memories(source_id)
+WHERE source_id IS NOT NULL;
+
+-- M5: Index for querying memories by chunk (positional metadata)
 CREATE INDEX idx_memories_chunk
 ON memories(chunk_id)
 WHERE chunk_id IS NOT NULL;

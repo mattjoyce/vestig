@@ -24,12 +24,12 @@ def test_fresh_db_uses_schema_sql():
         # Create fresh database
         storage = MemoryStorage(str(db_path))
 
-        # Verify all tables exist
+        # Verify all tables exist (Phase 2: includes sources, chunks, files)
         cursor = storage.conn.execute(
             "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
         )
         tables = {row[0] for row in cursor.fetchall()}
-        assert tables == {"edges", "entities", "memories", "memory_events"}
+        assert tables == {"chunks", "edges", "entities", "files", "memories", "memory_events", "sources"}
         print(f"✅ All tables created: {sorted(tables)}")
 
         # Verify all critical indexes exist
@@ -45,16 +45,17 @@ def test_fresh_db_uses_schema_sql():
         assert "idx_edges_unique" in indexes
         print(f"✅ Key indexes created: {len(indexes)} total indexes")
 
-        # Verify memories table has all M4 columns
+        # Verify memories table has all Phase 2 columns
         cursor = storage.conn.execute("PRAGMA table_info(memories)")
         columns = {row[1] for row in cursor.fetchall()}
         expected_columns = {
             "id", "content", "content_embedding", "created_at", "metadata",
             "content_hash", "t_valid", "t_invalid", "t_created", "t_expired",
-            "temporal_stability", "last_seen_at", "reinforce_count", "kind"
+            "temporal_stability", "last_seen_at", "reinforce_count", "kind",
+            "chunk_id", "source_id"  # M5 + Phase 2
         }
         assert columns == expected_columns
-        print(f"✅ Memories table has all {len(columns)} M4 columns")
+        print(f"✅ Memories table has all {len(columns)} Phase 2 columns")
 
         storage.close()
     print()
@@ -206,12 +207,12 @@ def test_schema_sql_is_valid_sqlite():
     conn.executescript(schema_sql)
     print("✅ schema.sql executed without syntax errors")
 
-    # Verify all tables created
+    # Verify all tables created (Phase 2: includes sources, chunks, files)
     cursor = conn.execute(
         "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
     )
     tables = {row[0] for row in cursor.fetchall()}
-    assert tables == {"edges", "entities", "memories", "memory_events"}
+    assert tables == {"chunks", "edges", "entities", "files", "memories", "memory_events", "sources"}
     print(f"✅ All tables created: {sorted(tables)}")
 
     # Verify indexes created

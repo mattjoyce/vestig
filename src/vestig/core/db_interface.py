@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from vestig.core.models import ChunkNode, EdgeNode, EntityNode, EventNode, FileNode, MemoryNode
+    from vestig.core.models import ChunkNode, EdgeNode, EntityNode, EventNode, FileNode, MemoryNode, SourceNode
 
 
 class EventStorageInterface(ABC):
@@ -291,27 +291,82 @@ class DatabaseInterface(ABC):
         ...
 
     # =========================================================================
-    # File and Chunk Operations (M5 Hub Layer)
+    # Source Operations (Phase 2: Primary Provenance)
+    # =========================================================================
+
+    @abstractmethod
+    def store_source(self, source_node: "SourceNode") -> str:
+        """Store source metadata (file, agentic, or legacy).
+
+        Returns:
+            Source ID (existing ID if duplicate detected by path/hash)
+        """
+        ...
+
+    @abstractmethod
+    def get_source(self, source_id: str) -> "SourceNode | None":
+        """Retrieve source by ID."""
+        ...
+
+    @abstractmethod
+    def find_source_by_path(self, path: str) -> "SourceNode | None":
+        """Find source by path (for file-type sources)."""
+        ...
+
+    @abstractmethod
+    def get_sources_by_type(
+        self, source_type: str, limit: int | None = None
+    ) -> list["SourceNode"]:
+        """Get sources of a specific type (file, agentic, legacy)."""
+        ...
+
+    @abstractmethod
+    def get_sources_by_agent(
+        self, agent: str, limit: int | None = None
+    ) -> list["SourceNode"]:
+        """Get sources by agent name (for agentic sources)."""
+        ...
+
+    @abstractmethod
+    def get_sources_by_session(
+        self, session_id: str
+    ) -> list["SourceNode"]:
+        """Get sources by session ID."""
+        ...
+
+    @abstractmethod
+    def list_sources(
+        self, source_type: str | None = None, limit: int | None = None
+    ) -> list[tuple]:
+        """List sources for CLI display.
+
+        Returns:
+            List of (source_id, source_type, path/agent, created_at, ingested_at) tuples
+        """
+        ...
+
+    # =========================================================================
+    # File and Chunk Operations (DEPRECATED - use Source operations)
     # =========================================================================
 
     @abstractmethod
     def store_file(self, file_node: "FileNode") -> str:
-        """Store file metadata."""
+        """DEPRECATED: Store file metadata. Use store_source() instead."""
         ...
 
     @abstractmethod
     def get_file(self, file_id: str) -> "FileNode | None":
-        """Retrieve file by ID."""
+        """DEPRECATED: Retrieve file by ID. Use get_source() instead."""
         ...
 
     @abstractmethod
     def find_file_by_path(self, path: str) -> "FileNode | None":
-        """Find file by path."""
+        """DEPRECATED: Find file by path. Use find_source_by_path() instead."""
         ...
 
     @abstractmethod
     def store_chunk(self, chunk_node: "ChunkNode") -> str:
-        """Store chunk pointer."""
+        """Store chunk pointer (now references source_id, not file_id)."""
         ...
 
     @abstractmethod
@@ -320,8 +375,13 @@ class DatabaseInterface(ABC):
         ...
 
     @abstractmethod
+    def get_chunks_by_source(self, source_id: str) -> list["ChunkNode"]:
+        """Get all chunks for a source, ordered by sequence."""
+        ...
+
+    @abstractmethod
     def get_chunks_by_file(self, file_id: str) -> list["ChunkNode"]:
-        """Get all chunks for a file, ordered by sequence."""
+        """DEPRECATED: Get all chunks for a file. Use get_chunks_by_source() instead."""
         ...
 
     @abstractmethod

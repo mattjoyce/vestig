@@ -1,8 +1,9 @@
-// Vestig FalkorDB Schema v1.0
+// Vestig FalkorDB Schema v2.0
 // Graph-native schema for memory system
+// Milestone: Phase 2 (Source Abstraction)
 //
-// Node Types: Memory, Entity, Chunk, File, Event
-// Edge Types: CONTAINS, LINKED, SUMMARIZED_BY, MENTIONS, RELATED, AFFECTS
+// Node Types: Memory, Entity, Chunk, Source, File (deprecated), Event
+// Edge Types: PRODUCED, HAS_CHUNK, CONTAINS, LINKED, SUMMARIZED_BY, MENTIONS, RELATED, AFFECTS
 
 // =============================================================================
 // NODE CONSTRAINTS AND INDEXES
@@ -28,13 +29,26 @@ CREATE CONSTRAINT unique_norm_key IF NOT EXISTS FOR (e:Entity) REQUIRE e.norm_ke
 CREATE INDEX entity_type IF NOT EXISTS FOR (e:Entity) ON (e.entity_type);
 CREATE INDEX entity_expired IF NOT EXISTS FOR (e:Entity) ON (e.expired_at);
 
-// Chunk nodes (provenance hubs - location pointers within files)
-// Properties: id, file_id, start, length, sequence, created_at
-CREATE CONSTRAINT unique_chunk_id IF NOT EXISTS FOR (c:Chunk) REQUIRE c.id IS UNIQUE;
-CREATE INDEX chunk_file_seq IF NOT EXISTS FOR (c:Chunk) ON (c.file_id, c.sequence);
+// Source nodes (unified provenance for all content origins)
+// Properties: id, source_type, created_at, ingested_at, source_hash, metadata,
+//             path (for 'file'), agent (for 'agentic'), session_id (optional)
+// Phase 2: Replaces File nodes with support for file/agentic/legacy types
+CREATE CONSTRAINT unique_source_id IF NOT EXISTS FOR (s:Source) REQUIRE s.id IS UNIQUE;
+CREATE INDEX source_type IF NOT EXISTS FOR (s:Source) ON (s.source_type);
+CREATE INDEX source_agent IF NOT EXISTS FOR (s:Source) ON (s.agent);
+CREATE INDEX source_path IF NOT EXISTS FOR (s:Source) ON (s.path);
+CREATE INDEX source_ingested IF NOT EXISTS FOR (s:Source) ON (s.ingested_at);
+CREATE INDEX source_session IF NOT EXISTS FOR (s:Source) ON (s.session_id);
 
-// File nodes (source documents)
+// Chunk nodes (optional positional metadata within sources)
+// Properties: id, source_id, start, length, sequence, created_at
+// Phase 2: source_id replaces file_id
+CREATE CONSTRAINT unique_chunk_id IF NOT EXISTS FOR (c:Chunk) REQUIRE c.id IS UNIQUE;
+CREATE INDEX chunk_source_seq IF NOT EXISTS FOR (c:Chunk) ON (c.source_id, c.sequence);
+
+// File nodes (DEPRECATED - use Source nodes for new code)
 // Properties: id, path, created_at, ingested_at, file_hash, metadata
+// Kept for backward compatibility during migration
 CREATE CONSTRAINT unique_file_id IF NOT EXISTS FOR (f:File) REQUIRE f.id IS UNIQUE;
 CREATE INDEX file_path IF NOT EXISTS FOR (f:File) ON (f.path);
 CREATE INDEX file_ingested IF NOT EXISTS FOR (f:File) ON (f.ingested_at);
@@ -65,17 +79,31 @@ CREATE INDEX event_type IF NOT EXISTS FOR (evt:Event) ON (evt.event_type);
 // EDGE TYPE DOCUMENTATION
 // =============================================================================
 
-// Hub-and-spoke relationships (Chunk as central hub):
+// Phase 2: Source-based provenance (dual linking model):
+// (Source)-[:PRODUCED]->(Memory)      - Source directly produced this memory (primary provenance)
+// (Source)-[:HAS_CHUNK]->(Chunk)      - Source has this chunk (for chunked content)
+// (Chunk)-[:CONTAINS]->(Memory)       - Chunk contains this memory (additional link for chunked)
+//
+// Dual linking: When content is chunked, memories have BOTH:
+//   (Source)-[:PRODUCED]->(Memory)    - Primary provenance link (always)
+//   (Chunk)-[:CONTAINS]->(Memory)     - Positional metadata link (when chunked)
+//
+// Source types:
+//   - file: (Source{type='file'})-[:HAS_CHUNK]->(Chunk)-[:CONTAINS]->(Memory)
+//   - agentic: (Source{type='agentic', agent='claude-code'})-[:PRODUCED]->(Memory)
+//   - legacy: (Source{type='legacy'})-[:PRODUCED]->(Memory) [backfilled orphans]
+
+// Hub-and-spoke relationships (Chunk as positional metadata hub):
 // (Chunk)-[:CONTAINS]->(Memory)       - Chunk contains these memories
 // (Chunk)-[:LINKED]->(Entity)         - Chunk mentions these entities (1st class)
 // (Chunk)-[:SUMMARIZED_BY]->(Memory)  - Chunk is summarized by this memory (kind='SUMMARY')
 
 // Graph layer relationships:
-// (Memory)-[:MENTIONS]->(Entity)      - Memory mentions entity (2nd class, from extraction)
+// (Memory)-[:MENTIONS]->(Entity)      - Memory mentions entity (medium trust, 1 LLM hop)
 // (Memory)-[:RELATED]->(Memory)       - Memories are topically related
 
 // Provenance relationships:
-// (File)-[:HAS_CHUNK]->(Chunk)        - File contains this chunk
+// (File)-[:HAS_CHUNK]->(Chunk)        - DEPRECATED: File contains this chunk (use Source)
 // (Event)-[:AFFECTS]->(Memory)        - Event affects this memory
 
 // Edge properties:

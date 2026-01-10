@@ -354,6 +354,147 @@ class MemoryStorage:
             """
         )
 
+        # Phase 2: Source abstraction migration
+        # Create sources table
+        self.conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS sources (
+                source_id TEXT PRIMARY KEY,
+                source_type TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                ingested_at TEXT NOT NULL,
+                source_hash TEXT,
+                metadata TEXT,
+                path TEXT,
+                agent TEXT,
+                session_id TEXT
+            )
+            """
+        )
+
+        # Phase 2: Migrate existing File nodes to Source nodes
+        cursor = self.conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='files'")
+        if cursor.fetchone():
+            # Check if migration already done by seeing if sources has data but files still exists
+            cursor = self.conn.execute("SELECT COUNT(*) FROM sources")
+            sources_count = cursor.fetchone()[0]
+
+            cursor = self.conn.execute("SELECT COUNT(*) FROM files")
+            files_count = cursor.fetchone()[0]
+
+            # Only migrate if we have files but no sources (fresh migration)
+            if files_count > 0 and sources_count == 0:
+                print("  Migrating files → sources (Phase 2)...")
+                # Copy all File records to Source records with type='file'
+                self.conn.execute(
+                    """
+                    INSERT INTO sources (source_id, source_type, created_at, ingested_at,
+                                       source_hash, metadata, path, agent, session_id)
+                    SELECT file_id, 'file', created_at, ingested_at,
+                           file_hash, metadata, path, NULL, NULL
+                    FROM files
+                    """
+                )
+                print(f"    Migrated {files_count} file records to sources")
+
+        # Phase 2: Update chunks table structure (file_id → source_id)
+        cursor = self.conn.execute("PRAGMA table_info(chunks)")
+        chunk_columns = [row[1] for row in cursor.fetchall()]
+
+        # If chunks still has file_id (old schema), need to migrate
+        if "file_id" in chunk_columns and "source_id" not in chunk_columns:
+            print("  Migrating chunks.file_id → chunks.source_id (Phase 2)...")
+            # SQLite doesn't support renaming columns directly in old versions
+            # Create new chunks table with source_id, copy data, then swap
+            self.conn.execute(
+                """
+                CREATE TABLE chunks_new (
+                    chunk_id TEXT PRIMARY KEY,
+                    source_id TEXT NOT NULL,
+                    start INTEGER NOT NULL,
+                    length INTEGER NOT NULL,
+                    sequence INTEGER NOT NULL,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY(source_id) REFERENCES sources(source_id)
+                )
+                """
+            )
+
+            # Copy data from old table (file_id becomes source_id)
+            self.conn.execute(
+                """
+                INSERT INTO chunks_new (chunk_id, source_id, start, length, sequence, created_at)
+                SELECT chunk_id, file_id, start, length, sequence, created_at
+                FROM chunks
+                """
+            )
+
+            # Drop old table and rename new one
+            self.conn.execute("DROP TABLE chunks")
+            self.conn.execute("ALTER TABLE chunks_new RENAME TO chunks")
+            print("    Migrated chunks table to use source_id")
+
+        # Phase 2: Add source_id column to memories (if missing)
+        cursor = self.conn.execute("PRAGMA table_info(memories)")
+        memory_columns = [row[1] for row in cursor.fetchall()]
+        if "source_id" not in memory_columns:
+            self.conn.execute("ALTER TABLE memories ADD COLUMN source_id TEXT")
+            print("  Added source_id column to memories table")
+
+        # Phase 2: Create indexes for sources table
+        self.conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_sources_type
+            ON sources(source_type)
+            """
+        )
+        self.conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_sources_agent
+            ON sources(agent) WHERE agent IS NOT NULL
+            """
+        )
+        self.conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_sources_path
+            ON sources(path) WHERE path IS NOT NULL
+            """
+        )
+        self.conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_sources_ingested_at
+            ON sources(ingested_at DESC)
+            """
+        )
+        self.conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_sources_session
+            ON sources(session_id) WHERE session_id IS NOT NULL
+            """
+        )
+
+        # Phase 2: Create indexes for chunks table (now using source_id)
+        self.conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_chunks_source
+            ON chunks(source_id, sequence)
+            """
+        )
+        self.conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_chunks_position
+            ON chunks(source_id, start, length)
+            """
+        )
+
+        # Phase 2: Create index for memories.source_id
+        self.conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_memories_source
+            ON memories(source_id) WHERE source_id IS NOT NULL
+            """
+        )
+
         self.conn.commit()
 
     def _validate_schema(self) -> None:
@@ -431,9 +572,9 @@ class MemoryStorage:
             INSERT INTO memories (
                 id, content, content_embedding, content_hash, created_at, metadata,
                 t_valid, t_invalid, t_created, t_expired, temporal_stability,
-                last_seen_at, reinforce_count, kind, chunk_id
+                last_seen_at, reinforce_count, kind, chunk_id, source_id
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 node.id,
@@ -451,6 +592,7 @@ class MemoryStorage:
                 node.reinforce_count,
                 kind,
                 node.chunk_id,
+                node.source_id,  # Phase 2: dual linking
             ),
         )
         # NOTE: Caller manages transaction commit
@@ -470,7 +612,7 @@ class MemoryStorage:
             """
             SELECT id, content, content_embedding, content_hash, created_at, metadata,
                    t_valid, t_invalid, t_created, t_expired, temporal_stability,
-                   last_seen_at, reinforce_count, chunk_id, kind
+                   last_seen_at, reinforce_count, chunk_id, kind, source_id
             FROM memories
             WHERE id = ?
             """,
@@ -496,6 +638,7 @@ class MemoryStorage:
             reinforce_count=row[12] or 0,
             chunk_id=row[13],
             kind=row[14],
+            source_id=row[15],
         )
 
     def get_all_memories(self) -> list[MemoryNode]:
@@ -509,7 +652,7 @@ class MemoryStorage:
             """
             SELECT id, content, content_embedding, content_hash, created_at, metadata,
                    t_valid, t_invalid, t_created, t_expired, temporal_stability,
-                   last_seen_at, reinforce_count, chunk_id, kind
+                   last_seen_at, reinforce_count, chunk_id, kind, source_id
             FROM memories
             ORDER BY created_at DESC
             """
@@ -533,6 +676,7 @@ class MemoryStorage:
                     reinforce_count=row[12] or 0,
                     chunk_id=row[13],
                     kind=row[14],
+                    source_id=row[15],
                 )
             )
         return memories
@@ -639,7 +783,271 @@ class MemoryStorage:
 
         # Note: Caller manages commit for batch operations
 
-    # M5: File operations
+    # Phase 2: Source operations
+
+    def store_source(self, source_node: "SourceNode") -> str:
+        """Store a source node in the database.
+
+        Args:
+            source_node: SourceNode to store
+
+        Returns:
+            source_id of the stored source
+        """
+        self.conn.execute(
+            """
+            INSERT INTO sources (source_id, source_type, created_at, ingested_at,
+                               source_hash, metadata, path, agent, session_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                source_node.source_id,
+                source_node.source_type,
+                source_node.created_at,
+                source_node.ingested_at,
+                source_node.source_hash,
+                json.dumps(source_node.metadata),
+                source_node.path,
+                source_node.agent,
+                source_node.session_id,
+            ),
+        )
+        self.conn.commit()
+        return source_node.source_id
+
+    def get_source(self, source_id: str) -> "SourceNode | None":
+        """Get a source by ID.
+
+        Args:
+            source_id: Source ID to retrieve
+
+        Returns:
+            SourceNode if found, None otherwise
+        """
+        from vestig.core.models import SourceNode
+
+        cursor = self.conn.execute(
+            """
+            SELECT source_id, source_type, created_at, ingested_at,
+                   source_hash, metadata, path, agent, session_id
+            FROM sources
+            WHERE source_id = ?
+            """,
+            (source_id,),
+        )
+        row = cursor.fetchone()
+        if not row:
+            return None
+
+        return SourceNode(
+            source_id=row[0],
+            source_type=row[1],
+            created_at=row[2],
+            ingested_at=row[3],
+            source_hash=row[4],
+            metadata=json.loads(row[5]) if row[5] else {},
+            path=row[6],
+            agent=row[7],
+            session_id=row[8],
+        )
+
+    def find_source_by_path(self, path: str) -> "SourceNode | None":
+        """Find a source by path (for file-type sources).
+
+        Args:
+            path: File path to search for
+
+        Returns:
+            SourceNode if found, None otherwise
+        """
+        from vestig.core.models import SourceNode
+
+        cursor = self.conn.execute(
+            """
+            SELECT source_id, source_type, created_at, ingested_at,
+                   source_hash, metadata, path, agent, session_id
+            FROM sources
+            WHERE path = ? AND source_type = 'file'
+            ORDER BY ingested_at DESC
+            LIMIT 1
+            """,
+            (path,),
+        )
+        row = cursor.fetchone()
+        if not row:
+            return None
+
+        return SourceNode(
+            source_id=row[0],
+            source_type=row[1],
+            created_at=row[2],
+            ingested_at=row[3],
+            source_hash=row[4],
+            metadata=json.loads(row[5]) if row[5] else {},
+            path=row[6],
+            agent=row[7],
+            session_id=row[8],
+        )
+
+    def get_sources_by_type(
+        self, source_type: str, limit: int | None = None
+    ) -> list["SourceNode"]:
+        """Get sources of a specific type.
+
+        Args:
+            source_type: Type to filter by ('file', 'agentic', 'legacy')
+            limit: Optional limit on results
+
+        Returns:
+            List of SourceNode objects
+        """
+        from vestig.core.models import SourceNode
+
+        query = """
+            SELECT source_id, source_type, created_at, ingested_at,
+                   source_hash, metadata, path, agent, session_id
+            FROM sources
+            WHERE source_type = ?
+            ORDER BY ingested_at DESC
+        """
+        if limit is not None:
+            query += f" LIMIT {limit}"
+
+        cursor = self.conn.execute(query, (source_type,))
+        rows = cursor.fetchall()
+
+        return [
+            SourceNode(
+                source_id=row[0],
+                source_type=row[1],
+                created_at=row[2],
+                ingested_at=row[3],
+                source_hash=row[4],
+                metadata=json.loads(row[5]) if row[5] else {},
+                path=row[6],
+                agent=row[7],
+                session_id=row[8],
+            )
+            for row in rows
+        ]
+
+    def get_sources_by_agent(
+        self, agent: str, limit: int | None = None
+    ) -> list["SourceNode"]:
+        """Get sources by agent name.
+
+        Args:
+            agent: Agent name to filter by
+            limit: Optional limit on results
+
+        Returns:
+            List of SourceNode objects
+        """
+        from vestig.core.models import SourceNode
+
+        query = """
+            SELECT source_id, source_type, created_at, ingested_at,
+                   source_hash, metadata, path, agent, session_id
+            FROM sources
+            WHERE agent = ?
+            ORDER BY ingested_at DESC
+        """
+        if limit is not None:
+            query += f" LIMIT {limit}"
+
+        cursor = self.conn.execute(query, (agent,))
+        rows = cursor.fetchall()
+
+        return [
+            SourceNode(
+                source_id=row[0],
+                source_type=row[1],
+                created_at=row[2],
+                ingested_at=row[3],
+                source_hash=row[4],
+                metadata=json.loads(row[5]) if row[5] else {},
+                path=row[6],
+                agent=row[7],
+                session_id=row[8],
+            )
+            for row in rows
+        ]
+
+    def get_sources_by_session(self, session_id: str) -> list["SourceNode"]:
+        """Get sources by session ID.
+
+        Args:
+            session_id: Session ID to filter by
+
+        Returns:
+            List of SourceNode objects
+        """
+        from vestig.core.models import SourceNode
+
+        cursor = self.conn.execute(
+            """
+            SELECT source_id, source_type, created_at, ingested_at,
+                   source_hash, metadata, path, agent, session_id
+            FROM sources
+            WHERE session_id = ?
+            ORDER BY ingested_at DESC
+            """,
+            (session_id,),
+        )
+        rows = cursor.fetchall()
+
+        return [
+            SourceNode(
+                source_id=row[0],
+                source_type=row[1],
+                created_at=row[2],
+                ingested_at=row[3],
+                source_hash=row[4],
+                metadata=json.loads(row[5]) if row[5] else {},
+                path=row[6],
+                agent=row[7],
+                session_id=row[8],
+            )
+            for row in rows
+        ]
+
+    def list_sources(
+        self, source_type: str | None = None, limit: int | None = None
+    ) -> list[tuple]:
+        """List sources for CLI display.
+
+        Args:
+            source_type: Optional type filter
+            limit: Optional limit on results
+
+        Returns:
+            List of (source_id, source_type, path/agent, created_at, ingested_at) tuples
+        """
+        query = """
+            SELECT source_id, source_type, path, agent, created_at, ingested_at
+            FROM sources
+        """
+        params: tuple = ()
+
+        if source_type is not None:
+            query += " WHERE source_type = ?"
+            params = (source_type,)
+
+        query += " ORDER BY ingested_at DESC"
+
+        if limit is not None:
+            query += f" LIMIT {limit}"
+
+        cursor = self.conn.execute(query, params)
+        rows = cursor.fetchall()
+
+        # Return tuples with path for file sources, agent for agentic sources
+        return [
+            (row[0], row[1], row[2] or row[3], row[4], row[5])
+            for row in rows
+        ]
+
+    # M5: File operations (DEPRECATED - use Source operations)
 
     def store_file(self, file_node: "FileNode") -> str:
         """
@@ -740,8 +1148,7 @@ class MemoryStorage:
     # M5: Chunk operations
 
     def store_chunk(self, chunk_node: "ChunkNode") -> str:
-        """
-        Store a chunk node in the database.
+        """Store a chunk node in the database.
 
         Args:
             chunk_node: ChunkNode to store
@@ -749,15 +1156,14 @@ class MemoryStorage:
         Returns:
             chunk_id of the stored chunk
         """
-
         self.conn.execute(
             """
-            INSERT INTO chunks (chunk_id, file_id, start, length, sequence, created_at)
+            INSERT INTO chunks (chunk_id, source_id, start, length, sequence, created_at)
             VALUES (?, ?, ?, ?, ?, ?)
             """,
             (
                 chunk_node.chunk_id,
-                chunk_node.file_id,
+                chunk_node.source_id,  # Phase 2: now source_id, not file_id
                 chunk_node.start,
                 chunk_node.length,
                 chunk_node.sequence,
@@ -768,8 +1174,7 @@ class MemoryStorage:
         return chunk_node.chunk_id
 
     def get_chunk(self, chunk_id: str) -> "ChunkNode | None":
-        """
-        Get a chunk by ID.
+        """Get a chunk by ID.
 
         Args:
             chunk_id: Chunk ID to retrieve
@@ -781,7 +1186,7 @@ class MemoryStorage:
 
         cursor = self.conn.execute(
             """
-            SELECT chunk_id, file_id, start, length, sequence, created_at
+            SELECT chunk_id, source_id, start, length, sequence, created_at
             FROM chunks
             WHERE chunk_id = ?
             """,
@@ -793,19 +1198,18 @@ class MemoryStorage:
 
         return ChunkNode(
             chunk_id=row[0],
-            file_id=row[1],
+            source_id=row[1],  # Phase 2: now source_id, not file_id
             start=row[2],
             length=row[3],
             sequence=row[4],
             created_at=row[5],
         )
 
-    def get_chunks_by_file(self, file_id: str) -> list["ChunkNode"]:
-        """
-        Get all chunks for a file, ordered by sequence.
+    def get_chunks_by_source(self, source_id: str) -> list["ChunkNode"]:
+        """Get all chunks for a source, ordered by sequence.
 
         Args:
-            file_id: File ID to get chunks for
+            source_id: Source ID to get chunks for
 
         Returns:
             List of ChunkNode objects ordered by sequence
@@ -814,12 +1218,12 @@ class MemoryStorage:
 
         cursor = self.conn.execute(
             """
-            SELECT chunk_id, file_id, start, length, sequence, created_at
+            SELECT chunk_id, source_id, start, length, sequence, created_at
             FROM chunks
-            WHERE file_id = ?
+            WHERE source_id = ?
             ORDER BY sequence ASC
             """,
-            (file_id,),
+            (source_id,),
         )
 
         chunks = []
@@ -827,7 +1231,7 @@ class MemoryStorage:
             chunks.append(
                 ChunkNode(
                     chunk_id=row[0],
-                    file_id=row[1],
+                    source_id=row[1],  # Phase 2: now source_id
                     start=row[2],
                     length=row[3],
                     sequence=row[4],
@@ -835,6 +1239,18 @@ class MemoryStorage:
                 )
             )
         return chunks
+
+    def get_chunks_by_file(self, file_id: str) -> list["ChunkNode"]:
+        """DEPRECATED: Get all chunks for a file. Use get_chunks_by_source() instead.
+
+        Args:
+            file_id: File ID to get chunks for (now source_id)
+
+        Returns:
+            List of ChunkNode objects ordered by sequence
+        """
+        # Backward compatibility: file_id is now source_id
+        return self.get_chunks_by_source(file_id)
 
     def get_memories_by_chunk(
         self, chunk_id: str, include_expired: bool = False
@@ -855,7 +1271,7 @@ class MemoryStorage:
             f"""
             SELECT id, content, content_embedding, content_hash, created_at, metadata,
                    t_valid, t_invalid, t_created, t_expired, temporal_stability,
-                   last_seen_at, reinforce_count, chunk_id, kind
+                   last_seen_at, reinforce_count, chunk_id, kind, source_id
             FROM memories
             WHERE chunk_id = ? {expired_filter}
             ORDER BY created_at ASC
@@ -882,6 +1298,7 @@ class MemoryStorage:
                     reinforce_count=row[12] or 0,
                     chunk_id=row[13],
                     kind=row[14],
+                    source_id=row[15],
                 )
             )
         return memories
@@ -945,7 +1362,7 @@ class MemoryStorage:
             """
             SELECT id, content, content_embedding, content_hash, created_at, metadata,
                    t_valid, t_invalid, t_created, t_expired, temporal_stability,
-                   last_seen_at, reinforce_count, chunk_id, kind
+                   last_seen_at, reinforce_count, chunk_id, kind, source_id
             FROM memories
             WHERE t_expired IS NULL
             ORDER BY created_at DESC
@@ -970,6 +1387,7 @@ class MemoryStorage:
                     reinforce_count=row[12] or 0,
                     chunk_id=row[13],
                     kind=row[14],
+                    source_id=row[15],
                 )
             )
         return memories
@@ -988,7 +1406,7 @@ class MemoryStorage:
             """
             SELECT id, content, content_embedding, content_hash, created_at, metadata,
                    t_valid, t_invalid, t_created, t_expired, temporal_stability,
-                   last_seen_at, reinforce_count, chunk_id, kind
+                   last_seen_at, reinforce_count, chunk_id, kind, source_id
             FROM memories
             WHERE kind = 'SUMMARY' AND t_expired IS NULL
             ORDER BY created_at DESC
@@ -1014,6 +1432,7 @@ class MemoryStorage:
                     reinforce_count=row[12] or 0,
                     chunk_id=row[13],
                     kind=row[14],
+                    source_id=row[15],
                 )
 
         return None
@@ -1032,7 +1451,7 @@ class MemoryStorage:
             """
             SELECT id, content, content_embedding, content_hash, created_at, metadata,
                    t_valid, t_invalid, t_created, t_expired, temporal_stability,
-                   last_seen_at, reinforce_count, chunk_id, kind
+                   last_seen_at, reinforce_count, chunk_id, kind, source_id
             FROM memories
             WHERE kind = 'SUMMARY' AND chunk_id = ? AND t_expired IS NULL
             ORDER BY created_at DESC
@@ -1061,6 +1480,7 @@ class MemoryStorage:
             reinforce_count=row[12] or 0,
             chunk_id=row[13],
             kind=row[14],
+            source_id=row[15],
         )
 
     # M4: Entity operations
@@ -1739,6 +2159,7 @@ class MemoryStorage:
                     reinforce_count=row[12] or 0,
                     chunk_id=row[13],
                     kind=row[14],
+                    source_id=row[15],
                 )
             )
         return memories
@@ -1778,6 +2199,7 @@ class MemoryStorage:
             reinforce_count=row[12] or 0,
             chunk_id=row[13],
             kind=row[14],
+            source_id=row[15],
         )
 
     def get_entities_in_chunk(

@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from falkordb import FalkorDB
 
 from vestig.core.db_interface import DatabaseInterface, EventStorageInterface
-from vestig.core.models import ChunkNode, EdgeNode, EntityNode, EventNode, FileNode, MemoryNode
+from vestig.core.models import ChunkNode, EdgeNode, EntityNode, EventNode, FileNode, MemoryNode, SourceNode
 
 
 class FalkorEventStorage(EventStorageInterface):
@@ -892,7 +892,219 @@ class FalkorDBDatabase(DatabaseInterface):
         return [tuple(row) for row in result.result_set]
 
     # =========================================================================
-    # File and Chunk Operations
+    # Source Operations (Phase 2)
+    # =========================================================================
+
+    def store_source(self, source_node: SourceNode) -> str:
+        """Store source metadata (file, agentic, or legacy)."""
+        self._graph.query(
+            """
+            CREATE (s:Source {
+                id: $id,
+                source_type: $source_type,
+                created_at: $created_at,
+                ingested_at: $ingested_at,
+                source_hash: $source_hash,
+                metadata: $metadata,
+                path: $path,
+                agent: $agent,
+                session_id: $session_id
+            })
+            """,
+            {
+                "id": source_node.source_id,
+                "source_type": source_node.source_type,
+                "created_at": source_node.created_at,
+                "ingested_at": source_node.ingested_at,
+                "source_hash": source_node.source_hash,
+                "metadata": json.dumps(source_node.metadata),
+                "path": source_node.path,
+                "agent": source_node.agent,
+                "session_id": source_node.session_id,
+            },
+        )
+        return source_node.source_id
+
+    def get_source(self, source_id: str) -> SourceNode | None:
+        """Retrieve source by ID."""
+        result = self._graph.ro_query(
+            """
+            MATCH (s:Source {id: $id})
+            RETURN s.id, s.source_type, s.created_at, s.ingested_at,
+                   s.source_hash, s.metadata, s.path, s.agent, s.session_id
+            """,
+            {"id": source_id},
+        )
+        if not result.result_set:
+            return None
+
+        row = result.result_set[0]
+        return SourceNode(
+            source_id=row[0],
+            source_type=row[1],
+            created_at=row[2],
+            ingested_at=row[3],
+            source_hash=row[4],
+            metadata=json.loads(row[5]) if row[5] else {},
+            path=row[6],
+            agent=row[7],
+            session_id=row[8],
+        )
+
+    def find_source_by_path(self, path: str) -> SourceNode | None:
+        """Find source by path (for file-type sources)."""
+        result = self._graph.ro_query(
+            """
+            MATCH (s:Source {path: $path, source_type: 'file'})
+            RETURN s.id, s.source_type, s.created_at, s.ingested_at,
+                   s.source_hash, s.metadata, s.path, s.agent, s.session_id
+            ORDER BY s.ingested_at DESC
+            LIMIT 1
+            """,
+            {"path": path},
+        )
+        if not result.result_set:
+            return None
+
+        row = result.result_set[0]
+        return SourceNode(
+            source_id=row[0],
+            source_type=row[1],
+            created_at=row[2],
+            ingested_at=row[3],
+            source_hash=row[4],
+            metadata=json.loads(row[5]) if row[5] else {},
+            path=row[6],
+            agent=row[7],
+            session_id=row[8],
+        )
+
+    def get_sources_by_type(
+        self, source_type: str, limit: int | None = None
+    ) -> list[SourceNode]:
+        """Get sources of a specific type."""
+        query = """
+            MATCH (s:Source {source_type: $source_type})
+            RETURN s.id, s.source_type, s.created_at, s.ingested_at,
+                   s.source_hash, s.metadata, s.path, s.agent, s.session_id
+            ORDER BY s.ingested_at DESC
+        """
+        if limit is not None:
+            query += f" LIMIT {limit}"
+
+        result = self._graph.ro_query(query, {"source_type": source_type})
+        if not result.result_set:
+            return []
+
+        return [
+            SourceNode(
+                source_id=row[0],
+                source_type=row[1],
+                created_at=row[2],
+                ingested_at=row[3],
+                source_hash=row[4],
+                metadata=json.loads(row[5]) if row[5] else {},
+                path=row[6],
+                agent=row[7],
+                session_id=row[8],
+            )
+            for row in result.result_set
+        ]
+
+    def get_sources_by_agent(
+        self, agent: str, limit: int | None = None
+    ) -> list[SourceNode]:
+        """Get sources by agent name."""
+        query = """
+            MATCH (s:Source {agent: $agent})
+            RETURN s.id, s.source_type, s.created_at, s.ingested_at,
+                   s.source_hash, s.metadata, s.path, s.agent, s.session_id
+            ORDER BY s.ingested_at DESC
+        """
+        if limit is not None:
+            query += f" LIMIT {limit}"
+
+        result = self._graph.ro_query(query, {"agent": agent})
+        if not result.result_set:
+            return []
+
+        return [
+            SourceNode(
+                source_id=row[0],
+                source_type=row[1],
+                created_at=row[2],
+                ingested_at=row[3],
+                source_hash=row[4],
+                metadata=json.loads(row[5]) if row[5] else {},
+                path=row[6],
+                agent=row[7],
+                session_id=row[8],
+            )
+            for row in result.result_set
+        ]
+
+    def get_sources_by_session(self, session_id: str) -> list[SourceNode]:
+        """Get sources by session ID."""
+        result = self._graph.ro_query(
+            """
+            MATCH (s:Source {session_id: $session_id})
+            RETURN s.id, s.source_type, s.created_at, s.ingested_at,
+                   s.source_hash, s.metadata, s.path, s.agent, s.session_id
+            ORDER BY s.ingested_at DESC
+            """,
+            {"session_id": session_id},
+        )
+        if not result.result_set:
+            return []
+
+        return [
+            SourceNode(
+                source_id=row[0],
+                source_type=row[1],
+                created_at=row[2],
+                ingested_at=row[3],
+                source_hash=row[4],
+                metadata=json.loads(row[5]) if row[5] else {},
+                path=row[6],
+                agent=row[7],
+                session_id=row[8],
+            )
+            for row in result.result_set
+        ]
+
+    def list_sources(
+        self, source_type: str | None = None, limit: int | None = None
+    ) -> list[tuple]:
+        """List sources for CLI display."""
+        if source_type is not None:
+            query = """
+                MATCH (s:Source {source_type: $source_type})
+                RETURN s.id, s.source_type, s.path, s.agent, s.created_at, s.ingested_at
+                ORDER BY s.ingested_at DESC
+            """
+            params = {"source_type": source_type}
+        else:
+            query = """
+                MATCH (s:Source)
+                RETURN s.id, s.source_type, s.path, s.agent, s.created_at, s.ingested_at
+                ORDER BY s.ingested_at DESC
+            """
+            params = {}
+
+        if limit is not None:
+            query += f" LIMIT {limit}"
+
+        result = self._graph.ro_query(query, params)
+        if not result.result_set:
+            return []
+
+        # Return tuples with path for file sources, agent for agentic sources
+        return [
+            (row[0], row[1], row[2] or row[3], row[4], row[5])
+            for row in result.result_set
+        ]
+
+    # File and Chunk Operations (DEPRECATED)
     # =========================================================================
 
     def store_file(self, file_node: FileNode) -> str:
@@ -966,12 +1178,12 @@ class FalkorDBDatabase(DatabaseInterface):
         )
 
     def store_chunk(self, chunk_node: ChunkNode) -> str:
-        """Store chunk pointer."""
+        """Store chunk pointer (now references source_id)."""
         self._graph.query(
             """
             CREATE (c:Chunk {
                 id: $id,
-                file_id: $file_id,
+                source_id: $source_id,
                 start: $start,
                 length: $length,
                 sequence: $sequence,
@@ -980,7 +1192,7 @@ class FalkorDBDatabase(DatabaseInterface):
             """,
             {
                 "id": chunk_node.chunk_id,
-                "file_id": chunk_node.file_id,
+                "source_id": chunk_node.source_id,  # Phase 2: now source_id
                 "start": chunk_node.start,
                 "length": chunk_node.length,
                 "sequence": chunk_node.sequence,
@@ -994,7 +1206,7 @@ class FalkorDBDatabase(DatabaseInterface):
         result = self._graph.ro_query(
             """
             MATCH (c:Chunk {id: $id})
-            RETURN c.id, c.file_id, c.start, c.length, c.sequence, c.created_at
+            RETURN c.id, c.source_id, c.start, c.length, c.sequence, c.created_at
             """,
             {"id": chunk_id},
         )
@@ -1004,27 +1216,27 @@ class FalkorDBDatabase(DatabaseInterface):
         row = result.result_set[0]
         return ChunkNode(
             chunk_id=row[0],
-            file_id=row[1],
+            source_id=row[1],  # Phase 2: now source_id
             start=row[2],
             length=row[3],
             sequence=row[4],
             created_at=row[5],
         )
 
-    def get_chunks_by_file(self, file_id: str) -> list[ChunkNode]:
-        """Get chunks for file, ordered by sequence."""
+    def get_chunks_by_source(self, source_id: str) -> list[ChunkNode]:
+        """Get chunks for source, ordered by sequence."""
         result = self._graph.ro_query(
             """
-            MATCH (c:Chunk {file_id: $file_id})
-            RETURN c.id, c.file_id, c.start, c.length, c.sequence, c.created_at
+            MATCH (c:Chunk {source_id: $source_id})
+            RETURN c.id, c.source_id, c.start, c.length, c.sequence, c.created_at
             ORDER BY c.sequence ASC
             """,
-            {"file_id": file_id},
+            {"source_id": source_id},
         )
         return [
             ChunkNode(
                 chunk_id=row[0],
-                file_id=row[1],
+                source_id=row[1],  # Phase 2: now source_id
                 start=row[2],
                 length=row[3],
                 sequence=row[4],
@@ -1032,6 +1244,11 @@ class FalkorDBDatabase(DatabaseInterface):
             )
             for row in result.result_set
         ]
+
+    def get_chunks_by_file(self, file_id: str) -> list[ChunkNode]:
+        """DEPRECATED: Get chunks for file. Use get_chunks_by_source() instead."""
+        # Backward compatibility: file_id is now source_id
+        return self.get_chunks_by_source(file_id)
 
     def get_chunk_for_memory(self, memory_id: str) -> ChunkNode | None:
         """Get chunk via CONTAINS edge (M6)."""
