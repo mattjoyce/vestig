@@ -267,6 +267,16 @@ class SQLiteDatabase(DatabaseInterface):
         return self._storage.count_memories_with_edge_type(edge_type)
 
     # =========================================================================
+    # Housekeeping Operations
+    # =========================================================================
+
+    def get_orphaned_memories(self) -> list[tuple[str, str, str]]:
+        return self._storage.get_orphaned_memories()
+
+    def get_memories_without_source(self) -> list[tuple[str, str, str]]:
+        return self._storage.get_memories_without_source()
+
+    # =========================================================================
     # Bulk Delete Operations
     # =========================================================================
 

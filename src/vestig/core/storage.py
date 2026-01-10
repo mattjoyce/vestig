@@ -1323,6 +1323,59 @@ class MemoryStorage:
             (edge_type,),
         ).fetchone()[0]
 
+    # =========================================================================
+    # Housekeeping Operations
+    # =========================================================================
+
+    def get_orphaned_memories(self) -> list[tuple[str, str, str]]:
+        """Find memories without provenance (no CONTAINS edge) and no entity links.
+
+        Returns:
+            List of (memory_id, content, created_at) tuples for orphaned memories.
+        """
+        cursor = self.conn.execute(
+            """
+            SELECT m.id, m.content, m.created_at
+            FROM memories m
+            WHERE m.t_expired IS NULL
+              AND m.kind = 'MEMORY'
+              AND NOT EXISTS (
+                  SELECT 1 FROM edges e
+                  WHERE e.to_node = m.id AND e.edge_type = 'CONTAINS'
+              )
+              AND NOT EXISTS (
+                  SELECT 1 FROM edges e
+                  WHERE e.from_node = m.id AND e.edge_type = 'MENTIONS'
+              )
+            ORDER BY m.created_at
+            """
+        )
+        return cursor.fetchall()
+
+    def get_memories_without_source(self) -> list[tuple[str, str, str]]:
+        """Find memories without Source linkage (direct or via Chunk).
+
+        For SQLite M5/M6: memories without CONTAINS edge pointing to them.
+        This is effectively the same as orphaned for now, until Source abstraction.
+
+        Returns:
+            List of (memory_id, content, created_at) tuples.
+        """
+        cursor = self.conn.execute(
+            """
+            SELECT m.id, m.content, m.created_at
+            FROM memories m
+            WHERE m.t_expired IS NULL
+              AND m.kind = 'MEMORY'
+              AND NOT EXISTS (
+                  SELECT 1 FROM edges e
+                  WHERE e.to_node = m.id AND e.edge_type = 'CONTAINS'
+              )
+            ORDER BY m.created_at
+            """
+        )
+        return cursor.fetchall()
+
     def list_entities_with_mention_counts(
         self, include_expired: bool = False, limit: int | None = None
     ) -> list[tuple]:

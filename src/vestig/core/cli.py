@@ -781,6 +781,144 @@ def cmd_entity_regen_embeddings(args):
         storage.close()
 
 
+# =========================================================================
+# Housekeeping Commands
+# =========================================================================
+
+
+def cmd_housekeeping_report(args):
+    """Handle 'vestig housekeeping report' command"""
+    config = args.config_dict
+    storage = create_database(config)
+
+    try:
+        print("Graph Health Report")
+        print("=" * 50)
+
+        # Memory stats
+        total_memories = storage.count_memories(kind="MEMORY")
+        total_summaries = storage.count_memories(kind="SUMMARY")
+        memories_with_entities = storage.count_memories_with_edge_type("MENTIONS")
+
+        print("\nMemories:")
+        print(f"  Total MEMORY nodes:    {total_memories}")
+        print(f"  Total SUMMARY nodes:   {total_summaries}")
+        print(f"  With entity links:     {memories_with_entities}")
+
+        # Orphan stats
+        orphaned = storage.get_orphaned_memories()
+        without_source = storage.get_memories_without_source()
+
+        print("\nProvenance Issues:")
+        print(f"  Without source (no CONTAINS edge): {len(without_source)}")
+        print(f"  Fully orphaned (no source, no entities): {len(orphaned)}")
+
+        # Entity stats
+        total_entities = storage.count_entities()
+        mentions_edges = storage.count_edges(edge_type="MENTIONS")
+
+        print("\nEntities:")
+        print(f"  Total entities:        {total_entities}")
+        print(f"  MENTIONS edges:        {mentions_edges}")
+
+        # Edge stats
+        contains_edges = storage.count_edges(edge_type="CONTAINS")
+        related_edges = storage.count_edges(edge_type="RELATED")
+
+        print("\nEdges:")
+        print(f"  CONTAINS edges:        {contains_edges}")
+        print(f"  RELATED edges:         {related_edges}")
+
+        print("\n" + "=" * 50)
+
+    finally:
+        storage.close()
+
+
+def cmd_housekeeping_entity_backfill(args):
+    """Handle 'vestig housekeeping entity-backfill' command"""
+    from vestig.core.config import load_entity_ontology
+    from vestig.core.entity_extraction import process_memories_for_entities
+
+    config = args.config_dict
+    storage = create_database(config)
+
+    try:
+        # Load ontology
+        ontology = load_entity_ontology(config)
+
+        print("Entity Backfill")
+        print("=" * 50)
+        print("Running entity extraction on memories without entities...")
+        print()
+
+        process_memories_for_entities(
+            storage=storage,
+            config=config,
+            ontology=ontology,
+            reprocess=False,  # Only unprocessed memories
+            batch_size=args.batch_size,
+            verbose=args.verbose,
+        )
+
+        print("\n✓ Entity backfill completed")
+
+    finally:
+        storage.close()
+
+
+def cmd_housekeeping_orphans(args):
+    """Handle 'vestig housekeeping orphans' command"""
+    from vestig.core.config import load_entity_ontology
+    from vestig.core.entity_extraction import process_memories_for_entities
+
+    config = args.config_dict
+    storage = create_database(config)
+
+    try:
+        orphaned = storage.get_orphaned_memories()
+
+        if not orphaned:
+            print("No orphaned memories found.")
+            return
+
+        print(f"Found {len(orphaned)} orphaned memories (no source, no entities):")
+        print("=" * 70)
+
+        for memory_id, content, created_at in orphaned:
+            preview = content[:80].replace("\n", " ")
+            if len(content) > 80:
+                preview += "..."
+            print(f"\n{memory_id}")
+            print(f"  Created: {created_at}")
+            print(f"  Content: {preview}")
+
+        if args.fix:
+            print("\n" + "=" * 70)
+            print("Running entity extraction on orphaned memories...")
+
+            # Load ontology
+            ontology = load_entity_ontology(config)
+
+            # For now, run entity extraction to give orphans a retrieval path
+            # Full source backfill will come with Source abstraction
+            process_memories_for_entities(
+                storage=storage,
+                config=config,
+                ontology=ontology,
+                reprocess=False,
+                batch_size=1,
+                verbose=args.verbose,
+            )
+
+            print("\n✓ Entity extraction completed for orphaned memories")
+        else:
+            print("\nUse --fix to run entity extraction on these memories")
+
+    finally:
+        storage.close()
+
+
 def cmd_edge_list(args):
     """Handle 'vestig edge list' command"""
     config = args.config_dict
@@ -1532,6 +1670,53 @@ def main():
     parser_config_show.set_defaults(func=cmd_config_show)
 
     parser_config.set_defaults(func=cmd_memory, noun_parser=parser_config)
+
+    # vestig housekeeping
+    parser_housekeeping = subparsers.add_parser("housekeeping", help="Graph maintenance operations")
+    housekeeping_subparsers = parser_housekeeping.add_subparsers(
+        dest="housekeeping_command", help="Housekeeping commands"
+    )
+
+    # vestig housekeeping report
+    parser_hk_report = housekeeping_subparsers.add_parser(
+        "report", help="Show graph health report"
+    )
+    parser_hk_report.set_defaults(func=cmd_housekeeping_report)
+
+    # vestig housekeeping entity-backfill
+    parser_hk_entity = housekeeping_subparsers.add_parser(
+        "entity-backfill", help="Run entity extraction on memories without entities"
+    )
+    parser_hk_entity.add_argument(
+        "--batch-size",
+        type=int,
+        default=1,
+        help="Number of memories per batch (default: 1)",
+    )
+    parser_hk_entity.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Show detailed output",
+    )
+    parser_hk_entity.set_defaults(func=cmd_housekeeping_entity_backfill)
+
+    # vestig housekeeping orphans
+    parser_hk_orphans = housekeeping_subparsers.add_parser(
+        "orphans", help="List orphaned memories (no source, no entities)"
+    )
+    parser_hk_orphans.add_argument(
+        "--fix",
+        action="store_true",
+        help="Run entity extraction on orphaned memories",
+    )
+    parser_hk_orphans.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Show detailed output during fix",
+    )
+    parser_hk_orphans.set_defaults(func=cmd_housekeeping_orphans)
+
+    parser_housekeeping.set_defaults(func=cmd_memory, noun_parser=parser_housekeeping)
 
     args = parser.parse_args()
 

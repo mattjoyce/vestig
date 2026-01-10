@@ -359,6 +359,28 @@ class DatabaseInterface(ABC):
         ...
 
     # =========================================================================
+    # Housekeeping Operations
+    # =========================================================================
+
+    @abstractmethod
+    def get_orphaned_memories(self) -> list[tuple[str, str, str]]:
+        """Find memories without provenance (no CONTAINS edge) and no entity links.
+
+        Returns:
+            List of (memory_id, content, created_at) tuples for orphaned memories.
+        """
+        ...
+
+    @abstractmethod
+    def get_memories_without_source(self) -> list[tuple[str, str, str]]:
+        """Find memories without Source linkage (direct or via Chunk).
+
+        Returns:
+            List of (memory_id, content, created_at) tuples.
+        """
+        ...
+
+    # =========================================================================
     # Bulk Delete Operations
     # =========================================================================
 

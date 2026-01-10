@@ -354,7 +354,7 @@ class FalkorDBDatabase(DatabaseInterface):
                 """
                 MATCH (m:Memory)
                 WHERE m.t_expired IS NULL AND m.kind = 'MEMORY'
-                AND NOT EXISTS { MATCH (m)-[:MENTIONS]->(:Entity) }
+                AND NOT (m)-[:MENTIONS]->(:Entity)
                 RETURN m.id, m.content
                 ORDER BY m.created_at ASC
                 """
@@ -1110,6 +1110,48 @@ class FalkorDBDatabase(DatabaseInterface):
             """
         )
         return result.result_set[0][0] if result.result_set else 0
+
+    # =========================================================================
+    # Housekeeping Operations
+    # =========================================================================
+
+    def get_orphaned_memories(self) -> list[tuple[str, str, str]]:
+        """Find memories without provenance (no CONTAINS edge) and no entity links.
+
+        Returns:
+            List of (memory_id, content, created_at) tuples for orphaned memories.
+        """
+        result = self._graph.ro_query(
+            """
+            MATCH (m:Memory)
+            WHERE m.t_expired IS NULL AND m.kind = 'MEMORY'
+              AND NOT (:Chunk)-[:CONTAINS]->(m)
+              AND NOT (m)-[:MENTIONS]->(:Entity)
+            RETURN m.id, m.content, m.created_at
+            ORDER BY m.created_at
+            """
+        )
+        return [(row[0], row[1], row[2]) for row in result.result_set]
+
+    def get_memories_without_source(self) -> list[tuple[str, str, str]]:
+        """Find memories without Source linkage (direct or via Chunk).
+
+        For FalkorDB: memories without incoming CONTAINS edge from Chunk.
+        This is effectively the same as orphaned for now, until Source abstraction.
+
+        Returns:
+            List of (memory_id, content, created_at) tuples.
+        """
+        result = self._graph.ro_query(
+            """
+            MATCH (m:Memory)
+            WHERE m.t_expired IS NULL AND m.kind = 'MEMORY'
+              AND NOT (:Chunk)-[:CONTAINS]->(m)
+            RETURN m.id, m.content, m.created_at
+            ORDER BY m.created_at
+            """
+        )
+        return [(row[0], row[1], row[2]) for row in result.result_set]
 
     # =========================================================================
     # Bulk Delete Operations
