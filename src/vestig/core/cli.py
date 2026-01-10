@@ -870,7 +870,6 @@ def cmd_housekeeping_entity_backfill(args):
 def cmd_housekeeping_orphans(args):
     """Handle 'vestig housekeeping orphans' command"""
     from vestig.core.config import load_entity_ontology
-    from vestig.core.entity_extraction import process_memories_for_entities
 
     config = args.config_dict
     storage = create_database(config)
@@ -895,23 +894,69 @@ def cmd_housekeeping_orphans(args):
 
         if args.fix:
             print("\n" + "=" * 70)
-            print("Running entity extraction on orphaned memories...")
+            print(f"Running entity extraction on {len(orphaned)} orphaned memories...")
 
-            # Load ontology
+            # Load ontology and extraction dependencies
             ontology = load_entity_ontology(config)
-
-            # For now, run entity extraction to give orphans a retrieval path
-            # Full source backfill will come with Source abstraction
-            process_memories_for_entities(
-                storage=storage,
-                config=config,
-                ontology=ontology,
-                reprocess=False,
-                batch_size=1,
-                verbose=args.verbose,
+            from vestig.core.entity_extraction import (
+                extract_entities_from_text,
+                store_entities,
             )
+            from vestig.core.models import EdgeNode
 
-            print("\n✓ Entity extraction completed for orphaned memories")
+            m4_config = config.get("m4", {})
+            entity_config = m4_config.get("entity_extraction", {})
+            llm_config = entity_config.get("llm", {})
+            model = llm_config.get("model", "claude-haiku-4.5")
+
+            entities_created = 0
+            edges_created = 0
+
+            for memory_id, content, created_at in orphaned:
+                if args.verbose:
+                    preview = content[:60].replace("\n", " ")
+                    print(f"\nProcessing: {memory_id}")
+                    print(f"  Content: {preview}...")
+
+                # Extract entities from memory content
+                entities = extract_entities_from_text(
+                    text=content,
+                    model=model,
+                    ontology=ontology,
+                )
+
+                if entities:
+                    # Store entities (deduplication, embeddings)
+                    # store_entities returns list of (entity_id, entity_type, confidence, evidence)
+                    stored = store_entities(
+                        entities=entities,
+                        memory_id=memory_id,
+                        storage=storage,
+                        config=config,
+                        chunk_id=None,
+                    )
+                    # Create MENTIONS edges from memory to entities
+                    for entity_id, entity_type, confidence, evidence in stored:
+                        edge = EdgeNode.create(
+                            from_node=memory_id,
+                            to_node=entity_id,
+                            edge_type="MENTIONS",
+                            confidence=confidence,
+                            evidence=evidence,
+                        )
+                        storage.store_edge(edge)
+                        entities_created += 1
+                        edges_created += 1
+
+                        if args.verbose:
+                            print(f"    → {entity_type}: {evidence} ({confidence:.2f})")
+
+                storage.commit()
+
+            print("\n✓ Entity extraction completed:")
+            print(f"  Memories processed: {len(orphaned)}")
+            print(f"  Entities linked: {entities_created}")
+            print(f"  MENTIONS edges created: {edges_created}")
         else:
             print("\nUse --fix to run entity extraction on these memories")
 
