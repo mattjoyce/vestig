@@ -19,9 +19,10 @@ We build Vestig in **progressive maturation** steps. Each maturity level is a *c
 - **M6 — Productisation:** stable interfaces, hardening, packaging, and clean integration patterns for agent ecosystems.
 
 See:
-- `PLAN.md` — the maturation roadmap (M1→M6) + guiding preamble and principles
-- `SPEC.md` — target design and technical contract (what we are building toward)
+- `ROADMAP.md` — the maturation roadmap (M1→M6) + guiding preamble and principles
+- `ARCHITECTURE.md` — current implementation documentation and technical contract
 - `M4_Completion_Report.md` — detailed M4 milestone report
+- `docs/archive/SPEC_RESEARCH.md` — archived research vision (aspirational features)
 
 **Current Status:** M1–M4 are complete and operational. **M5 is in progress** (TraceRank implemented, hybrid retrieval underway). Anything not required for the current milestone is intentionally deferred.
 
@@ -139,7 +140,9 @@ Typical structure (may evolve slightly as we implement):
 - `demos/` — demo scripts (demo_m1.sh, demo_m4.sh, etc.)
 - `benchmarks/` — performance benchmarking scripts
 - `data/` — local sqlite DB (gitignored)
-- `SPEC.md` — technical spec / contract
+- `ARCHITECTURE.md` — technical architecture and implementation documentation
+- `ROADMAP.md` — maturation roadmap and milestone planning
+- `docs/archive/` — archived research and design documents
 
 ---
 
