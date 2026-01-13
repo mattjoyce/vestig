@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+VENV=".venv_deadcode"
+DEADCODE_BIN="$VENV/bin/deadcode"
+
+if [[ ! -x "$DEADCODE_BIN" ]]; then
+  cat <<'USAGE'
+Deadcode helper venv not found.
+
+Create it with:
+  python3.12 -m venv .venv_deadcode
+  .venv_deadcode/bin/pip install deadcode
+USAGE
+  exit 1
+fi
+
+if [[ $# -eq 0 ]]; then
+  exec "$DEADCODE_BIN" ./src
+fi
+
+exec "$DEADCODE_BIN" "$@"

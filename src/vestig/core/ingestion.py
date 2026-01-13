@@ -945,7 +945,6 @@ def ingest_document(
                                     .get("min_confidence", 0.75)
                                 )
                                 mentions_edges = 0
-                                linked_edges = 0
 
                                 for entity_id, entity_type, confidence, evidence in stored_entities:
                                     if confidence >= min_confidence:
@@ -972,7 +971,6 @@ def ingest_document(
                                                 evidence=evidence,
                                             )
                                             storage.store_edge(linked_edge)
-                                            linked_edges += 1
 
                                 if verbose:
                                     print(

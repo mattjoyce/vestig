@@ -176,7 +176,7 @@ def expand_via_related(
     return results[:limit]
 
 
-def expand_with_graph(
+def expand_with_graph(  # noqa: DC02
     memory_ids: list[str],
     storage: MemoryStorage,
     entity_limit: int = 3,

@@ -373,7 +373,9 @@ class MemoryStorage:
         )
 
         # Phase 2: Migrate existing File nodes to Source nodes
-        cursor = self.conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='files'")
+        cursor = self.conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='files'"
+        )
         if cursor.fetchone():
             # Check if migration already done by seeing if sources has data but files still exists
             cursor = self.conn.execute("SELECT COUNT(*) FROM sources")
@@ -733,7 +735,7 @@ class MemoryStorage:
 
         return cursor.fetchall()
 
-    def get_memories_without_edge_type(
+    def get_memories_without_edge_type(  # noqa: DC04
         self, edge_type: str = "MENTIONS", kind: str = "MEMORY"
     ) -> list[tuple[str, str]]:
         """
@@ -889,9 +891,7 @@ class MemoryStorage:
             session_id=row[8],
         )
 
-    def get_sources_by_type(
-        self, source_type: str, limit: int | None = None
-    ) -> list["SourceNode"]:
+    def get_sources_by_type(self, source_type: str, limit: int | None = None) -> list["SourceNode"]:
         """Get sources of a specific type.
 
         Args:
@@ -931,9 +931,7 @@ class MemoryStorage:
             for row in rows
         ]
 
-    def get_sources_by_agent(
-        self, agent: str, limit: int | None = None
-    ) -> list["SourceNode"]:
+    def get_sources_by_agent(self, agent: str, limit: int | None = None) -> list["SourceNode"]:
         """Get sources by agent name.
 
         Args:
@@ -1011,9 +1009,7 @@ class MemoryStorage:
             for row in rows
         ]
 
-    def list_sources(
-        self, source_type: str | None = None, limit: int | None = None
-    ) -> list[tuple]:
+    def list_sources(self, source_type: str | None = None, limit: int | None = None) -> list[tuple]:
         """List sources for CLI display.
 
         Args:
@@ -1042,10 +1038,7 @@ class MemoryStorage:
         rows = cursor.fetchall()
 
         # Return tuples with path for file sources, agent for agentic sources
-        return [
-            (row[0], row[1], row[2] or row[3], row[4], row[5])
-            for row in rows
-        ]
+        return [(row[0], row[1], row[2] or row[3], row[4], row[5]) for row in rows]
 
     # M5: File operations (DEPRECATED - use Source operations)
 

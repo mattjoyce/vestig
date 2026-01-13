@@ -62,7 +62,7 @@ def match_query_entities_to_db(
 
     matched_entities = []
 
-    for q_ent_name, q_ent_type, q_conf, q_evidence in query_entities:
+    for q_ent_name, q_ent_type, _, _ in query_entities:
         # First try exact match via norm_key (fast path)
         norm_key = compute_norm_key(q_ent_name, q_ent_type)
         exact_match = storage.find_entity_by_norm_key(norm_key, include_expired=False)
@@ -380,7 +380,7 @@ def recall_with_chunk_expansion(
     all_memories = {}  # memory_id → MemoryNode
 
     # Expand via chunks from summaries
-    for summary, summary_score in summary_results:
+    for summary, _ in summary_results:
         # Include the summary itself
         all_memories[summary.id] = summary
 

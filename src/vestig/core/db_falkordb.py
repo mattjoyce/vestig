@@ -11,7 +11,15 @@ from datetime import datetime, timezone
 from falkordb import FalkorDB
 
 from vestig.core.db_interface import DatabaseInterface, EventStorageInterface
-from vestig.core.models import ChunkNode, EdgeNode, EntityNode, EventNode, FileNode, MemoryNode, SourceNode
+from vestig.core.models import (
+    ChunkNode,
+    EdgeNode,
+    EntityNode,
+    EventNode,
+    FileNode,
+    MemoryNode,
+    SourceNode,
+)
 
 
 class FalkorEventStorage(EventStorageInterface):
@@ -118,7 +126,6 @@ class FalkorDBDatabase(DatabaseInterface):
         """
         self._client = FalkorDB(host=host, port=port)
         self._graph = self._client.select_graph(graph_name)
-        self._graph_name = graph_name
         self._event_storage = FalkorEventStorage(self._graph)
         self._init_schema()
 
@@ -979,9 +986,7 @@ class FalkorDBDatabase(DatabaseInterface):
             session_id=row[8],
         )
 
-    def get_sources_by_type(
-        self, source_type: str, limit: int | None = None
-    ) -> list[SourceNode]:
+    def get_sources_by_type(self, source_type: str, limit: int | None = None) -> list[SourceNode]:
         """Get sources of a specific type."""
         query = """
             MATCH (s:Source {source_type: $source_type})
@@ -1011,9 +1016,7 @@ class FalkorDBDatabase(DatabaseInterface):
             for row in result.result_set
         ]
 
-    def get_sources_by_agent(
-        self, agent: str, limit: int | None = None
-    ) -> list[SourceNode]:
+    def get_sources_by_agent(self, agent: str, limit: int | None = None) -> list[SourceNode]:
         """Get sources by agent name."""
         query = """
             MATCH (s:Source {agent: $agent})
@@ -1072,9 +1075,7 @@ class FalkorDBDatabase(DatabaseInterface):
             for row in result.result_set
         ]
 
-    def list_sources(
-        self, source_type: str | None = None, limit: int | None = None
-    ) -> list[tuple]:
+    def list_sources(self, source_type: str | None = None, limit: int | None = None) -> list[tuple]:
         """List sources for CLI display."""
         if source_type is not None:
             query = """
@@ -1099,10 +1100,7 @@ class FalkorDBDatabase(DatabaseInterface):
             return []
 
         # Return tuples with path for file sources, agent for agentic sources
-        return [
-            (row[0], row[1], row[2] or row[3], row[4], row[5])
-            for row in result.result_set
-        ]
+        return [(row[0], row[1], row[2] or row[3], row[4], row[5]) for row in result.result_set]
 
     # File and Chunk Operations (DEPRECATED)
     # =========================================================================

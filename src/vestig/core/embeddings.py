@@ -121,7 +121,7 @@ class EmbeddingEngine:
         else:
             raise ValueError(f"Unknown provider: {provider}. Use 'llm' or 'sentence-transformers'")
 
-    def get_provider_info(self) -> dict[str, str]:
+    def get_provider_info(self) -> dict[str, str]:  # noqa: DC04
         """
         Get provider information for the current model.
 

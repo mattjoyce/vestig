@@ -407,16 +407,16 @@ def verify_migration(conn: sqlite3.Connection, falkor_db) -> bool:
     # Count edges (excluding AFFECTS edges which are created for events)
     # FalkorDB has additional AFFECTS edges from Event nodes
     falkor_edges = falkor_db.count_edges()
-    falkor_affects = falkor_db._graph.ro_query(
-        "MATCH ()-[r:AFFECTS]->() RETURN COUNT(r)"
-    )
+    falkor_affects = falkor_db._graph.ro_query("MATCH ()-[r:AFFECTS]->() RETURN COUNT(r)")
     affects_count = falkor_affects.result_set[0][0] if falkor_affects.result_set else 0
     falkor_edges_without_affects = falkor_edges - affects_count
 
     match = sqlite_counts["edges"] == falkor_edges_without_affects
     status = "OK" if match else "MISMATCH"
-    print(f"  Edges: SQLite={sqlite_counts['edges']}, FalkorDB={falkor_edges_without_affects} "
-          f"(+{affects_count} AFFECTS) [{status}]")
+    print(
+        f"  Edges: SQLite={sqlite_counts['edges']}, FalkorDB={falkor_edges_without_affects} "
+        f"(+{affects_count} AFFECTS) [{status}]"
+    )
     all_match = all_match and match
 
     # Count events
@@ -424,7 +424,9 @@ def verify_migration(conn: sqlite3.Connection, falkor_db) -> bool:
     falkor_event_count = falkor_events.result_set[0][0] if falkor_events.result_set else 0
     match = sqlite_counts["memory_events"] == falkor_event_count
     status = "OK" if match else "MISMATCH"
-    print(f"  Events: SQLite={sqlite_counts['memory_events']}, FalkorDB={falkor_event_count} [{status}]")
+    print(
+        f"  Events: SQLite={sqlite_counts['memory_events']}, FalkorDB={falkor_event_count} [{status}]"
+    )
     all_match = all_match and match
 
     return all_match
@@ -492,7 +494,6 @@ def migrate_database(
     # Connect to SQLite
     print("Connecting to SQLite...")
     conn = sqlite3.connect(sqlite_path)
-    conn.row_factory = sqlite3.Row
 
     # Get counts
     counts = get_sqlite_counts(conn)

@@ -184,7 +184,7 @@ class EntityOntology:
         normalized = type_name.strip().upper()
         return normalized in self.get_type_names()
 
-    def get_type(self, type_name: str) -> EntityType | None:
+    def get_type(self, type_name: str) -> EntityType | None:  # noqa: DC04
         """
         Get EntityType object by name.
 

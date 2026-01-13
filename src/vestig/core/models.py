@@ -415,14 +415,14 @@ class SourceNode:
     ) -> "SourceNode":
         """Convenience method to create a file-type source."""
         return cls.create(
-            source_type='file',
+            source_type="file",
             path=path,
             source_hash=file_hash,
             created_at=file_created_at,
             metadata=metadata,
         )
 
-    @classmethod
+    @classmethod  # noqa: DC04
     def from_agent(
         cls,
         agent: str,
@@ -432,7 +432,7 @@ class SourceNode:
     ) -> "SourceNode":
         """Convenience method to create an agentic-type source."""
         return cls.create(
-            source_type='agentic',
+            source_type="agentic",
             agent=agent,
             session_id=session_id,
             source_hash=content_hash,
