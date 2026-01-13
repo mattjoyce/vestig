@@ -171,6 +171,8 @@ def build_runtime(
 
 def cmd_add(args):
     """Handle 'vestig memory add' command"""
+    from vestig.core.models import SourceNode
+
     config = args.config_dict
     storage, embedding_engine, event_storage, _ = build_runtime(config)
 
@@ -180,6 +182,17 @@ def cmd_add(args):
         tags = [tag.strip() for tag in args.tags.split(",")]
 
     try:
+        # Phase 2: Create Source node for proper provenance tracking
+        agent_name = getattr(args, "agent", None) or "cli"
+        session_id = getattr(args, "session_id", None)
+
+        source_node = SourceNode.from_agent(
+            agent=agent_name,
+            session_id=session_id,
+            metadata={"command": "memory add"},
+        )
+        source_id = storage.store_source(source_node)
+
         outcome = commit_memory(
             content=args.content,
             storage=storage,
@@ -189,6 +202,7 @@ def cmd_add(args):
             tags=tags,
             event_storage=event_storage,  # M3: Enable event logging
             m4_config=config.get("m4", {}),  # M4: Enable one-shot entity extraction
+            source_id=source_id,  # Phase 2: Link to Source node
         )
 
         # Display outcome info
@@ -206,45 +220,6 @@ def cmd_add(args):
     except ValueError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
-    finally:
-        storage.close()
-
-
-def cmd_search(args):
-    """Handle 'vestig memory search' command"""
-    from vestig.core.retrieval import format_search_results, search_memories
-
-    config = args.config_dict
-    storage, embedding_engine, event_storage, tracerank_config = build_runtime(config)
-
-    # M5: Entity-based retrieval config
-    entity_config = config.get("retrieval", {}).get("entity_path")
-    model = config.get("m4", {}).get("entity_extraction", {}).get("llm", {}).get("model")
-
-    # M4: Load entity ontology
-    from vestig.core.config import load_entity_ontology
-
-    ontology = None
-    try:
-        ontology = load_entity_ontology(config)
-    except (ValueError, KeyError):
-        # Ontology not configured - entity extraction will be skipped
-        pass
-
-    try:
-        results = search_memories(
-            query=args.query,
-            storage=storage,
-            embedding_engine=embedding_engine,
-            limit=args.limit,
-            event_storage=event_storage,
-            tracerank_config=tracerank_config,
-            show_timing=getattr(args, "timing", False),
-            entity_config=entity_config,
-            model=model,
-            ontology=ontology,
-        )
-        print(format_search_results(results))
     finally:
         storage.close()
 
@@ -269,7 +244,8 @@ def _synthesize_query_with_llm(conversation_text: str, model: str, max_query_len
         conversation_text = "...\n" + conversation_text[-max_context:]
 
     prompt = {
-        "system": """You are a query synthesis assistant. Given a conversation, extract the key topics, entities, and current user intent into a focused search query.
+        "system": """You are a query synthesis assistant. Given a conversation, \
+extract the key topics, entities, and current user intent into a focused search query.
 
 The query should:
 - Capture the main subjects being discussed (projects, tools, concepts, people)
@@ -1449,7 +1425,7 @@ def main():
     parser_ingest.add_argument(
         "--min-confidence",
         type=float,
-        help="Minimum confidence for extracted memories (overrides config, default from config or 0.6)",
+        help="Minimum confidence for extracted memories (overrides config, default 0.6)",
     )
     parser_ingest.add_argument(
         "--verbose",
@@ -1472,22 +1448,14 @@ def main():
     parser_add.add_argument("content", help="Memory content")
     parser_add.add_argument("--source", default="manual", help="Memory source (default: manual)")
     parser_add.add_argument("--tags", help="Comma-separated tags (e.g., bug,auth,fix)")
+    parser_add.add_argument(
+        "--agent",
+        help="Agent name for agentic source (default: cli). Examples: claude-code, codex, goose",
+    )
+    parser_add.add_argument(
+        "--session-id", help="Optional session ID for tracking related memories"
+    )
     parser_add.set_defaults(func=cmd_add)
-
-    # vestig memory search
-    parser_search = memory_subparsers.add_parser(
-        "search", help="Search memories by semantic similarity"
-    )
-    parser_search.add_argument("query", help="Search query")
-    parser_search.add_argument(
-        "--limit", type=int, default=5, help="Number of results (default: 5)"
-    )
-    parser_search.add_argument(
-        "--timing",
-        action="store_true",
-        help="Show performance timing breakdown",
-    )
-    parser_search.set_defaults(func=cmd_search)
 
     # vestig memory recall
     parser_recall = memory_subparsers.add_parser(
@@ -1723,9 +1691,7 @@ def main():
     )
 
     # vestig housekeeping report
-    parser_hk_report = housekeeping_subparsers.add_parser(
-        "report", help="Show graph health report"
-    )
+    parser_hk_report = housekeeping_subparsers.add_parser("report", help="Show graph health report")
     parser_hk_report.set_defaults(func=cmd_housekeeping_report)
 
     # vestig housekeeping entity-backfill

@@ -65,7 +65,6 @@ pip install -e .
 ```bash
 vestig --help
 vestig memory add "Solved auth bug by checking JWT expiry handling"
-vestig memory search "jwt expiry" --limit 5
 vestig memory recall "jwt expiry" --limit 5
 ```
 
@@ -93,8 +92,7 @@ Ingest:
   `--verbose`, `--recurse` (or `-r`) for recursive globbing (enables `**` patterns)
 
 Memory:
-- `vestig memory add "<text>"` with `--source <label>`, `--tags a,b,c`
-- `vestig memory search "<query>"` with `--limit N`
+- `vestig memory add "<text>"` with `--agent <name>`, `--session-id <id>`, `--tags a,b,c`
 - `vestig memory recall "<query>"` with `--limit N`, `--explain`
 - `vestig memory show <id>` with `--expand 0|1`, `--include-expired`
 - `vestig memory list` with `--limit N`, `--snippet-len N`, `--include-expired`
