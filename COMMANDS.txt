@@ -6,6 +6,9 @@ export ANTHROPIC_API_KEY="sk-ant-..."
 # 2. Activate environment
 source ~/Environments/vestig/bin/activate
 
+# Dev: run deadcode via Python 3.12 helper venv (defaults to ./src)
+scripts/deadcode
+
 # 3. Ingest session file (creates test_vestig.db)
 # Model now comes from config (config_test.yaml: ingestion.model)
 python -m vestig.core.cli --config config_test.yaml ingest your_session.txt

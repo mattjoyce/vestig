@@ -1,57 +1,79 @@
 # Python Constraints (Ruff-first, agent-friendly)
 
-## Philosophy (rapid mode)
+## Goal
+- Provide a clear, enforceable policy for Python code quality, tooling, and interfaces.
+
+## Policy language
+- MUST: mandatory requirement.
+- SHOULD: strong default; deviations require explicit justification.
+- MAY: optional; use when it adds clear value.
+
+## Assumptions
+- Applies to Python modules, tools, and scripts in this repo.
+- Tooling runs in local dev and CI environments.
+
+## Principles (rapid mode)
 - Optimize for iteration speed and clarity.
-- Fail fast, fail loudly: exceptions are fine; don’t hide errors.
+- Fail fast, fail loudly: exceptions are fine; do not hide errors.
 - Readable > clever: code is the collaboration interface (humans + agents).
 
-## Non-negotiables
+## MUST requirements
 ### Ruff (format + lint)
-- `ruff format .`
-- `ruff check .`
-- CI must enforce both.
+- MUST run `ruff format .`
+- MUST run `ruff check .`
+- CI MUST enforce both.
+
+### Default pre-commit checks (unless overridden)
+- SHOULD run `ruff check` (use `--fix` only when agreed) and `ruff format` if formatting is enforced.
+- SHOULD run `mypy` on touched modules or a fast subset when types are relevant.
+- SHOULD run `deadcode` only for cleanup/refactor work; MAY skip for small behavior changes.
 
 ### Repo hygiene
-- `README.md` includes: setup, run, validate commands
-- `pyproject.toml` owns tool config
-- Prefer `src/` layout
-- Keep modules shallow; avoid deep nesting
+- MUST ensure `README.md` includes: setup, run, validate commands
+- MUST ensure `pyproject.toml` owns tool config
+- SHOULD use `src/` layout
+- SHOULD keep modules shallow; avoid deep nesting
 
 ### Docstrings (short & functional)
 Required for:
-- every public module, class, function
-- any function reused across modules
+- MUST document every public module, class, function
+- MUST document any function reused across modules
 
 Docstrings cover:
-- what it does
-- inputs/outputs (high-level)
-- side effects (files/network/db)
-- expected failure modes (exceptions)
+- SHOULD cover what it does
+- SHOULD cover inputs/outputs (high-level)
+- SHOULD cover side effects (files/network/db)
+- SHOULD cover expected failure modes (exceptions)
 
 ### Types (lightweight, real)
 Type hints required for:
-- public functions/classes
-- module constants
-- dataclasses/models
-Type checking stays non-strict.
+- MUST type public functions/classes
+- MUST type module constants
+- MUST type dataclasses/models
+- SHOULD keep type checking non-strict.
 
 ## House rules (always)
-- **Imports at the top.**
-- **Use `pathlib` for file operations.**
+- MUST keep imports at the top.
+- MUST use `pathlib` for file operations.
+- MUST add `if __name__ == "__main__":` guard to runnable modules.
+- MUST add `from __future__ import annotations` in new/edited modules.
+- MUST avoid `..` relative imports outside a package.
+- MUST define `__all__` explicitly in public modules.
+- SHOULD prefer immutable data via `dataclass(frozen=True)` or `typing.NamedTuple`.
 
 ## Execution model
-- **One obvious entrypoint:** `python -m package.cli ...` (or a `main()`), not scattered scripts.
-- **No global side effects on import:** imports define; execution happens in `main()` / CLI.
+- MUST provide one obvious entrypoint: `python -m package.cli ...` (or a `main()`), not scattered scripts.
+- MUST avoid global side effects on import; imports define and execution happens in `main()` / CLI.
 
 ## IO & filesystem
-- **Text IO is explicit:** `encoding="utf-8"` everywhere.
-- Be consistent with newline handling (pick a convention; keep it stable).
+- MUST make text IO explicit: `encoding="utf-8"` everywhere.
+- SHOULD be consistent with newline handling (pick a convention; keep it stable).
 
 ## Config & CLI ergonomics
-- **Precedence:** `defaults < config < options`  
+- MUST follow precedence: `defaults < config < options`  
   Recommended: `defaults < config file < env vars < CLI options`
-- **Config is explicit:** a single config object; no “read env anywhere”.
-- Standard flags: `--config`, `--verbose`, `--debug`, `--dry-run`
+- MUST keep config explicit: a single config object; no "read env anywhere".
+- SHOULD support standard flags: `--config`, `--verbose`, `--debug`, `--dry-run`
 
 ## Defaults & required values (fail-fast)
 - Agents and templates MUST NOT silently invent important defaults for values that affect correctness, security, or observability.
@@ -82,40 +104,40 @@ def validate_config(cfg: Config) -> None:
 
 ## Error handling (fail hard by design)
 Default:
-- Let exceptions propagate.
-- Use `assert` for invariants.
-- Validate at system boundaries only (CLI args, file parsing, external calls).
+- SHOULD let exceptions propagate.
+- SHOULD use `assert` for invariants.
+- SHOULD validate at system boundaries only (CLI args, file parsing, external calls).
 
 Avoid:
-- Catch-and-continue that silently masks failures.
-- “return None on error” unless the contract truly means optional.
-- Complex fallback logic early on.
+- MUST NOT catch-and-continue in ways that silently mask failures.
+- MUST NOT "return None on error" unless the contract truly means optional.
+- SHOULD avoid complex fallback logic early on.
 
 ## Logging (minimal but useful)
-- Log at boundaries and major steps.
-- Don’t spam logs inside loops.
-- Prefer structured key/value logging when convenient.
+- SHOULD log at boundaries and major steps.
+- SHOULD avoid log spam inside loops.
+- SHOULD prefer structured key/value logging when convenient.
 
 ## Testing policy (slice-level only)
 We do:
-- Smoke/integration tests per feature slice (“does it run?”, “typical input?”, “correctly-shaped outputs?”)
-- Prefer golden files / snapshots when cheap
+- SHOULD add smoke/integration tests per feature slice ("does it run?", "typical input?", "correctly-shaped outputs?")
+- SHOULD prefer golden files / snapshots when cheap
 
 We avoid (for now):
-- Exhaustive unit tests for tiny helpers
-- Coverage-driven tests
-- Heavy mocking unless unavoidable
+- SHOULD NOT add exhaustive unit tests for tiny helpers
+- SHOULD NOT add coverage-driven tests
+- SHOULD avoid heavy mocking unless unavoidable
 
 ## PR expectations
 Every PR includes:
-- what changed + why
-- how to validate
-- known limitations / TODOs
-- Ruff passing
-- at least one slice-level validation
+- MUST include what changed + why
+- MUST include how to validate
+- MUST include known limitations / TODOs
+- MUST include Ruff passing
+- MUST include at least one slice-level validation
 
 Prefer small, frequent PRs.
 
 ## Determinism & dependency hygiene
-- Determinism where possible: seed randomness; stable ordering when serialising.
-- Standard library first unless a dependency clearly buys leverage (agents love adding libraries; keep the garden tidy).
+- SHOULD favor determinism where possible: seed randomness; stable ordering when serialising.
+- SHOULD default to standard library first unless a dependency clearly buys leverage (agents love adding libraries; keep the garden tidy).
