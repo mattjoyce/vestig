@@ -355,25 +355,30 @@ def recall_with_chunk_expansion(
     # Generate query embedding once for re-ranking
     query_embedding = embedding_engine.embed_text(query)
 
-    # Search with higher limit to find more potential summary chunks
+    # For recall, we ONLY want summaries (chunk representatives)
+    # Get all summaries first, then score them
+    all_summaries = [m for m in storage.get_all_memories() if m.kind == "SUMMARY"]
+
+    if not all_summaries:
+        if show_timing:
+            elapsed = (time.perf_counter() - t_start) * 1000
+            print(f"\n[RECALL] {elapsed:.0f}ms total")
+            print("  Summaries found: 0")
+            print("  No summaries to expand from")
+        return []
+
+    # Score summaries by semantic similarity
+    from vestig.core.retrieval import cosine_similarity
+
+    scored_summaries = []
+    for summary in all_summaries:
+        semantic_score = cosine_similarity(query_embedding, summary.content_embedding)
+        scored_summaries.append((summary, semantic_score))
+
+    # Sort by score and take top summaries for expansion
+    scored_summaries.sort(key=lambda x: -x[1])
     initial_limit = limit * 5  # Cast wider net for chunk discovery
-
-    initial_results = search_memories(
-        query=query,
-        storage=storage,
-        embedding_engine=embedding_engine,
-        limit=initial_limit,
-        event_storage=event_storage,
-        tracerank_config=tracerank_config,
-        include_expired=include_expired,
-        show_timing=False,  # Don't show timing for initial search
-        entity_config=entity_config,
-        model=model,
-        ontology=ontology,
-    )
-
-    # Filter to SUMMARY kind only (chunk representatives)
-    summary_results = [(mem, score) for mem, score in initial_results if mem.kind == "SUMMARY"]
+    summary_results = scored_summaries[:initial_limit]
 
     # Track which chunks we've expanded and collect all memories
     expanded_chunks = set()
