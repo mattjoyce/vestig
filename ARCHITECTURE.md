@@ -1,8 +1,8 @@
 # Vestig Architecture: Source-Centric Knowledge Graph with Dual Linking
 
-**Version:** 2.0 (Phase 2 Complete)
-**Date:** 2026-01-11
-**Status:** Production (SQLite + FalkorDB backends)
+**Version:** 2.1 (FalkorDB Only)
+**Date:** 2026-01-15
+**Status:** Production (FalkorDB backend)
 
 ## Executive Summary
 
@@ -12,20 +12,18 @@ Vestig implements a **source-centric graph architecture** with **dual linking** 
 1. **SOURCE as primary provenance** - Unified tracking for file, agentic, and legacy content
 2. **Dual linking model** - Memories link to both Source (primary provenance) AND Chunk (positional metadata)
 3. **Chunk as optional metadata** - Location pointers within sources, not required intermediary
-4. **Multi-backend support** - SQLite (relational) and FalkorDB (graph-native) implementations
+4. **Graph-native storage** - FalkorDB for native graph operations and vector similarity
 
 ---
 
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Current State (SQLite)](#current-state-sqlite)
-3. [Target State (Neo4j)](#target-state-neo4j)
-4. [Graph Model](#graph-model)
-5. [Architectural Rationale](#architectural-rationale)
-6. [Comparison to Other Approaches](#comparison-to-other-approaches)
-7. [Migration Path](#migration-path)
-8. [Benefits & Trade-offs](#benefits--trade-offs)
+2. [Current State (FalkorDB)](#current-state-falkordb)
+3. [Graph Model](#graph-model)
+4. [Architectural Rationale](#architectural-rationale)
+5. [Comparison to Other Approaches](#comparison-to-other-approaches)
+6. [Benefits & Trade-offs](#benefits--trade-offs)
 
 ---
 
@@ -54,9 +52,10 @@ Vestig implements a **source-centric graph architecture** with **dual linking** 
 
 ### Implementation
 
-**Storage:** Dual-backend architecture
-- **SQLite**: Relational tables with foreign keys
-- **FalkorDB**: Graph-native with Cypher queries
+**Storage:** FalkorDB graph database
+- **FalkorDB**: Graph-native storage with Cypher queries
+- Native vector operations for similarity search
+- Direct edge relationships for provenance and knowledge graph
 
 **Provenance Model:** Source → Memory (always) AND Source → Chunk → Memory (when chunked)
 
@@ -65,7 +64,7 @@ Vestig implements a **source-centric graph architecture** with **dual linking** 
 - `agentic`: AI agent contributions (agent name: claude-code, codex, goose, etc.)
 - `legacy`: Backfilled orphans from housekeeping
 
-### Schema (Phase 2 - SQLite)
+### Schema (Phase 2 - FalkorDB Graph Model)
 
 ```sql
 -- Sources table (NEW in Phase 2)

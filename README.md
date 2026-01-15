@@ -110,21 +110,21 @@ Edge:
 
 ---
 
-## Architecture (Current / M1)
+## Architecture (Current)
 
 ```
 Input text (manual for now)
         ↓
 Embedding (single vector per memory)
         ↓
-SQLite persistence
+FalkorDB graph storage
         ↓
-Brute-force similarity retrieval (M1)
+Semantic similarity retrieval
         ↓
 Recall formatting for agent context
 ```
 
-M1 can use brute-force retrieval over a modest corpus. We optimise later.
+Storage is handled by FalkorDB, a graph database optimized for relationships and vector similarity.
 
 ---
 
@@ -137,7 +137,6 @@ Typical structure (may evolve slightly as we implement):
 - `tests/` — test scripts and smoke tests
 - `demos/` — demo scripts (demo_m1.sh, demo_m4.sh, etc.)
 - `benchmarks/` — performance benchmarking scripts
-- `data/` — local sqlite DB (gitignored)
 - `ARCHITECTURE.md` — technical architecture and implementation documentation
 - `ROADMAP.md` — maturation roadmap and milestone planning
 - `docs/archive/` — archived research and design documents
@@ -148,7 +147,7 @@ Typical structure (may evolve slightly as we implement):
 
 Vestig is designed to be **local-first** and configurable. Typical config includes:
 
-- database path (SQLite)
+- FalkorDB connection details (host, port, graph name)
 - embedding model selection
 - optional import paths for session artifacts (future)
 
@@ -158,32 +157,24 @@ If configuration is present in the repo, prefer:
 
 ---
 
-## Schema Management (M0)
+## Storage Backend
 
-Vestig's SQLite schema is managed via **schema.sql** as the **sovereign interface**.
+Vestig uses **FalkorDB**, a graph database, as its storage backend.
 
-**For Fresh Databases:**
-- New databases are created from `src/vestig/core/schema.sql`
-- This file is the single source of truth for the schema structure
-- Schema changes are explicit and reviewable as SQL diffs in PRs
+**Graph Structure:**
+- Memory nodes with vector embeddings
+- Entity nodes (PERSON, ORG, SYSTEM, etc.)
+- Source nodes for provenance tracking
+- Edges for relationships (MENTIONS, RELATED, SUMMARIZES)
 
-**For Existing Databases:**
-- Legacy migration logic in `storage.py` handles backward compatibility
-- Additive migrations (ALTER TABLE) automatically upgrade old databases
-- Validation runs after migration to ensure schema correctness
+**Configuration:**
+- FalkorDB connection is configured in `config.yaml`
+- Default: `localhost:6379` with graph name `vestig`
+- Test graph names are auto-generated to avoid conflicts
 
-**Making Schema Changes:**
-1. Update `src/vestig/core/schema.sql` with new DDL
-2. Add migration logic to `storage.py:_migrate_existing_database()` for backward compatibility
-3. Update `_validate_schema()` to check new requirements
-4. Test both fresh and migrated databases
-5. Schema changes appear as SQL diffs in PRs for easy review
-
-**Files:**
-- `src/vestig/core/schema.sql` — Authoritative DDL for fresh databases
-- `src/vestig/core/storage.py` — Migration logic + validation
-
-This approach establishes schema as a reviewable contract while maintaining backward compatibility for existing users.
+**Implementation:**
+- `src/vestig/core/db_falkordb.py` — FalkorDB backend implementation
+- Graph schema is defined implicitly through node and edge creation
 
 ---
 
@@ -227,7 +218,7 @@ These are the rules we use to move quickly without creating chaos:
 
 ## Roadmap Snapshot
 
-- **Sprint 1 (Complete):** ✓ M1 real, boring, and reliable (CLI + SQLite + embeddings + recall)
+- **Sprint 1 (Complete):** ✓ M1 real, boring, and reliable (CLI + graph storage + embeddings + recall)
 - **Sprint 2 (Complete):** ✓ M2 "Quality Firewall" (dedupe + hygiene + better recall formatting)
 - **Sprint 3 (Next):** M3 "Time & Truth" (temporal awareness, decay/refresh, provenance) — awaiting green light
 - **Sprint 4+:** M4–M6 as per `PLAN.md`

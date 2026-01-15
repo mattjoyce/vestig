@@ -7,9 +7,9 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from vestig.core.db_interface import DatabaseInterface
 from vestig.core.embeddings import EmbeddingEngine
 from vestig.core.models import MemoryNode
-from vestig.core.storage import MemoryStorage
 
 if TYPE_CHECKING:
     from vestig.core.event_storage import MemoryEventStorage
@@ -42,7 +42,7 @@ def cosine_similarity(a: list[float], b: list[float]) -> float:
 
 def match_query_entities_to_db(
     query_entities: list[tuple[str, str, float, str]],
-    storage: MemoryStorage,
+    storage: DatabaseInterface,
     embedding_engine: EmbeddingEngine,
     similarity_threshold: float = 0.7,
 ) -> list[tuple[str, str, float]]:
@@ -100,7 +100,7 @@ def match_query_entities_to_db(
 
 def retrieve_memories_by_entities(
     matched_entities: list[tuple[str, float]],
-    storage: MemoryStorage,
+    storage: DatabaseInterface,
     include_expired: bool = False,
 ) -> dict[str, float]:
     """
@@ -137,7 +137,7 @@ def retrieve_memories_by_entities(
 
 def search_memories(
     query: str,
-    storage: MemoryStorage,
+    storage: DatabaseInterface,
     embedding_engine: EmbeddingEngine,
     limit: int = 5,
     event_storage: MemoryEventStorage | None = None,  # M3
@@ -325,7 +325,7 @@ def search_memories(
 
 def recall_with_chunk_expansion(
     query: str,
-    storage: MemoryStorage,
+    storage: DatabaseInterface,
     embedding_engine: EmbeddingEngine,
     limit: int = 5,
     event_storage: MemoryEventStorage | None = None,
@@ -575,7 +575,7 @@ def format_recall_results(results: list[tuple[MemoryNode, float]]) -> str:
 def format_recall_results_with_explanation(
     results: list[tuple[MemoryNode, float]],
     event_storage: "MemoryEventStorage",
-    storage: "MemoryStorage",
+    storage: "DatabaseInterface",
     tracerank_config: "TraceRankConfig",
 ) -> str:
     """

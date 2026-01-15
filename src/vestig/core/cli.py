@@ -12,7 +12,8 @@ from typing import Any
 from vestig.core.commitment import commit_memory
 from vestig.core.config import load_config
 from vestig.core.db_interface import DatabaseInterface, EventStorageInterface
-from vestig.core.db_sqlite import SQLiteDatabase
+
+# SQLite removed - using FalkorDB only
 from vestig.core.embeddings import EmbeddingEngine
 from vestig.core.tracerank import TraceRankConfig
 
@@ -50,16 +51,11 @@ def validate_config(config: dict[str, Any]) -> None:
         if key not in current:
             raise ValueError(f"Missing required config key: {'.'.join(path)}.{key}")
 
-    # Backend-specific validation
-    backend = config.get("storage", {}).get("backend", "sqlite")
-    if backend == "sqlite":
-        if "db_path" not in config.get("storage", {}):
-            raise ValueError("Missing required config key: storage.db_path")
-    elif backend == "falkordb":
-        falkor_cfg = config.get("storage", {}).get("falkordb", {})
-        for key in ["host", "port", "graph_name"]:
-            if key not in falkor_cfg:
-                raise ValueError(f"Missing required config key: storage.falkordb.{key}")
+    # FalkorDB validation
+    falkor_cfg = config.get("storage", {}).get("falkordb", {})
+    for key in ["host", "port", "graph_name"]:
+        if key not in falkor_cfg:
+            raise ValueError(f"Missing required config key: storage.falkordb.{key}")
 
 
 def _truncate(text: str, length: int = 80) -> str:
@@ -97,33 +93,22 @@ def expand_ingest_paths(pattern: str, recursive: bool = False) -> list[str]:
 
 
 def create_database(config: dict[str, Any]) -> DatabaseInterface:
-    """Factory function for database backend selection.
+    """Create FalkorDB database backend.
 
     Args:
-        config: Configuration dictionary
+        config: Configuration dictionary with FalkorDB connection details
 
     Returns:
-        DatabaseInterface implementation based on config
-
-    Raises:
-        ValueError: If unknown backend specified
+        FalkorDBDatabase instance
     """
-    backend = config.get("storage", {}).get("backend", "sqlite")
+    from vestig.core.db_falkordb import FalkorDBDatabase
 
-    if backend == "sqlite":
-        return SQLiteDatabase(config["storage"]["db_path"])
-    elif backend == "falkordb":
-        # Import here to avoid dependency if not used
-        from vestig.core.db_falkordb import FalkorDBDatabase
-
-        falkor_cfg = config["storage"]["falkordb"]
-        return FalkorDBDatabase(
-            host=falkor_cfg["host"],
-            port=falkor_cfg["port"],
-            graph_name=falkor_cfg["graph_name"],
-        )
-    else:
-        raise ValueError(f"Unknown storage backend: {backend}")
+    falkor_cfg = config["storage"]["falkordb"]
+    return FalkorDBDatabase(
+        host=falkor_cfg["host"],
+        port=falkor_cfg["port"],
+        graph_name=falkor_cfg["graph_name"],
+    )
 
 
 def build_runtime(

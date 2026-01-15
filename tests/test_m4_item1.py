@@ -2,7 +2,7 @@
 """Test M4 Work Item #1: Entity Schema & Storage
 
 Tests entity creation, storage, retrieval, deduplication, and expiration.
-Runs against both SQLite and FalkorDB backends when VESTIG_TEST_FALKORDB=1.
+Runs against FalkorDB backend.
 """
 
 import os
@@ -163,52 +163,3 @@ class TestEntityStorage:
         merged = storage.get_entity(id2)
         assert merged.merged_into == id1
         assert merged.expired_at is not None
-
-
-# Legacy standalone execution support
-def run_standalone():
-    """Run tests standalone without pytest (for backwards compatibility)."""
-    import tempfile
-
-    from vestig.core.storage import MemoryStorage
-
-    print("=== M4 Work Item #1: Entity Schema & Storage ===\n")
-    print("Running standalone with SQLite backend...\n")
-
-    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
-        db_path = f.name
-
-    try:
-        storage = MemoryStorage(db_path)
-
-        # Run a subset of tests
-        print("Test: Normalization key computation")
-        assert compute_norm_key("Alice Smith", "PERSON") == "PERSON:alice smith"
-        print("  PASSED\n")
-
-        print("Test: Entity creation and storage")
-        entity = EntityNode.create(entity_type="PERSON", canonical_name="Alice Smith")
-        entity_id = storage.store_entity(entity)
-        retrieved = storage.get_entity(entity_id)
-        assert retrieved.canonical_name == "Alice Smith"
-        print("  PASSED\n")
-
-        print("Test: Deduplication")
-        entity2 = EntityNode.create(entity_type="PERSON", canonical_name="alice smith")
-        id2 = storage.store_entity(entity2)
-        assert id2 == entity_id
-        print("  PASSED\n")
-
-        storage.close()
-
-        print("=" * 50)
-        print("All standalone tests passed!")
-        print("=" * 50)
-        print("\nFor full test coverage, run: pytest tests/test_m4_item1.py -v")
-
-    finally:
-        os.remove(db_path)
-
-
-if __name__ == "__main__":
-    run_standalone()

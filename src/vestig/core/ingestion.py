@@ -7,6 +7,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from vestig.core.commitment import commit_memory
+from vestig.core.db_interface import DatabaseInterface
 from vestig.core.embeddings import EmbeddingEngine
 from vestig.core.entity_extraction import (
     call_llm,
@@ -19,7 +20,6 @@ from vestig.core.ingest_sources import (
     normalize_document_text,
 )
 from vestig.core.models import MemoryNode
-from vestig.core.storage import MemoryStorage
 
 
 @dataclass
@@ -484,7 +484,7 @@ def commit_summary(
     memory_ids: list[str],
     artifact_ref: str,
     source_label: str,
-    storage: MemoryStorage,
+    storage: DatabaseInterface,
     embedding_engine: EmbeddingEngine,
     event_storage: MemoryEventStorage | None = None,
     chunk_id: str | None = None,  # M5: Link summary to chunk (positional metadata)
@@ -628,7 +628,7 @@ def commit_summary(
 
 def ingest_document(
     document_path: str,
-    storage: MemoryStorage,
+    storage: DatabaseInterface,
     embedding_engine: EmbeddingEngine,
     extraction_model: str,
     event_storage: MemoryEventStorage | None = None,

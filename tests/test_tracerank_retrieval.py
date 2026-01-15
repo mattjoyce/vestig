@@ -3,7 +3,6 @@
 
 import os
 import sys
-import tempfile
 from pathlib import Path
 
 os.environ.setdefault("HF_HUB_OFFLINE", "1")
@@ -11,29 +10,21 @@ os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from vestig.core.storage import MemoryStorage
-from vestig.core.event_storage import MemoryEventStorage
+from vestig.core.commitment import commit_memory
+from vestig.core.config import load_config
+from vestig.core.db_interface import DatabaseInterface
 from vestig.core.embeddings import EmbeddingEngine
 from vestig.core.retrieval import search_memories
-from vestig.core.commitment import commit_memory
 from vestig.core.tracerank import TraceRankConfig
-from vestig.core.config import load_config
 
 
-def test_tracerank_retrieval():
+def test_tracerank_retrieval(storage: DatabaseInterface):
     """Test that TraceRank affects retrieval ranking"""
     print("=== TraceRank Retrieval Integration Test ===\n")
 
-    # Use temporary database
-    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
-        db_path = f.name
-
-    print(f"Using temp database: {db_path}\n")
-
     # Load config and setup
     config = load_config("config_test.yaml")
-    storage = MemoryStorage(db_path)
-    event_storage = MemoryEventStorage(storage.conn)
+    event_storage = storage.event_storage
     embedding_engine = EmbeddingEngine(
         model_name=config["embedding"]["model"],
         expected_dimension=config["embedding"]["dimension"],
@@ -83,7 +74,7 @@ def test_tracerank_retrieval():
         event_storage=event_storage,
     )
     assert outcome_b2.memory_id == memory_b_id, "Should return same ID for duplicate"
-    print(f"    ✓ Memory B reinforced (REINFORCE_EXACT event created)")
+    print("    ✓ Memory B reinforced (REINFORCE_EXACT event created)")
 
     # Verify reinforcement
     memory_b = storage.get_memory(memory_b_id)
@@ -148,10 +139,5 @@ def test_tracerank_retrieval():
 
     # Cleanup
     storage.close()
-    Path(db_path).unlink()
 
     print("=== TraceRank Retrieval Integration Test Complete ===")
-
-
-if __name__ == "__main__":
-    test_tracerank_retrieval()

@@ -8,9 +8,13 @@ embedding:
   dimension: 768
   normalize: true
 
-# Storage (overridden by tests)
+# Storage - FalkorDB only (overridden by tests)
 storage:
-  db_path: "test.db"
+  backend: falkordb
+  falkordb:
+    host: localhost
+    port: 6379
+    graph_name: vestig_test
 
 # Retrieval
 retrieval:

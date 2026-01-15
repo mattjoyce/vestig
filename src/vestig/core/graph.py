@@ -2,12 +2,12 @@
 
 from typing import Any
 
-from vestig.core.storage import MemoryStorage
+from vestig.core.db_interface import DatabaseInterface
 
 
 def expand_via_entities(
     memory_ids: list[str],
-    storage: MemoryStorage,
+    storage: DatabaseInterface,
     limit: int = 5,
     include_expired: bool = False,
     min_confidence: float = 0.75,
@@ -98,7 +98,7 @@ def expand_via_entities(
 
 def expand_via_related(
     memory_ids: list[str],
-    storage: MemoryStorage,
+    storage: DatabaseInterface,
     limit: int = 5,
     include_expired: bool = False,
     min_confidence: float = 0.0,
@@ -178,7 +178,7 @@ def expand_via_related(
 
 def expand_with_graph(  # noqa: DC02
     memory_ids: list[str],
-    storage: MemoryStorage,
+    storage: DatabaseInterface,
     entity_limit: int = 3,
     related_limit: int = 3,
     include_expired: bool = False,

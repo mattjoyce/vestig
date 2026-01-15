@@ -3,8 +3,7 @@
 
 import os
 import sys
-import tempfile
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 # Ensure tests run offline if the model is already cached
 os.environ.setdefault("HF_HUB_OFFLINE", "1")
@@ -14,26 +13,22 @@ os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from vestig.core.commitment import commit_memory
-from vestig.core.embeddings import EmbeddingEngine
-from vestig.core.storage import MemoryStorage
-from vestig.core.event_storage import MemoryEventStorage
 from vestig.core.config import load_config
+from vestig.core.db_interface import DatabaseInterface
+from vestig.core.embeddings import EmbeddingEngine
 from vestig.core.ingestion import MemoryExtractionResult
 
 
-def test_mentions_edge_creation():
+def test_mentions_edge_creation(storage: DatabaseInterface):
     """Test end-to-end MENTIONS edge creation during memory commit"""
     print("=== M4 Work Item #4: MENTIONS Edge Creation ===\n")
 
     # Create temp database
-    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
-        db_path = f.name
 
     try:
         # Load config and initialize storage
         config = load_config("config_test.yaml")
-        storage = MemoryStorage(db_path)
-        event_storage = MemoryEventStorage(storage.conn)
+        event_storage = storage.event_storage
         embedding_engine = EmbeddingEngine(
             model_name=config["embedding"]["model"],
             expected_dimension=config["embedding"]["dimension"],
@@ -41,9 +36,7 @@ def test_mentions_edge_creation():
 
         # M4 config (with entity extraction enabled)
         m4_config = {
-            "entity_types": {
-                "allowed_types": ["PERSON", "ORG", "SYSTEM", "PROJECT", "PLACE"]
-            },
+            "entity_types": {"allowed_types": ["PERSON", "ORG", "SYSTEM", "PROJECT", "PLACE"]},
             "entity_extraction": {
                 "enabled": True,
                 "mode": "llm",
@@ -304,10 +297,5 @@ def test_mentions_edge_creation():
         print("  ✓ Config flags respected (enabled/disabled)")
 
     finally:
-        # Cleanup
-        if os.path.exists(db_path):
-            os.unlink(db_path)
-
-
-if __name__ == "__main__":
-    test_mentions_edge_creation()
+        # Cleanup handled by fixture
+        pass

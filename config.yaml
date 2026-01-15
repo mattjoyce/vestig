@@ -13,9 +13,13 @@ embedding:
   dimension: 768
   normalize: true
 
-# Storage
+# Storage - FalkorDB only
 storage:
-  db_path: "vestig.db"
+  backend: falkordb
+  falkordb:
+    host: localhost
+    port: 6379
+    graph_name: vestig
 
 # Retrieval
 retrieval:

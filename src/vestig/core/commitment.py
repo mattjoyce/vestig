@@ -5,10 +5,10 @@ import re
 import uuid
 from typing import TYPE_CHECKING, Any
 
+from vestig.core.db_interface import DatabaseInterface
 from vestig.core.embeddings import EmbeddingEngine
 from vestig.core.events import CommitOutcome, OnCommitHook
 from vestig.core.models import MemoryNode
-from vestig.core.storage import MemoryStorage
 
 if TYPE_CHECKING:
     from vestig.core.event_storage import MemoryEventStorage
@@ -87,7 +87,7 @@ def validate_content(content: str, hygiene_config: dict[str, Any]) -> None:
 
 def commit_memory(
     content: str,
-    storage: MemoryStorage,
+    storage: DatabaseInterface,
     embedding_engine: EmbeddingEngine,
     source: str = "manual",
     hygiene_config: dict[str, Any] = None,
@@ -377,7 +377,7 @@ def commit_memory(
 def _extract_and_link_entities(
     content: str,
     memory_id: str,
-    storage: MemoryStorage,
+    storage: DatabaseInterface,
     m4_config: dict[str, Any],
     artifact_ref: str | None = None,
     pre_extracted_entities: list[tuple[str, str, float, str]] | None = None,
@@ -460,7 +460,7 @@ def _extract_and_link_entities(
 def _create_related_edges(
     memory_id: str,
     embedding: list[float],
-    storage: MemoryStorage,
+    storage: DatabaseInterface,
     m4_config: dict[str, Any],
 ) -> None:
     """
@@ -519,7 +519,7 @@ def _create_related_edges(
 
 def _log_commit_event(
     outcome: CommitOutcome,
-    storage: MemoryStorage,
+    storage: DatabaseInterface,
     event_storage: MemoryEventStorage,
 ) -> None:
     """

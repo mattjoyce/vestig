@@ -3,17 +3,15 @@
 
 import os
 import sys
-import tempfile
-from pathlib import Path
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-from vestig.core.entity_extraction import load_prompts, substitute_tokens, store_entities
-from vestig.core.storage import MemoryStorage
+from vestig.core.db_interface import DatabaseInterface
+from vestig.core.entity_extraction import load_prompts, store_entities, substitute_tokens
 
 
-def test_entity_extraction():
+def test_entity_extraction(storage: DatabaseInterface):
     """Test entity extraction helpers and storage integration"""
     print("=== M4 Work Item #3: Entity Extraction ===\n")
 
@@ -39,11 +37,8 @@ def test_entity_extraction():
 
     # Test 3: store_entities respects confidence threshold + dedup
     print("Test 3: store_entities confidence gating + dedup")
-    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
-        db_path = f.name
 
     try:
-        storage = MemoryStorage(db_path)
         config = {
             "entity_extraction": {
                 "llm": {"min_confidence": 0.75},
@@ -70,14 +65,10 @@ def test_entity_extraction():
         print("✓ Confidence gating + dedup working\n")
 
     finally:
-        if os.path.exists(db_path):
-            os.unlink(db_path)
+        # Cleanup handled by fixture
+        pass
 
     print("=" * 50)
     print("✅ All tests passed!")
     print("=" * 50)
     print("\nWork Item #3 (Entity Extraction) complete!")
-
-
-if __name__ == "__main__":
-    test_entity_extraction()

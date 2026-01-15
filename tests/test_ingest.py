@@ -3,8 +3,6 @@
 
 import os
 import sys
-import json
-import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
@@ -15,26 +13,22 @@ os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
 # Add src to path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from vestig.core.ingestion import ingest_document, MemoryExtractionResult
-from vestig.core.embeddings import EmbeddingEngine
-from vestig.core.storage import MemoryStorage
-from vestig.core.event_storage import MemoryEventStorage
 from vestig.core.config import load_config
+from vestig.core.db_interface import DatabaseInterface
+from vestig.core.embeddings import EmbeddingEngine
+from vestig.core.ingestion import MemoryExtractionResult, ingest_document
 
 
-def test_ingestion():
+def test_ingestion(storage: DatabaseInterface):
     """Test document ingestion with mocked LLM"""
     print("=== Testing Document Ingestion ===\n")
 
     # Create temp database
-    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
-        db_path = f.name
 
     try:
         # Load config and setup
         config = load_config("config_test.yaml")
-        storage = MemoryStorage(db_path)
-        event_storage = MemoryEventStorage(storage.conn)
+        event_storage = storage.event_storage
         embedding_engine = EmbeddingEngine(
             model_name=config["embedding"]["model"],
             expected_dimension=config["embedding"]["dimension"],
@@ -121,7 +115,7 @@ def test_ingestion():
         # Show entities
         entities = storage.get_all_entities()
         if entities:
-            print(f"\n\nEntities extracted:")
+            print("\n\nEntities extracted:")
             for entity in entities:
                 print(f"  - {entity.canonical_name} ({entity.entity_type})")
 
@@ -139,10 +133,5 @@ def test_ingestion():
         print("=" * 70)
 
     finally:
-        # Cleanup
-        if os.path.exists(db_path):
-            os.unlink(db_path)
-
-
-if __name__ == "__main__":
-    test_ingestion()
+        # Cleanup handled by fixture
+        pass

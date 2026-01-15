@@ -7,20 +7,13 @@ import sys
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
+from vestig.core.db_interface import DatabaseInterface
 from vestig.core.models import EdgeNode, EntityNode, MemoryNode
-from vestig.core.storage import MemoryStorage
 
 
-def test_edge_schema_and_storage():
+def test_edge_schema_and_storage(storage: DatabaseInterface):
     """Test Edge node creation and storage operations"""
     print("=== M4 Work Item #2: Edge Schema & Storage ===\n")
-
-    # Use test database
-    test_db = "./data/test_m4_item2.db"
-    if os.path.exists(test_db):
-        os.remove(test_db)
-
-    storage = MemoryStorage(test_db)
 
     # Create test nodes (memory + entities)
     memory1 = MemoryNode.create(
@@ -55,7 +48,7 @@ def test_edge_schema_and_storage():
     # Test 2: Invalid edge type rejection
     print("Test 2: Invalid edge type rejection")
     try:
-        invalid_edge = EdgeNode.create(
+        EdgeNode.create(
             from_node=memory1.id,
             to_node=entity1.id,
             edge_type="INVALID_TYPE",  # Should fail
@@ -178,15 +171,7 @@ def test_edge_schema_and_storage():
     assert edge6.t_expired is None
     print(f"✓ Bi-temporal fields: t_valid={edge6.t_valid[:19]}, t_created={edge6.t_created[:19]}\n")
 
-    # Cleanup
-    storage.close()
-    os.remove(test_db)
-
     print("=" * 50)
     print("✅ All tests passed!")
     print("=" * 50)
     print("\nWork Item #2 (Edge Schema & Storage) complete!")
-
-
-if __name__ == "__main__":
-    test_edge_schema_and_storage()

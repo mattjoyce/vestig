@@ -3,7 +3,6 @@
 
 import os
 import sys
-import tempfile
 
 # Ensure tests run offline if the model is already cached
 os.environ.setdefault("HF_HUB_OFFLINE", "1")
@@ -13,25 +12,21 @@ os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from vestig.core.commitment import commit_memory
-from vestig.core.embeddings import EmbeddingEngine
-from vestig.core.storage import MemoryStorage
-from vestig.core.event_storage import MemoryEventStorage
 from vestig.core.config import load_config
+from vestig.core.db_interface import DatabaseInterface
+from vestig.core.embeddings import EmbeddingEngine
 
 
-def test_related_edge_creation():
+def test_related_edge_creation(storage: DatabaseInterface):
     """Test end-to-end RELATED edge creation between semantically similar memories"""
     print("=== M4 Work Item #5: RELATED Edge Creation ===\n")
 
     # Create temp database
-    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
-        db_path = f.name
 
     try:
         # Load config and initialize storage
         config = load_config("config_test.yaml")
-        storage = MemoryStorage(db_path)
-        event_storage = MemoryEventStorage(storage.conn)
+        event_storage = storage.event_storage
         embedding_engine = EmbeddingEngine(
             model_name=config["embedding"]["model"],
             expected_dimension=config["embedding"]["dimension"],
@@ -39,9 +34,7 @@ def test_related_edge_creation():
 
         # M4 config (with RELATED edges enabled)
         m4_config = {
-            "entity_types": {
-                "allowed_types": ["PERSON", "ORG", "SYSTEM", "PROJECT", "PLACE"]
-            },
+            "entity_types": {"allowed_types": ["PERSON", "ORG", "SYSTEM", "PROJECT", "PLACE"]},
             "entity_extraction": {
                 "enabled": False,  # Disable for this test (focus on RELATED only)
             },
@@ -92,7 +85,7 @@ def test_related_edge_creation():
         # Check edge points to memory1
         edge_to_ids = [e.to_node for e in edges]
         assert memory_id1 in edge_to_ids, "Should link to memory1"
-        print(f"✓ RELATED edge points to memory1")
+        print("✓ RELATED edge points to memory1")
 
         # Check edge has correct properties
         edge = edges[0]
@@ -162,9 +155,7 @@ def test_related_edge_creation():
         memory_id_final = outcome_final.memory_id
 
         # Should have at most 2 RELATED edges (limited by max_edges_per_memory)
-        edges_final = storage.get_edges_from_memory(
-            memory_id_final, edge_type="RELATED"
-        )
+        edges_final = storage.get_edges_from_memory(memory_id_final, edge_type="RELATED")
         assert len(edges_final) <= 2, f"Should have at most 2 edges, got {len(edges_final)}"
         print(f"✓ Respects limit: {len(edges_final)} edges (max 2)")
 
@@ -225,10 +216,5 @@ def test_related_edge_creation():
         print("  ✓ Edges sorted by similarity (top-K selection)")
 
     finally:
-        # Cleanup
-        if os.path.exists(db_path):
-            os.unlink(db_path)
-
-
-if __name__ == "__main__":
-    test_related_edge_creation()
+        # Cleanup handled by fixture
+        pass

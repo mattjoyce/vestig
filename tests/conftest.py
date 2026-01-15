@@ -1,6 +1,6 @@
 """Pytest configuration and fixtures for vestig tests.
 
-Provides parametrized fixtures to run tests against both SQLite and FalkorDB backends.
+Provides fixtures for FalkorDB backend testing.
 """
 
 import os
@@ -14,7 +14,6 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from vestig.core.db_interface import DatabaseInterface
-from vestig.core.db_sqlite import SQLiteDatabase
 
 
 def get_falkordb_config():
@@ -44,73 +43,49 @@ def falkordb_available() -> bool:
 # Determine which backends to test
 def get_backends():
     """Get list of backends to test based on availability."""
-    backends = ["sqlite"]
-
-    # Check if FalkorDB testing is enabled
-    if os.environ.get("VESTIG_TEST_FALKORDB", "").lower() in ("1", "true", "yes"):
-        if falkordb_available():
-            backends.append("falkordb")
-        else:
-            print("Warning: VESTIG_TEST_FALKORDB enabled but FalkorDB not available")
-
-    return backends
+    # FalkorDB only
+    if falkordb_available():
+        return ["falkordb"]
+    else:
+        return []
 
 
 @pytest.fixture(params=get_backends())
-def storage(request, tmp_path) -> DatabaseInterface:
+def storage(request) -> DatabaseInterface:
     """
-    Parametrized fixture providing a storage backend.
-
-    Runs each test once per available backend (SQLite, and optionally FalkorDB).
+    Parametrized fixture providing FalkorDB storage backend.
 
     Usage:
         def test_something(storage):
             storage.store_entity(...)
 
     Environment variables:
-        VESTIG_TEST_FALKORDB=1  - Enable FalkorDB testing
         VESTIG_FALKORDB_HOST    - FalkorDB host (default: 192.168.20.4)
         VESTIG_FALKORDB_PORT    - FalkorDB port (default: 6379)
         VESTIG_FALKORDB_GRAPH   - Graph name (default: random per test)
     """
-    backend = request.param
+    from vestig.core.db_falkordb import FalkorDBDatabase
 
-    if backend == "sqlite":
-        db_path = str(tmp_path / "test.db")
-        db = SQLiteDatabase(db_path)
-        yield db
-        db.close()
-        # tmp_path cleanup is automatic
+    config = get_falkordb_config()
+    # Use unique graph name per test to avoid conflicts
+    graph_name = f"vestig_test_{uuid.uuid4().hex[:8]}"
 
-    elif backend == "falkordb":
-        from vestig.core.db_falkordb import FalkorDBDatabase
-
-        config = get_falkordb_config()
-        # Use unique graph name per test to avoid conflicts
-        graph_name = f"vestig_test_{uuid.uuid4().hex[:8]}"
-
-        db = FalkorDBDatabase(
-            host=config["host"],
-            port=config["port"],
-            graph_name=graph_name,
-        )
-        yield db
-
-        # Cleanup: drop the test graph
-        try:
-            db._graph.delete()
-        except Exception:
-            pass  # Best effort cleanup
-        db.close()
-
-
-@pytest.fixture
-def sqlite_storage(tmp_path) -> DatabaseInterface:
-    """Fixture for tests that specifically need SQLite only."""
-    db_path = str(tmp_path / "test.db")
-    db = SQLiteDatabase(db_path)
+    db = FalkorDBDatabase(
+        host=config["host"],
+        port=config["port"],
+        graph_name=graph_name,
+    )
     yield db
+
+    # Cleanup: drop the test graph
+    try:
+        db._graph.delete()
+    except Exception:
+        pass  # Best effort cleanup
     db.close()
+
+
+# SQLite removed - using FalkorDB only
 
 
 @pytest.fixture
