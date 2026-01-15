@@ -10,7 +10,11 @@ embedding:
 
 # Storage
 storage:
-  db_path: "vestig-standard.db"
+  backend: falkordb
+  falkordb:
+    host: localhost
+    port: 6379
+    graph_name: vestig_standard
 
 # Retrieval
 retrieval:

@@ -16,7 +16,11 @@ embedding:
 
 # Storage
 storage:
-  db_path: "custom-gpt-gemma.db"
+  backend: falkordb
+  falkordb:
+    host: localhost
+    port: 6379
+    graph_name: vestig_custom
 
 # Retrieval
 retrieval:

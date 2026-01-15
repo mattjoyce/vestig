@@ -6,7 +6,6 @@ import json
 import os
 import sys
 from importlib.metadata import PackageNotFoundError, version
-from pathlib import Path
 from typing import Any
 
 from vestig.core.commitment import commit_memory
@@ -560,7 +559,6 @@ def cmd_entity_show(args):
 def cmd_entity_purge(args):
     """Handle 'vestig entity purge --force' command"""
     config = args.config_dict
-    db_path = config["storage"]["db_path"]
     storage = create_database(config)
 
     try:
@@ -570,7 +568,8 @@ def cmd_entity_purge(args):
 
         print(f"vestig v{get_version()}")
         print("Purging all entities and edges...")
-        print(f"Database: {Path(db_path).absolute()}")
+        falkor_cfg = config["storage"]["falkordb"]
+        print(f"Database: {falkor_cfg['host']}:{falkor_cfg['port']}/{falkor_cfg['graph_name']}")
         print()
 
         # Count before deletion
@@ -609,7 +608,6 @@ def cmd_entity_extract(args):
     from vestig.core.entity_extraction import process_memories_for_entities
 
     config = args.config_dict
-    db_path = config["storage"]["db_path"]
     storage = create_database(config)
 
     # Get model from config
@@ -626,7 +624,8 @@ def cmd_entity_extract(args):
     try:
         print(f"vestig v{get_version()}")
         print("Extracting entities from memories...")
-        print(f"Database: {Path(db_path).absolute()}")
+        falkor_cfg = config["storage"]["falkordb"]
+        print(f"Database: {falkor_cfg['host']}:{falkor_cfg['port']}/{falkor_cfg['graph_name']}")
         print(f"Model: {model}")
         print(f"Entity types: {', '.join(ontology.get_type_names())}")
         print(f"Reprocess: {args.reprocess}")
@@ -685,7 +684,8 @@ def cmd_entity_regen_embeddings(args):
     try:
         print(f"vestig v{get_version()}")
         print("Regenerating entity embeddings...")
-        print(f"Database: {Path(config['storage']['db_path']).absolute()}")
+        falkor_cfg = config["storage"]["falkordb"]
+        print(f"Database: {falkor_cfg['host']}:{falkor_cfg['port']}/{falkor_cfg['graph_name']}")
         print(f"Model: {config['embedding']['model']}")
         print()
 
@@ -1298,11 +1298,16 @@ def cmd_config_show(args):
     print("=" * 70)
 
     # Database
-    db_path = config.get("storage", {}).get("db_path", "N/A")
-    if db_path != "N/A":
-        db_path = str(Path(db_path).resolve())
+    falkor_cfg = config.get("storage", {}).get("falkordb", {})
+    if falkor_cfg:
+        host = falkor_cfg.get("host", "N/A")
+        port = falkor_cfg.get("port", "N/A")
+        graph = falkor_cfg.get("graph_name", "N/A")
+        db_display = f"{host}:{port}/{graph}"
+    else:
+        db_display = "N/A"
     print("\nDatabase:")
-    print(f"  Path: {db_path}")
+    print(f"  FalkorDB: {db_display}")
 
     # Embedding model
     embedding = config.get("embedding", {})
