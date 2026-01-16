@@ -15,23 +15,20 @@ Recall is designed to be:
 
 ## 2) Retrieval Entry Point
 The CLI uses:
-- `vestig memory search` → raw ranked list
 - `vestig memory recall` → formatted context blocks
 - `vestig memory recall --explain` → formatted blocks with per-result explanations
 
-Both routes call `search_memories()` with:
-- `query` (string)
-- `limit`
-- storage + embedding engine
-- optional TraceRank config
+`memory recall` accepts either:
+- plain text queries
+- conversation JSON (array or JSONL), which is summarized into a focused query when configured
 
 ---
 
 ## 3) Baseline Similarity (M1)
 ### Steps
 1. Embed the query using the configured embedding model.
-2. Compare query embedding against every stored memory embedding.
-3. Rank by cosine similarity.
+2. Use FalkorDB native vector search to retrieve candidate memories.
+3. Rank by cosine similarity (with optional TraceRank multiplier).
 
 ### Cosine similarity
 Given embeddings `a` and `b`:
@@ -47,7 +44,7 @@ This is the baseline score used across all recall.
 TraceRank adds a temporal multiplier to the base similarity.
 
 ### Inputs
-- **Event history** (`memory_events`): ADD / REINFORCE events.
+- **Event history** (`Event` nodes): ADD / REINFORCE events linked via `AFFECTS`.
 - **Temporal parameters** (from config):
   - `tau_days` — decay constant
   - `cooldown_hours` — burst discount window
@@ -84,13 +81,13 @@ trace_multiplier = 1 + k * log1p(trace)
 
 ---
 
-## 5) Combined Recall Score
-For each memory:
-```
-recall_score = cosine_similarity * trace_multiplier
-```
+## 5) Recall Path (M5: Chunk Expansion)
+`memory recall` uses chunk expansion:
+1. Search for relevant **SUMMARY** nodes via vector search.
+2. For each summary, hop to its chunk and retrieve all memories in that chunk.
+3. Re-rank the expanded set by similarity and apply TraceRank (if enabled).
 
-In M3/M4, this is the primary scoring model.
+This keeps recall grounded in chunk-level provenance while preserving semantic ordering.
 
 ---
 
@@ -108,18 +105,17 @@ These fields are not yet fully integrated into scoring, but are used for:
 
 ---
 
-## 7) Graph Features (M4)
-Graph is not used directly in baseline recall yet, but supports:
-- entity inspection
-- edge-based explainability
-- future graph expansion (M5)
+## 7) Graph Features (M4/M5)
+Graph edges are used directly during recall:
+- chunk expansion via `SUMMARY` → `Chunk` → `Memory`
+- provenance links via `PRODUCED` and `CONTAINS`
+
+Entity-based retrieval exists in `search_memories()` but is not wired into
+`memory recall` yet.
 
 ---
 
 ## 8) Output Formatting
-### `memory search`
-- Returns a ranked list with similarity scores.
-
 ### `memory recall`
 - Returns text blocks separated by `---`.
 - Each memory includes content and created timestamp.

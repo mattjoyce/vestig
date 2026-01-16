@@ -8,6 +8,7 @@ This document explains how Vestig ingests artifacts, extracts memories, and stor
 3. **Chunk** normalized text into manageable segments.
 4. **Extract memories** with the LLM, producing structured memory objects with entities and temporal hints.
 5. **Commit memories**: apply hygiene + dedupe, store in FalkorDB, create events, extract entities, and create graph edges.
+6. **Summarize chunks**: generate per-chunk summaries when enough memories were committed.
 
 ---
 
@@ -96,6 +97,11 @@ When event storage is enabled:
 - ADD / REINFORCE events are stored as `Event` nodes with `AFFECTS` edges.
 - Reinforcement updates `reinforce_count` and `last_seen_at`.
 
+### 5.5 Provenance links (Phase 2)
+For each committed memory:
+- `(Source)-[:PRODUCED]->(Memory)` is always created (primary provenance)
+- `(Chunk)-[:CONTAINS]->(Memory)` is created when the content was chunked
+
 ---
 
 ## 6) Entity Extraction + Graph Edges (M4)
@@ -107,6 +113,14 @@ If enabled:
 ### Edge creation
 - **MENTIONS** edges: Memory → Entity
 - **RELATED** edges: Memory → Memory (semantic similarity)
+- **LINKED** edges: Chunk → Entity (first-class provenance from source text)
+
+### Summary generation (M4/M5)
+Per-chunk summaries are generated when a chunk yields **>=2 committed memories**.
+Summaries are stored as `Memory` nodes with `kind=SUMMARY`, plus edges:
+- **SUMMARIZES**: Summary → Memory
+- **SUMMARIZED_BY**: Chunk → Summary
+- **PRODUCED**: Source → Summary
 
 Edges include:
 - weight (e.g., similarity)
@@ -118,10 +132,12 @@ Edges include:
 
 ## 7) What gets stored
 Nodes and edges in FalkorDB:
-- `Memory` nodes (MemoryNode)
+- `Source` nodes (SourceNode)
+- `Chunk` nodes (ChunkNode)
+- `Memory` nodes (MemoryNode, including summaries via `kind=SUMMARY`)
 - `Entity` nodes (EntityNode)
-- `Edge` relationships (EdgeNode)
 - `Event` nodes (EventNode) with `AFFECTS` edges
+- Relationship edges: PRODUCED, HAS_CHUNK, CONTAINS, LINKED, MENTIONS, RELATED, SUMMARIZES, SUMMARIZED_BY
 
 ---
 

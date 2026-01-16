@@ -39,12 +39,11 @@ User → CLI → Core (storage, embeddings, retrieval)
 
 ---
 
-## Near-term Refactoring
+## Near-term Refactoring (Updated)
 
 ### Source Abstraction
 Unify provenance under a Source type with dual linking:
-- Current: `File → Chunk → Memory`
-- Proposed: `Source → Memory` (always) AND `Source → Chunk → Memory` (when chunked)
+- Current: `Source → Memory` (always) AND `Source → Chunk → Memory` (when chunked)
 
 **Source Types:**
 - `file` - Document ingestion
@@ -61,8 +60,7 @@ Benefits:
 
 ### CLI Simplification
 Consider deprecating:
-- `memory add` - creates orphaned data without provenance
-- `memory search` - redundant with `recall`
+- `memory search` - already removed (redundant with `recall`)
 
 Keep ingestion as the primary path, with source type differentiation.
 
@@ -71,6 +69,8 @@ For atomic memories that bypass the Source→Chunk chain:
 - Entity extraction provides retrieval pathway via MENTIONS edges
 - Consider `--entities` flag on `memory add` for explicit linking
 - Periodic housekeeping can associate orphans with entities retroactively
+
+**Current behavior:** `memory add` now creates an agentic `Source` node, so ad-hoc memories are not orphaned.
 
 ---
 
@@ -110,7 +110,7 @@ Implementation: `vestig housekeeping` command with subcommands or `--task` flag.
 ## Data Model Notes
 
 ### SUMMARY Nodes
-`kind='SUMMARY'` memories are lightweight chunk representations optimized for retrieval. They capture semantic essence without full content, enabling efficient vector search while maintaining links to detailed Memory nodes.
+`kind='SUMMARY'` memories are lightweight chunk representations optimized for retrieval. They are generated per chunk (>=2 memories) and link back to detailed Memory nodes via `SUMMARIZES` edges.
 
 ### Provenance Chain (Revised)
 ```
@@ -120,8 +120,6 @@ Source (type=file|agentic|legacy)
     │                                │
     │                                └──[MENTIONS]──→ Entity
     ├──[PRODUCED]──────────────→ Summary
-    │                                │
-    │                                └──[MENTIONS]──→ Entity
     │
     └──[HAS_CHUNK]──→ Chunk (optional positional metadata)
                           │
@@ -139,12 +137,12 @@ Entities can be extracted at different levels with varying trust:
 | Source → Summary → Entity | Medium | Same trust as Memory (1 LLM hop) |
 | Source → Chunk → Entity | High (future) | Direct from raw text if implemented |
 
-**Current implementation:** Entities extracted from Memory and Summary nodes. Both have equal trust as they're one LLM processing step from source.
+**Current implementation:** Entities are extracted from Memory nodes. Chunk-level `LINKED` edges reuse the same extraction evidence for provenance.
 
 **Open question:** Should Chunk remain a first-class node, or become edge/node metadata?
 
 ### Entity-based Discovery
-Memories and Summaries connect to Entities via MENTIONS edges. This provides an alternative retrieval pathway independent of the provenance chain - critical for memories without source links (orphans).
+Memories connect to Entities via MENTIONS edges. This provides an alternative retrieval pathway independent of the provenance chain.
 
 ---
 

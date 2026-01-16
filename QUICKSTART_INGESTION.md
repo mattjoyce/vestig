@@ -13,9 +13,17 @@ storage:
     graph_name: vestig_test
 
 embedding:
-  model: "BAAI/bge-m3"
-  dimension: 1024
+  provider: "llm"
+  model: "embeddinggemma:latest"
+  dimension: 768
   normalize: true
+
+ingestion:
+  model: phi3:latest
+  chunk_size: 4000
+  chunk_overlap: 400
+  min_confidence: 0.8
+  format: auto
 
 hygiene:
   min_chars: 12
@@ -28,9 +36,7 @@ hygiene:
     skip_manual_source: true
 
 m3:
-  temporal:
-    enabled: true
-  events:
+  event_logging:
     enabled: true
   tracerank:
     enabled: true
@@ -72,10 +78,14 @@ m4:
       max_edges_per_memory: 10
 ```
 
-## Step 2: Set Anthropic API Key
+## Step 2: Configure LLM Access
 
 ```bash
+# If using Anthropic models via llm:
 export ANTHROPIC_API_KEY="your-key-here"
+
+# If using Ollama models via llm:
+# export OLLAMA_HOST="http://localhost:11434"
 ```
 
 ## Step 3: Ingest Session File
@@ -109,18 +119,16 @@ python -m vestig.core.cli --config config_test.yaml ingest your_session.txt \
 ```
 
 **What happens:**
-- Document chunked by ~5k tokens
-- Haiku extracts discrete memories from each chunk
-- Each memory committed with entity extraction
+- Document chunked by character count (`ingestion.chunk_size`)
+- Extraction model pulls discrete memories from each chunk
+- Each memory committed with optional entity extraction
 - Entities linked via MENTIONS edges
 - Similar memories linked via RELATED edges
+- Summaries generated per chunk when >=2 memories are committed
 
 ## Step 4: Query Memories
 
 ```bash
-# Search by semantic similarity
-python -m vestig.core.cli --config config_test.yaml memory search "PostgreSQL optimization"
-
 # Recall with LLM-ready formatting
 python -m vestig.core.cli --config config_test.yaml memory recall "PostgreSQL optimization"
 
@@ -136,26 +144,28 @@ export FALKOR_PORT=6379
 export FALKOR_GRAPH=vestig_test
 
 # Show all memories (raw)
-scripts/falkor "MATCH (m:Memory) RETURN m.id, substring(m.content, 0, 60) LIMIT 10"
+redis-cli -h "$FALKOR_HOST" -p "$FALKOR_PORT" GRAPH.QUERY "$FALKOR_GRAPH" \
+  "MATCH (m:Memory) RETURN m.id, substring(m.content, 0, 60) LIMIT 10"
 
 # Show all entities
-scripts/falkor "MATCH (e:Entity) RETURN e.canonical_name, e.entity_type LIMIT 10"
+redis-cli -h "$FALKOR_HOST" -p "$FALKOR_PORT" GRAPH.QUERY "$FALKOR_GRAPH" \
+  "MATCH (e:Entity) RETURN e.canonical_name, e.entity_type LIMIT 10"
 
 # Show MENTIONS edges
-scripts/falkor "
-  MATCH (m:Memory)-[:MENTIONS]->(e:Entity)
-  RETURN m.content, e.canonical_name, e.entity_type
-  LIMIT 10
-"
+redis-cli -h "$FALKOR_HOST" -p "$FALKOR_PORT" GRAPH.QUERY "$FALKOR_GRAPH" \
+  "MATCH (m:Memory)-[:MENTIONS]->(e:Entity) RETURN m.content, e.canonical_name, e.entity_type LIMIT 10"
 ```
 
 ## Step 5: Inspect Results
 
 ```bash
 # Count what was created
-echo "Memories: $(scripts/falkor 'MATCH (m:Memory) RETURN COUNT(m)' | tail -1)"
-echo "Entities: $(scripts/falkor 'MATCH (e:Entity) RETURN COUNT(e)' | tail -1)"
-echo "Edges: $(scripts/falkor 'MATCH ()-[r]->() RETURN COUNT(r)' | tail -1)"
+redis-cli -h "$FALKOR_HOST" -p "$FALKOR_PORT" GRAPH.QUERY "$FALKOR_GRAPH" \
+  "MATCH (m:Memory) RETURN COUNT(m)"
+redis-cli -h "$FALKOR_HOST" -p "$FALKOR_PORT" GRAPH.QUERY "$FALKOR_GRAPH" \
+  "MATCH (e:Entity) RETURN COUNT(e)"
+redis-cli -h "$FALKOR_HOST" -p "$FALKOR_PORT" GRAPH.QUERY "$FALKOR_GRAPH" \
+  "MATCH ()-[r]->() RETURN COUNT(r)"
 ```
 
 ## Cleanup

@@ -23,7 +23,7 @@ A concise glossary of core terms, mechanics, and maturity concepts used in Vesti
 - **Edge invalidation**: Marking a prior edge as expired when contradicted by new info.
 - **Embedding**: Vector representation of text used for semantic retrieval.
 - **Entity**: Typed node extracted from memories (PERSON, ORG, SYSTEM, PROJECT, PLACE, SKILL, TOOL, FILE, CONCEPT).
-- **Event node**: Append-only record of memory events (ADD, REINFORCE, IMPORT, DEPRECATE, SUMMARY_CREATED, etc.).
+- **Event node**: Append-only record of memory events (ADD, REINFORCE_EXACT, REINFORCE_NEAR, DEPRECATE, SUMMARY_CREATED, etc.).
 
 ## G
 - **Graph expansion**: Traversing edges (MENTIONS/RELATED) to find related nodes.
@@ -45,7 +45,7 @@ A concise glossary of core terms, mechanics, and maturity concepts used in Vesti
 ## M
 - **Maturity levels (M1–M6)**: Progressive capability slices from core loop to advanced cognition.
 - **Memory**: Canonical stored fact/insight with metadata and embeddings.
-- **MemRank**: Graph centrality score (PageRank-like) used in advanced retrieval (M5).
+- **MemRank**: Graph centrality score (PageRank-like) proposed for advanced retrieval (M5, not yet implemented).
 - **MENTIONS**: Edge type for Memory → Entity links.
 
 ## N
@@ -62,9 +62,9 @@ A concise glossary of core terms, mechanics, and maturity concepts used in Vesti
 - **RELATED**: Edge type for Memory → Memory semantic similarity links.
 
 ## S
-- **Source**: Metadata describing how a memory was created (manual, hook, import, ingest).
+- **Source**: Provenance node for content origins (type: file, agentic, legacy), linked to memories via PRODUCED edges.
 - **Substance filter**: LLM gate that rejects low-signal content before storage (M2+).
-- **Summary generation**: LLM step that produces a SUMMARY node after an ingest run (currently when >=5 memories are committed).
+- **Summary generation**: LLM step that produces a SUMMARY memory per chunk (currently when >=2 memories are committed).
 - **Summary node**: Derived memory node (kind=SUMMARY) that synthesizes an ingest run and links to its source memories.
 - **SUMMARIZES**: Edge type from Summary → Memory that records which memories were summarized.
 

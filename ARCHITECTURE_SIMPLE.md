@@ -1,148 +1,138 @@
 # Chunk-Centric Knowledge Graph Architecture
 
-**Version:** 1.0  
+**Version:** 1.1  
 **Target:** FalkorDB Implementation  
-**Status:** Initial Build
+**Status:** Production Baseline (M4)
 
 ---
 
 ## Core Concept
 
-Build a **chunk-centric knowledge graph** where document chunks act as hub nodes connecting source files to extracted knowledge (memories, entities, summaries).
+Build a **chunk-centric knowledge graph** where chunks act as hub nodes connecting sources to extracted knowledge (memories, entities, summaries).
 
-**Key Principle:** Everything traces back to exact locations in source documents through chunks.
+**Key Principle:** Everything traces back to provenance via Source nodes, with optional positional context via Chunk nodes.
 
 ---
 
 ## The Hub-and-Spoke Model
 
 ```
-                    FILE
-                     │
-                     ↓
-                ┌─────────┐
-                │  CHUNK  │ ← Hub Node (source location pointer)
-                └─────────┘
-                     │
-        ┌────────────┼────────────┐
-        ↓            ↓            ↓
-    MEMORY       ENTITY       SUMMARY
-  (facts)      (entities)   (overview)
+                 SOURCE (type=file|agentic|legacy)
+                             │
+                             │ PRODUCED
+                             ▼
+                          MEMORY (kind=MEMORY)
+                             │
+                             │ MENTIONS
+                             ▼
+                           ENTITY
+
+             SOURCE ──HAS_CHUNK──▶ CHUNK ──CONTAINS──▶ MEMORY
+                                   │
+                                   │ LINKED
+                                   ▼
+                                 ENTITY
+
+             CHUNK ──SUMMARIZED_BY──▶ SUMMARY (Memory kind=SUMMARY)
+             SUMMARY ──SUMMARIZES──▶ MEMORY
 ```
 
-**CHUNK is the hub** - all extracted artifacts connect through it, not to each other.
+**CHUNK is the positional hub** - all extracted artifacts can be traced to source locations through it.
 
 ---
 
 ## Node Types
 
-### 1. FILE
-Represents a source document.
+### 1. SOURCE
+Represents a content origin.
 
 **Properties:**
-- `file_id` - Unique identifier
-- `path` - Absolute file path
-- `created_at` - When file was created
-- `ingested_at` - When file was processed
+- `id` - Unique identifier
+- `source_type` - `file` | `agentic` | `legacy`
+- `path` (file sources)
+- `agent`, `session_id` (agentic sources)
+- `created_at`, `ingested_at`, `source_hash`, `metadata`
 
-**Purpose:** Track source documents and file-level metadata.
+**Purpose:** Unified provenance for all content origins.
 
 ---
 
-### 2. CHUNK (Hub Node)
-A pointer to a specific location in a file. Does not store the text itself.
+### 2. CHUNK (Positional Hub)
+A pointer to a specific location in a source.
 
 **Properties:**
-- `chunk_id` - Unique identifier
-- `file_id` - Which file this chunk belongs to
-- `start` - Character position in file where chunk starts
-- `length` - Number of characters in chunk
-- `sequence` - Position in document (1st chunk, 2nd chunk, etc.)
+- `id`
+- `source_id` - Which Source this chunk belongs to
+- `start` - Character position
+- `length` - Characters in chunk
+- `sequence` - Position in source
 
-**Purpose:** Central connection point that preserves exact source location. Enables retrieval of original text when needed.
-
-**Critical:** Chunk text is NOT stored in the database - only the pointer (file + start + length).
+**Purpose:** Preserve exact source location without storing raw chunk text.
 
 ---
 
 ### 3. MEMORY
-Extracted facts or statements from a chunk.
+Extracted facts or statements.
 
 **Properties:**
-- `memory_id` - Unique identifier
-- `content` - The actual fact/statement text
-- `embedding` - Vector representation (for semantic search)
-- `chunk_id` - Which chunk this was extracted from
+- `id`
+- `content`
+- `content_embedding`
+- `content_hash`
+- `created_at`
+- temporal fields (`t_valid`, `t_created`, `t_expired`, `temporal_stability`, etc.)
+- `metadata` (source tags, etc.)
 
-**Purpose:** Granular, searchable facts with full provenance back to source.
+**Purpose:** Granular, searchable facts with full provenance.
 
 ---
 
-### 4. ENTITY
-Extracted entities (people, organizations, concepts) from a chunk.
+### 4. SUMMARY (Memory kind=SUMMARY)
+Summaries are stored as Memory nodes with `kind="SUMMARY"`.
 
-**Properties:**
-- `entity_id` - Unique identifier
-- `name` - Entity name (e.g., "Matt Joyce", "AI governance")
-- `type` - Entity category (PERSON, ORG, CONCEPT, etc.)
-- `embedding` - Vector representation (for semantic matching)
-- `chunk_id` - Which chunk this was extracted from
-
-**Purpose:** Enable entity-based connections between chunks. Same entity appearing in different chunks creates implicit links.
+**Purpose:** Fast gist retrieval and chunk-level expansion.
 
 ---
 
-### 5. SUMMARY
-High-level overview of a chunk's content.
+### 5. ENTITY
+Canonical entities extracted from memories or chunks.
 
 **Properties:**
-- `summary_id` - Unique identifier
-- `content` - Summary text
-- `embedding` - Vector representation (for semantic search)
-- `chunk_id` - Which chunk this summarizes
+- `id`, `entity_type`, `canonical_name`, `norm_key`
+- `created_at`, `embedding`, `expired_at`, `merged_into`
 
-**Purpose:** Fast gist retrieval without reading full chunk text. Primary entry point for vector search.
+**Purpose:** Link memories and chunks via shared entities.
+
+---
+
+### 6. EVENT
+Lifecycle and audit trail events.
+
+**Properties:**
+- `id`, `memory_id`, `event_type`, `occurred_at`, `source`, `actor`, `payload`
+
+**Purpose:** TraceRank and observability.
 
 ---
 
 ## Relationships
 
-All relationships flow **through CHUNK**. There are no direct connections between MEMORY, ENTITY, and SUMMARY nodes.
+**Provenance**
+- `Source -[:PRODUCED]-> Memory`
+- `Source -[:HAS_CHUNK]-> Chunk`
+- `Chunk -[:CONTAINS]-> Memory`
 
-### Direct Relationships (Stored in Database)
+**Entity graph**
+- `Memory -[:MENTIONS]-> Entity`
+- `Chunk -[:LINKED]-> Entity`
+- `Memory -[:RELATED]-> Memory`
 
-```
-FILE → CHUNK       (file contains chunks)
-CHUNK → MEMORY     (chunk has extracted memories)
-CHUNK → ENTITY     (chunk mentions entities)
-CHUNK → SUMMARY    (chunk has summary)
-```
+**Summaries**
+- `Summary -[:SUMMARIZES]-> Memory`
+- `Chunk -[:SUMMARIZED_BY]-> Summary`
 
-### Implied Relationships (Derived via Traversal)
-
-```
-SUMMARY → ENTITY   (traverse: SUMMARY → CHUNK → ENTITY)
-MEMORY → ENTITY    (traverse: MEMORY → CHUNK → ENTITY)
-CHUNK → CHUNK      (via shared entities: CHUNK → ENTITY ← CHUNK)
-```
-
----
-
-## FalkorDB Graph Model Overview
-
-**Tables:**
-- `files` - Source documents
-- `chunks` - Location pointers (file_id, start, length)
-- `memories` - Extracted facts with embeddings
-- `entities` - Extracted entities with embeddings
-- `summaries` - Chunk overviews with embeddings
-
-**Key Design Decisions:**
-
-1. **No chunk text in database** - Store only `(file_id, start, length)` pointer
-2. **All embeddings stored** - On memories, entities, and summaries for vector search
-3. **Hub constraint** - All foreign keys point to `chunk_id`, not to each other
-4. **Simple schema** - Start minimal, add complexity only if needed
+**Events**
+- `Event -[:AFFECTS]-> Memory`
 
 ---
 
@@ -151,130 +141,41 @@ CHUNK → CHUNK      (via shared entities: CHUNK → ENTITY ← CHUNK)
 ### Ingestion Pipeline
 
 ```
-1. Load document → Create FILE record
-                     ↓
-2. Split document → Create CHUNK records (pointers only!)
-                     ↓
-3. For each chunk:
-   a. Extract entities → Create ENTITY records → Link to CHUNK
-   b. Generate summary → Create SUMMARY record → Link to CHUNK
-   c. Extract memories → Create MEMORY records → Link to CHUNK
-   d. Generate embeddings for all extracted content
+1. Load artifact → Create SOURCE node
+2. Chunk text → Create CHUNK nodes
+3. Extract memories → Create MEMORY nodes
+4. Link provenance → PRODUCED + CONTAINS edges
+5. Extract entities → MENTIONS (Memory) + LINKED (Chunk)
+6. Generate summaries (>=2 memories per chunk)
+7. Store events → Event nodes with AFFECTS edges
 ```
 
-### Retrieval Modes
+### Retrieval Mode (Recall)
 
-**Recall Mode** - Find specific facts with full source context:
 ```
-Query → Search SUMMARY embeddings → Get CHUNK pointer → 
-Get MEMORYs from that CHUNK → Retrieve original text from file
-```
-
-**Expand Mode** - Discover related information:
-```
-Query → Search SUMMARY embeddings → Get CHUNK → 
-Get ENTITYs from that CHUNK → Find other CHUNKs with same entities →
-Get MEMORYs from those related CHUNKs
+Query → Search SUMMARY embeddings → Expand to CHUNK → Pull all MEMORY in chunk → Re-rank by similarity + TraceRank
 ```
 
 ---
 
 ## Why This Architecture?
 
-### 1. **Full Provenance**
-Every fact traces back to exact character position in source file:
-```
-MEMORY → CHUNK → FILE (path:start:length)
-```
+1. **Full Provenance**
+   `MEMORY → CHUNK → SOURCE` preserves exact source location and origin.
 
-### 2. **Storage Efficiency**
-Chunk text stored once in original file, not duplicated in database. Only pointers stored.
+2. **Storage Efficiency**
+   Chunk text stays in the original artifact, not duplicated in the graph.
 
-### 3. **Flexible Retrieval**
-- Vector search on summaries (fast, broad semantic match)
-- Vector search on entities (concept-level fuzzy matching)
-- Vector search on memories (precise fact matching)
-- Graph traversal for entity-based expansion
+3. **Flexible Retrieval**
+   Summary-first retrieval keeps recall fast and expandable.
 
-### 4. **Re-extraction Friendly**
-Improve extraction prompts and re-process without re-ingesting files. Chunk pointers remain stable.
-
-### 5. **Multi-Resolution**
-Query at different granularities:
-- Quick scan: Read summaries
-- Detailed: Read memories
-- Full context: Retrieve original chunk text from file
-
----
-
-## Implementation Phases
-
-### Phase 1: Core Nodes and Edges (FalkorDB)
-- Create nodes: Source, Chunk, Memory, Entity, Summary
-- Implement chunk pointer system (source_id + start + length)
-- Basic insert and retrieval functions
-
-### Phase 2: Vector Search
-- Add embedding columns
-- Implement vector similarity search using FalkorDB native indexes
-- Test semantic retrieval
-
-### Phase 3: Graph Traversal
-- Implement entity-based chunk expansion
-- Test recall and expand retrieval modes
-- Measure retrieval quality
-
-### Phase 4: Evaluation
-- Test with 2WikiMultiHopQA dataset or real documents
-- Measure: precision, recall, storage efficiency
-- Keep storage FalkorDB-only
-
----
-
-## Success Criteria
-
-**The architecture is successful if:**
-
-1. ✅ Can trace any fact back to exact source location
-2. ✅ Storage footprint is reasonable (no chunk text duplication)
-3. ✅ Retrieval finds relevant context across documents
-4. ✅ Entity-based expansion discovers non-obvious connections
-5. ✅ Re-extraction works without breaking existing data
+4. **Graph-Native**
+   FalkorDB supports vector search + traversal in one store.
 
 ---
 
 ## Future Evolution
 
-FalkorDB is the primary backend for:
-- Native graph traversal (vs. relational joins)
-- Better performance at scale
-- Built-in vector search optimization
-- More natural graph query language
-
-**Evolution preserves the same hub-and-spoke model** while deepening graph-native capabilities.
-
----
-
-## Key Constraints
-
-**Remember:**
-1. **Chunk text is NOT stored** - only pointers (file_id, start, length)
-2. **All artifacts connect through CHUNK** - no sibling relationships
-3. **Embeddings on everything** - memories, entities, summaries all get vectors
-4. **Hub model is sacred** - don't shortcut by linking memories directly to entities
-
----
-
-## Questions for Implementation
-
-1. **Chunking strategy:** Fixed size? Semantic boundaries? Overlap?
-2. **Entity extraction:** LLM-based or NER model?
-3. **Vector embeddings:** Which model? (OpenAI, local, etc.)
-4. **Vector search:** FalkorDB vector index or external service
-5. **Deduplication:** How to handle same entity appearing multiple times?
-
----
-
-**Document Author:** Matt Joyce  
-**Date:** 2025-01-05  
-**Purpose:** Developer guide for initial FalkorDB implementation
+- Expand entity-based retrieval in recall
+- Add richer traversal and graph scoring (M5+)
+- Continue hardening provenance and observability

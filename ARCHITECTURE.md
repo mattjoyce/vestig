@@ -1,754 +1,178 @@
-# Vestig Architecture: Source-Centric Knowledge Graph with Dual Linking
+# Vestig Architecture (FalkorDB-Only)
 
-**Version:** 2.1 (FalkorDB Only)
-**Date:** 2026-01-15
-**Status:** Production (FalkorDB backend)
-
-## Executive Summary
-
-Vestig implements a **source-centric graph architecture** with **dual linking** for knowledge management, where unified source nodes provide primary provenance for all content origins (files, agent contributions, legacy data), while optional chunk nodes provide positional metadata. This design prioritizes **provenance**, **temporal tracking**, and **multi-resolution querying** over traditional entity-centric approaches.
-
-**Key Innovations:**
-1. **SOURCE as primary provenance** - Unified tracking for file, agentic, and legacy content
-2. **Dual linking model** - Memories link to both Source (primary provenance) AND Chunk (positional metadata)
-3. **Chunk as optional metadata** - Location pointers within sources, not required intermediary
-4. **Graph-native storage** - FalkorDB for native graph operations and vector similarity
+**Version:** 2.2  
+**Status:** Production baseline (M4), M5 in progress  
+**Last Updated:** 2026-01-17
 
 ---
 
-## Table of Contents
+## Purpose
+Vestig is a local-first memory system for agents. It ingests artifacts, extracts structured memories, and stores them in a graph for retrieval and provenance.
 
-1. [Overview](#overview)
-2. [Current State (FalkorDB)](#current-state-falkordb)
-3. [Graph Model](#graph-model)
-4. [Architectural Rationale](#architectural-rationale)
-5. [Comparison to Other Approaches](#comparison-to-other-approaches)
-6. [Benefits & Trade-offs](#benefits--trade-offs)
-
----
-
-## Overview
-
-### Design Philosophy
-
-1. **Provenance-First**: Every knowledge artifact must be traceable to its exact source
-2. **Temporal-Aware**: Track both when facts were true (event time) and when we learned them (transaction time)
-3. **Multi-Resolution**: Support querying at multiple levels of abstraction from the same source
-4. **Re-extraction Friendly**: Enable reprocessing without re-ingesting source documents
-
-### Core Principles (Phase 2 Updated)
-
-- **Source as Primary Provenance**: All content originates from unified Source nodes (file/agentic/legacy)
-- **Dual Linking**: Memories link to Source (always) AND Chunk (when chunked)
-- **Chunk as Optional Metadata**: Location pointers within sources, not required provenance chain
-- **Unified Provenance Model**: Files, agent contributions, and legacy data share common source abstraction
-- **Normalized Graph**: Avoid redundancy; use relationships over denormalized properties
-- **Bi-temporal Model**: Track t_valid (event time) and t_created (transaction time)
-- **Quality Firewall**: Hygiene checks and deduplication prevent low-quality data
+Key priorities:
+- **Earn complexity**: ship minimal end-to-end slices, then deepen.
+- **Stable interfaces**: CLI contract + schema are guarded.
+- **Content hygiene**: quality gates at the boundary.
+- **Observability**: behavior is inspectable via CLI and graph queries.
 
 ---
 
-## Phase 2: Source Abstraction (Current State)
+## Current Scope (M4)
+- FalkorDB graph storage with vector search
+- Source abstraction (file/agentic/legacy)
+- Chunk-based provenance
+- Entity extraction and graph edges
+- Summary generation per chunk
+- TraceRank temporal scoring
 
-### Implementation
-
-**Storage:** FalkorDB graph database
-- **FalkorDB**: Graph-native storage with Cypher queries
-- Native vector operations for similarity search
-- Direct edge relationships for provenance and knowledge graph
-
-**Provenance Model:** Source → Memory (always) AND Source → Chunk → Memory (when chunked)
-
-**Source Types:**
-- `file`: Document ingestion (path-based)
-- `agentic`: AI agent contributions (agent name: claude-code, codex, goose, etc.)
-- `legacy`: Backfilled orphans from housekeeping
-
-### Schema (Phase 2 - FalkorDB Graph Model)
-
-```sql
--- Sources table (NEW in Phase 2)
-CREATE TABLE sources (
-    source_id TEXT PRIMARY KEY,
-    source_type TEXT NOT NULL,        -- 'file' | 'agentic' | 'legacy'
-    created_at TEXT NOT NULL,
-    ingested_at TEXT NOT NULL,
-    source_hash TEXT,
-    metadata TEXT,
-    -- Type-specific fields (nullable)
-    path TEXT,                        -- For 'file'
-    agent TEXT,                       -- For 'agentic'
-    session_id TEXT                   -- Optional session tracking
-);
-
--- Chunks table (UPDATED in Phase 2)
-CREATE TABLE chunks (
-    chunk_id TEXT PRIMARY KEY,
-    source_id TEXT NOT NULL,          -- Changed from file_id
-    start INTEGER NOT NULL,
-    length INTEGER NOT NULL,
-    sequence INTEGER NOT NULL,
-    created_at TEXT NOT NULL,
-    FOREIGN KEY(source_id) REFERENCES sources(source_id)
-);
-
--- Memories table (UPDATED in Phase 2)
-CREATE TABLE memories (
-    id TEXT PRIMARY KEY,
-    content TEXT NOT NULL,
-    content_embedding TEXT NOT NULL,
-    content_hash TEXT,
-    created_at TEXT NOT NULL,
-    metadata TEXT NOT NULL,
-    -- Bi-temporal fields
-    t_valid TEXT,
-    t_invalid TEXT,
-    t_created TEXT,
-    t_expired TEXT,
-    temporal_stability TEXT DEFAULT 'unknown',
-    last_seen_at TEXT,
-    reinforce_count INTEGER DEFAULT 0,
-    kind TEXT DEFAULT 'MEMORY',       -- 'MEMORY' | 'SUMMARY'
-    -- Phase 2: Dual linking
-    chunk_id TEXT,                    -- Optional positional metadata
-    source_id TEXT                    -- Primary provenance (ALWAYS set)
-);
-
--- Entities table
-CREATE TABLE entities (
-    id TEXT PRIMARY KEY,
-    entity_type TEXT NOT NULL,
-    canonical_name TEXT NOT NULL,
-    norm_key TEXT NOT NULL UNIQUE,
-    created_at TEXT NOT NULL,
-    embedding TEXT,
-    expired_at TEXT,
-    merged_into TEXT,
-    chunk_id TEXT                     -- Optional chunk link
-);
-
--- Edges table
-CREATE TABLE edges (
-    edge_id TEXT PRIMARY KEY,
-    from_node TEXT NOT NULL,
-    to_node TEXT NOT NULL,
-    edge_type TEXT NOT NULL,          -- MENTIONS | RELATED | SUMMARIZED_BY | CONTAINS
-    weight REAL NOT NULL,
-    confidence REAL,
-    evidence TEXT,
-    -- Bi-temporal fields
-    t_valid TEXT,
-    t_invalid TEXT,
-    t_created TEXT,
-    t_expired TEXT
-);
-
--- Files table (DEPRECATED - kept for backward compatibility)
-CREATE TABLE files (
-    file_id TEXT PRIMARY KEY,
-    path TEXT NOT NULL,
-    created_at TEXT NOT NULL,
-    ingested_at TEXT NOT NULL,
-    file_hash TEXT,
-    metadata TEXT
-);
-```
-
-### Phase 2 Provenance Model (Dual Linking)
-
-**Key Concept:** Memories have TWO provenance links:
-
-1. **Primary: source_id** → Always points to Source node (required)
-2. **Secondary: chunk_id** → Points to Chunk node (optional, for chunked content)
-
-**File Ingestion Example:**
-```
-Source{type='file', path='/path/to/doc.md'}
-    └──→ Chunk{sequence=1, start=0, length=5000}
-            └──→ Memory{content='...', source_id, chunk_id}
-                    ↑
-                    └── Both source_id AND chunk_id are set
-```
-
-**Agentic Content Example:**
-```
-Source{type='agentic', agent='claude-code', session_id='abc123'}
-    └──→ Memory{content='...', source_id, chunk_id=NULL}
-            ↑
-            └── Only source_id is set (no chunking)
-```
-
-**Legacy/Orphan Example:**
-```
-Source{type='legacy', agent='unknown'}
-    └──→ Memory{content='...', source_id, chunk_id=NULL}
-            ↑
-            └── Created by housekeeping backfill
-```
-
-**Benefits:**
-✅ All content has provenance (no orphans)
-✅ Session-level tracking for agentic sources
-✅ Trust signals (file vs agentic vs legacy)
-✅ Positional metadata when needed (chunks)
-
----
-
-## FalkorDB Backend (Graph-Native Implementation)
-
-### Status: Production
-
-**Implemented:** January 2026 (Phase 2)
-**Why:** Native graph traversal, Cypher query language, better relationship modeling, scalable querying
-
-FalkorDB provides a graph-native backend using edges for provenance relationships rather than foreign key properties.
-
-### Node Types (Phase 2)
-
-#### 1. SOURCE Node (Primary Provenance)
-
-```cypher
-(:Source {
-  id: "source_<uuid>",
-  source_type: "file",            // 'file' | 'agentic' | 'legacy'
-  created_at: "2024-01-15T10:30:00Z",
-  ingested_at: "2024-01-20T15:00:00Z",
-  source_hash: "sha256_...",
-  metadata: {...},
-  // Type-specific fields (nullable)
-  path: "/absolute/path/to/document.md",  // For 'file'
-  agent: NULL,                              // For 'agentic': 'claude-code', 'codex', etc.
-  session_id: NULL                          // Optional session tracking
-})
-```
-
-**Purpose:** Unified provenance for all content origins. Replaces FILE nodes with support for multiple source types.
-
-**Example - Agentic Source:**
-```cypher
-(:Source {
-  id: "source_<uuid>",
-  source_type: "agentic",
-  agent: "claude-code",
-  session_id: "abc123",
-  created_at: "2026-01-11T14:30:00Z",
-  ingested_at: "2026-01-11T14:30:00Z",
-  metadata: {conversation_id: "xyz", turn: 42}
-})
-```
-
-#### 2. CHUNK Node (Optional Positional Metadata)
-
-```cypher
-(:Chunk {
-  id: "chunk_<uuid>",
-  source_id: "source_<uuid>",  // Phase 2: references Source, not File
-  start: 0,                     // Character position in source
-  length: 3933,                 // Length in characters
-  sequence: 1,                  // Position in document (1-indexed)
-  created_at: "2024-01-20T15:00:00Z"
-})
-```
-
-**Purpose:** Location pointers within sources. Provides positional metadata for chunked content (primarily for files). Optional - not all memories have chunks (e.g., agentic sources).
-
-#### 3. MEMORY Node
-
-```cypher
-(:MEMORY {
-  memory_id: "mem_<uuid>",
-  content: "Matt Joyce developed Vestig as a chunk-centric knowledge graph system",
-  content_hash: "sha256_...",
-  created_at: "2024-01-20T15:00:00Z",
-  -- Bi-temporal fields
-  t_valid: "2024-01-15T00:00:00Z",      // When fact became true (event time)
-  t_invalid: NULL,                       // When fact stopped being true
-  t_created: "2024-01-20T15:00:00Z",    // When we learned it (transaction time)
-  t_expired: NULL,                       // When deprecated/superseded
-  temporal_stability: "static",          // "static" | "dynamic" | "ephemeral" | "unknown"
-  -- Reinforcement tracking
-  last_seen_at: "2024-01-25T10:00:00Z",
-  reinforce_count: 3
-})
-```
-
-**Purpose:** Granular facts with temporal metadata. Supports bi-temporal querying ("what did we know on date X?").
-
-#### 4. ENTITY Node
-
-```cypher
-(:ENTITY {
-  entity_id: "ent_<uuid>",
-  entity_type: "PERSON",        // PERSON | ORG | SYSTEM | PROJECT | TOOL | etc.
-  canonical_name: "Matt Joyce",
-  norm_key: "person:matt joyce", // Deduplication key (type:normalized_name)
-  created_at: "2024-01-20T15:00:00Z",
-  embedding: [0.123, -0.456, ...],  // Optional: for semantic entity matching
-  expired_at: NULL,
-  merged_into: NULL              // If entity was merged into canonical
-})
-```
-
-**Purpose:** Canonical entities extracted from chunks. Deduplicated via norm_key.
-
-#### 5. SUMMARY Node
-
-```cypher
-(:SUMMARY {
-  summary_id: "sum_<uuid>",
-  content: "This chunk discusses the architecture of Vestig, a chunk-centric knowledge graph...",
-  summary_type: "chunk",         // "chunk" | "document" | "multi-document"
-  created_at: "2024-01-20T15:05:00Z",
-  model: "gpt-5.1",
-  prompt_version: "summary_v2"
-})
-```
-
-**Purpose:** High-level overviews at chunk or document level. Enables fast gist retrieval.
-
-### Edge Types
-
-#### FILE → CHUNK: CONTAINS
-
-```cypher
-(FILE)-[:CONTAINS {
-  sequence: 1,           // Chunk position in file
-  extraction_date: "2024-01-20T15:00:00Z"
-}]->(CHUNK)
-```
-
-**Purpose:** Link files to their constituent chunks, preserving document structure.
-
-#### CHUNK → CHUNK: NEXT
-
-```cypher
-(CHUNK {sequence: 1})-[:NEXT]->(CHUNK {sequence: 2})
-```
-
-**Purpose:** Sequential linking for document flow navigation. Enables "show context before/after this chunk" queries.
-
-#### CHUNK → MEMORY: EXTRACTED
-
-```cypher
-(CHUNK)-[:EXTRACTED {
-  extraction_date: "2024-01-20T15:00:00Z",
-  model: "gpt-5.1",
-  prompt_version: "extract_memories_v4",
-  confidence: 0.92
-}]->(MEMORY)
-```
-
-**Purpose:** Track which chunk each memory was extracted from. Enables provenance queries.
-
-#### CHUNK → ENTITY: EXTRACTED
-
-```cypher
-(CHUNK)-[:EXTRACTED {
-  extraction_date: "2024-01-20T15:00:00Z",
-  model: "gpt-5-nano",
-  prompt_version: "extract_entities_v1",
-  confidence: 0.85
-}]->(ENTITY)
-```
-
-**Purpose:** Track entity extraction from original chunk text (not from memories). Ensures high-quality entity extraction.
-
-#### CHUNK → SUMMARY: SUMMARIZED_BY
-
-```cypher
-(CHUNK)-[:SUMMARIZED_BY {
-  created_at: "2024-01-20T15:05:00Z",
-  model: "gpt-5.1",
-  prompt_version: "summary_v2"
-}]->(SUMMARY)
-```
-
-**Purpose:** Link chunks to their summaries for fast overview retrieval.
-
-#### MEMORY → ENTITY: MENTIONS
-
-```cypher
-(MEMORY)-[:MENTIONS {
-  confidence: 0.87,
-  evidence: "Found in original chunk text via substring match",
-  extraction_source: "chunk",  // "chunk" or "memory"
-  t_valid: "2024-01-20T15:00:00Z",
-  t_created: "2024-01-20T15:00:00Z"
-}]->(ENTITY)
-```
-
-**Purpose:** Link memories to entities they mention. Created via substring matching after chunk-level entity extraction.
-
-#### MEMORY → MEMORY: RELATED
-
-```cypher
-(MEMORY)-[:RELATED {
-  similarity: 0.78,
-  evidence: "semantic_similarity=0.780",
-  t_valid: "2024-01-20T15:00:00Z"
-}]->(MEMORY)
-```
-
-**Purpose:** Semantic similarity edges for memory graph traversal.
+M5 work is in progress: advanced retrieval, scoring, and traversal behaviors.
 
 ---
 
 ## Graph Model
 
-### Visual Representation
+### Node Types
 
-```
-┌─────────────┐
-│    FILE     │
-│  (document) │
-└──────┬──────┘
-       │ [:CONTAINS]
-       ↓
-┌─────────────┐      [:NEXT]      ┌─────────────┐
-│   CHUNK₁    │ ──────────────→   │   CHUNK₂    │
-│ (start:0)   │                   │ (start:3533)│
-└──────┬──────┘                   └──────┬──────┘
-       │                                  │
-       ├─[:EXTRACTED]────→ ┌──────────┐  │
-       │                   │  MEMORY  │  │
-       │                   └────┬─────┘  │
-       │                        │[:MENTIONS]
-       │                        ↓        │
-       ├─[:EXTRACTED]────→ ┌──────────┐ │
-       │                   │  ENTITY  │←┘
-       │                   └──────────┘
-       │
-       └─[:SUMMARIZED_BY]→ ┌──────────┐
-                           │  SUMMARY │
-                           └──────────┘
-```
+**Source**
+- `source_type`: `file` | `agentic` | `legacy`
+- `path` (file), `agent` + `session_id` (agentic)
+- `created_at`, `ingested_at`, `source_hash`, `metadata`
 
-### Example Query Patterns
+**Chunk**
+- `source_id`, `start`, `length`, `sequence`, `created_at`
 
-#### 1. Provenance Query: "Where did this memory come from?"
+**Memory**
+- `id`, `content`, `content_embedding`, `content_hash`, `created_at`
+- `metadata` (source, tags)
+- Temporal fields: `t_valid`, `t_invalid`, `t_created`, `t_expired`, `temporal_stability`
+- Reinforcement fields: `last_seen_at`, `reinforce_count`
+- `kind`: `MEMORY` (default) or `SUMMARY`
 
-```cypher
-MATCH (m:MEMORY {memory_id: "mem_abc123"})
-      <-[:EXTRACTED]-(c:CHUNK)
-      <-[:CONTAINS]-(f:FILE)
-RETURN f.path, c.start, c.length, c.text
-```
+**Entity**
+- `entity_type`, `canonical_name`, `norm_key`
+- `embedding`, `created_at`, `expired_at`, `merged_into`
 
-#### 2. Entity-Centric Query: "Show all memories mentioning Matt Joyce"
+**Event**
+- `event_type` (ADD, REINFORCE_EXACT, REINFORCE_NEAR, DEPRECATE, SUMMARY_CREATED)
+- `occurred_at`, `source`, `actor`, `artifact_ref`, `payload`
 
-```cypher
-MATCH (e:ENTITY {canonical_name: "Matt Joyce"})
-      <-[:MENTIONS]-(m:MEMORY)
-      <-[:EXTRACTED]-(c:CHUNK)
-RETURN m.content, m.t_valid, c.start, c.length
-ORDER BY m.t_valid DESC
-```
+**File (deprecated)**
+- Retained only for migration/backward compatibility. New writes use `Source`.
 
-#### 3. Multi-Resolution Query: "Get entity, summary, and memories from chunk"
+### Edge Types
 
-```cypher
-MATCH (c:CHUNK {chunk_id: "chunk_xyz"})
-OPTIONAL MATCH (c)-[:EXTRACTED]->(e:ENTITY)
-OPTIONAL MATCH (c)-[:SUMMARIZED_BY]->(s:SUMMARY)
-OPTIONAL MATCH (c)-[:EXTRACTED]->(m:MEMORY)
-RETURN c, collect(e) as entities, s, collect(m) as memories
-```
+**Provenance**
+- `Source -[:PRODUCED]-> Memory` (and summaries)
+- `Source -[:HAS_CHUNK]-> Chunk`
+- `Chunk -[:CONTAINS]-> Memory`
 
-#### 4. Temporal Query: "What did we know about Vestig on 2024-01-15?"
+**Entities**
+- `Memory -[:MENTIONS]-> Entity`
+- `Chunk -[:LINKED]-> Entity`
+- `Memory -[:RELATED]-> Memory`
 
-```cypher
-MATCH (m:MEMORY)-[:MENTIONS]->(e:ENTITY {canonical_name: "Vestig"})
-WHERE m.t_valid <= datetime("2024-01-15T23:59:59Z")
-  AND (m.t_invalid IS NULL OR m.t_invalid > datetime("2024-01-15T23:59:59Z"))
-  AND m.t_created <= datetime("2024-01-15T23:59:59Z")
-RETURN m.content, m.t_valid, m.temporal_stability
-ORDER BY m.t_valid DESC
-```
+**Summaries**
+- `Summary -[:SUMMARIZES]-> Memory`
+- `Chunk -[:SUMMARIZED_BY]-> Summary`
+- `Chunk -[:CONTAINS]-> Summary`
 
-#### 5. Context Navigation: "Show chunk context (before/after)"
+**Events**
+- `Event -[:AFFECTS]-> Memory`
 
-```cypher
-MATCH (c:CHUNK {chunk_id: "chunk_xyz"})
-OPTIONAL MATCH (prev:CHUNK)-[:NEXT]->(c)
-OPTIONAL MATCH (c)-[:NEXT]->(next:CHUNK)
-RETURN prev, c, next
-```
-
-#### 6. Document Structure: "Show all chunks from this file in order"
-
-```cypher
-MATCH (f:FILE {path: "/path/to/doc.md"})-[:CONTAINS]->(c:CHUNK)
-RETURN c.chunk_id, c.sequence, c.start, c.length
-ORDER BY c.sequence
-```
+Schema constraints and indexes are initialized in `src/vestig/core/db_falkordb.py`. The reference schema is in `src/vestig/core/schema_falkor.cypher`.
 
 ---
 
-## Architectural Rationale
+## Provenance Model (Phase 2)
 
-### Why Chunk-Centric vs. Entity-Centric?
+**Dual linking** keeps provenance explicit and positional metadata optional:
+- All content is linked to a `Source` via `PRODUCED`.
+- Chunked content adds a positional link via `Chunk` and `CONTAINS`.
 
-Most knowledge graph systems (GraphRAG, LlamaIndex, graph+LLM stacks) use **entity-centric** architectures where entities are hub nodes. Vestig chooses **chunk-centric** for the following reasons:
-
-#### 1. **Provenance is Fundamental**
-
-**Problem:** In entity-centric systems, provenance is weak. You know an entity was mentioned, but not exactly where.
-
-**Solution:** Chunks are anchored to exact source locations (`file:start:length`). Every memory, entity, and summary traces back to precise text.
-
-**Benefit:**
-- "Show me the exact text where this entity was extracted"
-- "Re-extract entities from this chunk using updated prompt"
-- "Debug why this memory was created"
-
-#### 2. **Multi-Resolution Querying**
-
-**Problem:** Entity-centric systems force you to choose: extract entities OR extract facts/summaries.
-
-**Solution:** Chunks support multiple abstraction levels from the same source:
-- **Entities**: What's mentioned? (nouns, concepts)
-- **Summaries**: What's the gist? (high-level overview)
-- **Memories**: What are the details? (granular facts with temporal data)
-
-**Benefit:**
-- Fast overview: Query summaries
-- Detailed analysis: Query memories
-- Entity tracking: Query entities
-- All from the same chunk with shared provenance
-
-#### 3. **Temporal Tracking**
-
-**Problem:** Most knowledge graphs ignore time. Facts are timeless, but reality changes.
-
-**Solution:** Memories carry bi-temporal metadata:
-- `t_valid`: When the fact became true (event time)
-- `t_created`: When we learned it (transaction time)
-- `temporal_stability`: Classification (static, dynamic, ephemeral)
-
-**Benefit:**
-- "What did we know on date X?" (as-of queries)
-- "When did this fact become true?" (event time)
-- "Track opinion changes over time" (temporal stability)
-
-Chunks anchor these temporal memories to source documents, enabling "show me the document version from which this temporal fact was extracted."
-
-#### 4. **Re-extraction Without Re-ingestion**
-
-**Problem:** When extraction prompts improve, entity-centric systems require full document re-ingestion.
-
-**Solution:** Chunks store references to source text. Can re-extract entities or memories from chunks without re-reading files.
-
-**Benefit:**
-- "Re-extract entities from all chunks using new ontology"
-- "Re-run memory extraction with improved prompt"
-- "Partial updates without full pipeline re-run"
-
-#### 5. **Document Structure Preservation**
-
-**Problem:** Entity-centric systems lose document narrative flow.
-
-**Solution:** Chunks link sequentially (`:NEXT` edges), preserving document structure.
-
-**Benefit:**
-- "Show context before and after this chunk"
-- "Navigate document flow: previous/next chunk"
-- "Understand narrative arc, not just isolated facts"
-
-### Why FILE as Separate Node?
-
-**Alternative:** Store file_path as property on CHUNK.
-
-**Chosen:** FILE as separate node linked via `[:CONTAINS]` edge.
-
-**Rationale:**
-
-1. **Normalization**: File path stored once, not repeated across all chunks
-2. **File-Level Metadata**: Track creation date, author, tags, ingestion version
-3. **File-Centric Queries**: "Show all files ingested last week"
-4. **File Lifecycle**: Handle renames, moves, re-ingestion without updating all chunks
-5. **Graph-Native Modeling**: FILE is logically a separate entity with its own lifecycle
-
-**Trade-off:** One extra hop in queries (`MEMORY → CHUNK → FILE`), but negligible in FalkorDB and benefits outweigh cost.
-
-### Why Both Summaries AND Memories?
-
-**Question:** Why not just summaries (faster) or just memories (detailed)?
-
-**Answer:** Different use cases require different granularity.
-
-**Summaries (Chunk-level):**
-- **Use Case**: Fast overview, gist retrieval, exploratory queries
-- **Example**: "What's this chunk about?"
-- **Trade-off**: Less detail, but faster retrieval
-
-**Memories (Granular):**
-- **Use Case**: Precise facts, temporal tracking, detailed analysis
-- **Example**: "When did Matt Joyce start Vestig?" (needs temporal precision)
-- **Trade-off**: More nodes, but supports bi-temporal queries
-
-**Hybrid Retrieval:**
-1. Vector search → find relevant chunks
-2. Return summaries for quick scan
-3. User drills down → retrieve memories for details
-4. Expand via entities → find related chunks
-
-### Why Bi-temporal Model?
-
-**Event Time (t_valid):** When the fact became true in reality
-**Transaction Time (t_created):** When we learned about it
-
-**Example:**
-- Matt Joyce started Vestig on 2024-01-15 (event time: t_valid)
-- We learned this on 2024-01-20 from a document (transaction time: t_created)
-
-**Queries Enabled:**
-- **As-of queries**: "What did we know on 2024-01-18?" (filter by t_created)
-- **Event-time queries**: "What was true on 2024-01-18?" (filter by t_valid)
-- **Audit trail**: "When did we first learn about this fact?" (t_created)
-
-**Inspiration:** Bi-temporal databases (Datomic, temporal data extensions), knowledge graph versioning research.
+Examples:
+- File ingest: `Source(file)` → `Chunk` → `Memory` (plus `Source` → `Memory`)
+- Agentic add: `Source(agentic)` → `Memory` (no chunk)
+- Orphan backfill: `Source(legacy)` → `Memory`
 
 ---
 
-## Comparison to Other Approaches
+## Ingestion Pipeline
 
-| Feature | GraphRAG (MS) | LlamaIndex KG | Neo4j+Lang | Diffbot | **Vestig** |
-|---------|---------------|---------------|------------|---------|------------|
-| **Hub Node** | Community | Entity | Entity | Entity | **Chunk** |
-| **Provenance** | Weak | Medium | Medium | Strong | **Strong** |
-| **Temporal** | No | No | No | Some | **Bi-temporal** |
-| **Granularity** | Communities | Triplets | Chunks | Facts | **Multi-level** |
-| **Doc Flow** | Lost | Lost | Lost | Lost | **Preserved** |
-| **Re-extraction** | Full re-ingest | Full re-ingest | Difficult | N/A | **Chunk-level** |
-| **File Metadata** | No | No | Some | Some | **Full** |
-| **Multi-resolution** | No | No | No | No | **Yes** |
+1. **Normalize input** (plain text or Claude session JSONL).
+2. **Chunk** content by character count (configurable overlap).
+3. **Extract memories** via LLM prompts.
+4. **Commit** with hygiene + dedupe:
+   - exact hash dedupe
+   - near-duplicate reinforcement
+5. **Create provenance edges** (`PRODUCED`, `CONTAINS`).
+6. **Extract entities** (LLM-based) and write `MENTIONS` + `LINKED` edges.
+7. **Generate summaries** per chunk (when >=2 memories) and write `SUMMARIZES` + `SUMMARIZED_BY`.
+8. **Log events** (`Event` nodes with `AFFECTS`).
 
-### Unique Value Proposition
-
-**Vestig is the only system that combines:**
-1. Chunk-centric hub architecture (provenance-first)
-2. Bi-temporal tracking (event time vs. transaction time)
-3. Multi-resolution querying (entity/summary/memory from same chunk)
-4. Document structure preservation (sequential chunk linking)
-5. Re-extraction without re-ingestion (chunk-level reprocessing)
-
-**Closest comparisons:**
-- **Provenance**: Similar to Diffbot's evidence linking
-- **Temporal**: Similar to bi-temporal databases (Datomic)
-- **Chunk-centric**: Similar to HippoRAG's memory encoding, but more comprehensive
-
-**Research-grade architecture** suitable for:
-- Knowledge work requiring audit trails
-- Temporal reasoning ("what changed when?")
-- Provenance-critical applications (research, legal, medical)
-- Evolving knowledge bases (opinions, predictions, time-sensitive facts)
+Key files:
+- `src/vestig/core/ingestion.py`
+- `src/vestig/core/commitment.py`
+- `src/vestig/core/ingest_sources.py`
 
 ---
 
-## Roadmap Notes
+## Retrieval Pipeline
 
-FalkorDB is the only supported backend. Forward-looking work stays within the
-graph-native model (M5/M6), with details tracked in `ROADMAP.md`.
+### search_memories()
+- Native vector search via FalkorDB
+- Optional hybrid entity path (entity extraction + matching)
+- TraceRank temporal multiplier
 
----
+### memory recall (CLI)
+- Uses `recall_with_chunk_expansion()`:
+  1. search summaries (kind=SUMMARY)
+  2. expand to their chunks
+  3. re-rank all memories by similarity
+  4. apply TraceRank
 
-## Benefits & Trade-offs
-
-### Benefits
-
-#### 1. Full Provenance Chain
-```
-User asks: "Where did this fact come from?"
-Answer: MEMORY → CHUNK → FILE
-Result: "Extracted from file X, characters 1000-4000, on line 45"
-```
-
-#### 2. Temporal Reasoning
-```
-User asks: "What did we know about AI safety on 2024-01-15?"
-Query: Filter memories by t_created <= 2024-01-15
-Result: As-of snapshot of knowledge at that date
-```
-
-#### 3. Multi-Resolution Retrieval
-```
-User asks: "Tell me about Vestig"
-Step 1: Find entity "Vestig" → get chunks
-Step 2: Fast scan: Read chunk summaries
-Step 3: Details: Retrieve memories from relevant chunks
-Step 4: Expand: Follow entity links to related chunks
-```
-
-#### 4. Re-extraction Efficiency
-```
-Scenario: Improved entity extraction prompt
-Action: Re-extract entities from chunks (not full re-ingestion)
-Benefit: Faster iteration on extraction quality
-```
-
-#### 5. Document Context Navigation
-```
-User reads memory from chunk 5
-Action: Show context → retrieve chunks 4, 5, 6
-Benefit: Understand narrative flow, not isolated facts
-```
-
-### Trade-offs
-
-#### 1. Graph Complexity
-- **More nodes/edges** than entity-centric (chunks + entities + memories + summaries)
-- **Mitigation**: FalkorDB handles millions of nodes efficiently; complexity is managed via indexes
-
-#### 2. Query Complexity
-- **Multi-hop traversals** may be slower than direct lookups
-- **Mitigation**: FalkorDB is optimized for graph traversal; use indexes on hub nodes (CHUNK)
-
-#### 3. Storage Overhead
-- **Chunk text storage** (optional) increases database size
-- **Mitigation**: Store chunk_ref only; re-read from file when needed
-
-#### 4. Chunk Boundary Issues
-- **Semantic units may span chunks** (e.g., sentence split across chunks)
-- **Mitigation**: Overlap (400 chars) + sequential linking helps preserve context
-
-#### 5. Learning Curve
-- **Chunk-centric is unconventional** compared to entity-centric RAG
-- **Mitigation**: Clear documentation (this file), query pattern examples
-
-### When to Use This Architecture
-
-**Good fit:**
-- Knowledge work requiring audit trails (research, legal, compliance)
-- Temporal reasoning ("what changed when?")
-- Provenance-critical applications (medical, scientific)
-- Evolving knowledge bases (opinions, predictions, time-sensitive facts)
-- Large document collections with version tracking needs
-
-**Poor fit:**
-- Simple entity extraction without provenance needs
-- Purely semantic search (vector DB sufficient)
-- Static knowledge (Wikipedia-like, no temporal changes)
-- Real-time streaming data (graph writes may be bottleneck)
+Key files:
+- `src/vestig/core/retrieval.py`
+- `src/vestig/core/tracerank.py`
 
 ---
 
-## Conclusion
+## Temporal Model (M3)
 
-Vestig's chunk-centric architecture represents a novel approach to knowledge graph design, prioritizing **provenance**, **temporal tracking**, and **multi-resolution querying** over traditional entity-centric models.
+Each memory is bi-temporal:
+- `t_valid`, `t_invalid` (event time)
+- `t_created`, `t_expired` (transaction time)
+- `temporal_stability` (static/dynamic/ephemeral/unknown)
 
-**Key Innovation:** CHUNK as hub node enables traceability from any knowledge artifact (memory, entity, summary) back to exact source locations while supporting multiple abstraction levels.
-
-**Target State:** FalkorDB graph database with Source → Chunk → {Memory, Entity, Summary} structure, bi-temporal tracking, and sequential chunk linking.
-
-**Current Status:** FalkorDB backend in production with graph-native storage and vector search.
-
-**Next Steps:**
-1. Advance M5 retrieval and scoring in FalkorDB
-2. Harden provenance and chunk traversal behaviors (M6)
-3. Expand observability and inspection tooling
+TraceRank uses reinforcement events + graph connectivity to apply a decay-aware multiplier.
 
 ---
 
-**Document Version:** 2.2
+## Observability
+
+- `vestig memory show` exposes temporal fields and embeddings
+- `vestig entity list/show` surfaces graph nodes
+- `vestig edge list/show` inspects relationships
+- `vestig housekeeping report/orphans` inspects graph health
+
+---
+
+## Configuration
+
+Key config sections:
+- `embedding`: model, provider, dimension, normalization
+- `storage.falkordb`: host, port, graph_name
+- `ingestion`: model, chunk size/overlap, confidence thresholds
+- `m3`: event logging + TraceRank settings
+- `m4`: entity types, extraction config, edge creation
+
+---
+
+## Out of Scope (M5+)
+
+- Service/daemon mode and external integrations
+- Multi-hop traversal and MemRank-like scoring
+- Background job scheduling
+
+---
+
 **Author:** Matt Joyce (with Claude Sonnet 4.5)
-**Last Updated:** 2026-01-16
