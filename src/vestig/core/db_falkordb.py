@@ -116,16 +116,18 @@ class FalkorDBDatabase(DatabaseInterface):
     Provides native graph operations using Cypher queries.
     """
 
-    def __init__(self, host: str, port: int, graph_name: str):
+    def __init__(self, host: str, port: int, graph_name: str, config: dict | None = None):
         """Initialize FalkorDB connection.
 
         Args:
             host: FalkorDB server host
             port: FalkorDB server port
             graph_name: Name of the graph to use
+            config: Optional config dict (needed for embedding dimension for vector indices)
         """
         self._client = FalkorDB(host=host, port=port)
         self._graph = self._client.select_graph(graph_name)
+        self._config = config or {}
         self._event_storage = FalkorEventStorage(self._graph)
         self._init_schema()
 
@@ -188,6 +190,33 @@ class FalkorDBDatabase(DatabaseInterface):
         except Exception:
             pass
 
+        # Create vector indices for native vector search (Issue #7)
+        # Only create if config is provided with embedding dimension
+        if self._config:
+            embedding_dim = self._config.get("embedding", {}).get("dimension", 768)
+
+            # Memory content_embedding vector index
+            try:
+                self._graph.query(
+                    f"""
+                    CREATE VECTOR INDEX FOR (m:Memory) ON (m.content_embedding)
+                    OPTIONS {{dimension:{embedding_dim}, similarityFunction:'cosine'}}
+                    """
+                )
+            except Exception:
+                pass  # Index may already exist
+
+            # Entity embedding vector index
+            try:
+                self._graph.query(
+                    f"""
+                    CREATE VECTOR INDEX FOR (e:Entity) ON (e.embedding)
+                    OPTIONS {{dimension:{embedding_dim}, similarityFunction:'cosine'}}
+                    """
+                )
+            except Exception:
+                pass  # Index may already exist
+
     # =========================================================================
     # Memory Operations
     # =========================================================================
@@ -203,12 +232,13 @@ class FalkorDBDatabase(DatabaseInterface):
             return result.result_set[0][0]
 
         # Create new memory node (no chunk_id - use edges instead)
+        # Use vecf32() for native vector storage (Issue #7)
         self._graph.query(
             """
             CREATE (m:Memory {
                 id: $id,
                 content: $content,
-                content_embedding: $embedding,
+                content_embedding: vecf32($embedding),
                 content_hash: $hash,
                 created_at: $created_at,
                 metadata: $metadata,
@@ -225,7 +255,7 @@ class FalkorDBDatabase(DatabaseInterface):
             {
                 "id": node.id,
                 "content": node.content,
-                "embedding": json.dumps(node.content_embedding),
+                "embedding": node.content_embedding,  # Pass as list, vecf32() converts it
                 "hash": node.content_hash,
                 "created_at": node.created_at,
                 "metadata": json.dumps(node.metadata),
@@ -257,10 +287,11 @@ class FalkorDBDatabase(DatabaseInterface):
             return None
 
         row = result.result_set[0]
+        # FalkorDB returns vecf32 as Python list automatically (Issue #7)
         return MemoryNode(
             id=row[0],
             content=row[1],
-            content_embedding=json.loads(row[2]) if row[2] else [],
+            content_embedding=row[2] if isinstance(row[2], list) else [],
             content_hash=row[3],
             created_at=row[4],
             metadata=json.loads(row[5]) if row[5] else {},
@@ -272,7 +303,6 @@ class FalkorDBDatabase(DatabaseInterface):
             temporal_stability=row[11] or "unknown",
             last_seen_at=row[12],
             reinforce_count=row[13] or 0,
-            chunk_id=None,  # Use edges instead
         )
 
     def get_all_memories(self) -> list[MemoryNode]:
@@ -305,11 +335,12 @@ class FalkorDBDatabase(DatabaseInterface):
         return [self._row_to_memory(row) for row in result.result_set]
 
     def _row_to_memory(self, row) -> MemoryNode:
-        """Convert query result row to MemoryNode (without chunk_id - use edges)."""
+        """Convert query result row to MemoryNode (Issue #10: no chunk_id/source_id)."""
+        # FalkorDB returns vecf32 as Python list automatically (Issue #7)
         return MemoryNode(
             id=row[0],
             content=row[1],
-            content_embedding=json.loads(row[2]) if row[2] else [],
+            content_embedding=row[2] if isinstance(row[2], list) else [],
             content_hash=row[3],
             created_at=row[4],
             metadata=json.loads(row[5]) if row[5] else {},
@@ -321,7 +352,6 @@ class FalkorDBDatabase(DatabaseInterface):
             temporal_stability=row[11] or "unknown",
             last_seen_at=row[12],
             reinforce_count=row[13] or 0,
-            chunk_id=None,  # Use CONTAINS edges instead
         )
 
     def list_memories(self, include_expired: bool = False, limit: int | None = None) -> list[tuple]:
@@ -424,17 +454,92 @@ class FalkorDBDatabase(DatabaseInterface):
         """
         return self.get_summary_for_chunk_via_edge(chunk_id)
 
+    def search_memories_by_vector(
+        self,
+        query_vector: list[float],
+        limit: int = 10,
+        kind_filter: str | None = None,
+        include_expired: bool = False,
+    ) -> list[tuple[MemoryNode, float]]:
+        """Search memories using FalkorDB native vector index.
+
+        Args:
+            query_vector: Query embedding as list of floats
+            limit: Maximum number of results to return
+            kind_filter: Optional filter by memory kind (e.g., 'SUMMARY', 'MEMORY')
+            include_expired: Whether to include expired memories
+
+        Returns:
+            List of (MemoryNode, similarity_score) tuples, ordered by similarity desc
+        """
+        # Build WHERE clause for filters
+        filters = []
+        if kind_filter:
+            filters.append(f"node.kind = '{kind_filter}'")
+        if not include_expired:
+            filters.append("node.t_expired IS NULL")
+
+        where_clause = " AND ".join(filters) if filters else "1=1"
+
+        # Use FalkorDB's native vector search
+        # db.idx.vector.queryNodes expects vecf32() wrapped vector
+        result = self._graph.ro_query(
+            f"""
+            CALL db.idx.vector.queryNodes('Memory', 'content_embedding', $limit, vecf32($query_vector))
+            YIELD node, score
+            WHERE {where_clause}
+            RETURN node.id, node.content, node.content_embedding, node.content_hash,
+                   node.created_at, node.metadata, node.kind, node.t_valid, node.t_invalid,
+                   node.t_created, node.t_expired, node.temporal_stability,
+                   node.last_seen_at, node.reinforce_count, score
+            ORDER BY score DESC
+            """,
+            {"limit": limit, "query_vector": query_vector},
+        )
+
+        results = []
+        for row in result.result_set:
+            memory = MemoryNode(
+                id=row[0],
+                content=row[1],
+                content_embedding=row[2] if isinstance(row[2], list) else [],
+                content_hash=row[3],
+                created_at=row[4],
+                metadata=json.loads(row[5]) if row[5] else {},
+                kind=row[6] or "MEMORY",
+                t_valid=row[7],
+                t_invalid=row[8],
+                t_created=row[9],
+                t_expired=row[10],
+                temporal_stability=row[11] or "unknown",
+                last_seen_at=row[12],
+                reinforce_count=row[13] or 0,
+            )
+            score = float(row[14]) if row[14] is not None else 0.0
+            results.append((memory, score))
+
+        return results
+
     def update_node_embedding(self, node_id: str, embedding_json: str, node_type: str) -> None:
-        """Update embedding for memory or entity."""
+        """Update embedding for memory or entity.
+
+        Note: embedding_json is a JSON string for backward compatibility,
+        but we convert it to vecf32 format for native vector storage.
+        """
+        # Parse JSON string to list for vecf32 conversion
+        embedding_list = (
+            json.loads(embedding_json) if isinstance(embedding_json, str) else embedding_json
+        )
+
         if node_type == "memory":
             self._graph.query(
-                "MATCH (m:Memory {id: $id}) SET m.content_embedding = $embedding",
-                {"id": node_id, "embedding": embedding_json},
+                "MATCH (m:Memory {id: $id}) SET m.content_embedding = vecf32($embedding)",
+                {"id": node_id, "embedding": embedding_list},
             )
         elif node_type == "entity":
             self._graph.query(
-                "MATCH (e:Entity {id: $id}) SET e.embedding = $embedding",
-                {"id": node_id, "embedding": embedding_json},
+                "MATCH (e:Entity {id: $id}) SET e.embedding = vecf32($embedding)",
+                {"id": node_id, "embedding": embedding_list},
             )
 
     def increment_reinforce_count(self, memory_id: str) -> None:
@@ -484,30 +589,56 @@ class FalkorDBDatabase(DatabaseInterface):
             return result.result_set[0][0]
 
         # Create new entity (no chunk_id - use edges instead)
-        self._graph.query(
-            """
-            CREATE (e:Entity {
-                id: $id,
-                entity_type: $entity_type,
-                canonical_name: $canonical_name,
-                norm_key: $norm_key,
-                created_at: $created_at,
-                embedding: $embedding,
-                expired_at: $expired_at,
-                merged_into: $merged_into
-            })
-            """,
-            {
-                "id": entity.id,
-                "entity_type": entity.entity_type,
-                "canonical_name": entity.canonical_name,
-                "norm_key": entity.norm_key,
-                "created_at": entity.created_at,
-                "embedding": entity.embedding,
-                "expired_at": entity.expired_at,
-                "merged_into": entity.merged_into,
-            },
-        )
+        # Use vecf32() for native vector storage if embedding exists (Issue #7)
+        if entity.embedding:
+            self._graph.query(
+                """
+                CREATE (e:Entity {
+                    id: $id,
+                    entity_type: $entity_type,
+                    canonical_name: $canonical_name,
+                    norm_key: $norm_key,
+                    created_at: $created_at,
+                    embedding: vecf32($embedding),
+                    expired_at: $expired_at,
+                    merged_into: $merged_into
+                })
+                """,
+                {
+                    "id": entity.id,
+                    "entity_type": entity.entity_type,
+                    "canonical_name": entity.canonical_name,
+                    "norm_key": entity.norm_key,
+                    "created_at": entity.created_at,
+                    "embedding": entity.embedding,  # Pass as list, vecf32() converts it
+                    "expired_at": entity.expired_at,
+                    "merged_into": entity.merged_into,
+                },
+            )
+        else:
+            # No embedding - create entity without embedding property
+            self._graph.query(
+                """
+                CREATE (e:Entity {
+                    id: $id,
+                    entity_type: $entity_type,
+                    canonical_name: $canonical_name,
+                    norm_key: $norm_key,
+                    created_at: $created_at,
+                    expired_at: $expired_at,
+                    merged_into: $merged_into
+                })
+                """,
+                {
+                    "id": entity.id,
+                    "entity_type": entity.entity_type,
+                    "canonical_name": entity.canonical_name,
+                    "norm_key": entity.norm_key,
+                    "created_at": entity.created_at,
+                    "expired_at": entity.expired_at,
+                    "merged_into": entity.merged_into,
+                },
+            )
         return entity.id
 
     def get_entity(self, entity_id: str) -> EntityNode | None:
@@ -654,6 +785,65 @@ class FalkorDBDatabase(DatabaseInterface):
             """
         )
         return [tuple(row) for row in result.result_set]
+
+    def search_entities_by_vector(
+        self,
+        query_vector: list[float],
+        entity_type: str | None = None,
+        limit: int = 10,
+        include_expired: bool = False,
+    ) -> list[tuple[EntityNode, float]]:
+        """Search entities using FalkorDB native vector index.
+
+        Args:
+            query_vector: Query embedding as list of floats
+            entity_type: Optional filter by entity type (e.g., 'PERSON', 'ORG')
+            limit: Maximum number of results to return
+            include_expired: Whether to include expired entities
+
+        Returns:
+            List of (EntityNode, similarity_score) tuples, ordered by similarity desc
+        """
+        # Build WHERE clause for filters
+        filters = []
+        if entity_type:
+            filters.append(f"node.entity_type = '{entity_type}'")
+        if not include_expired:
+            filters.append("node.expired_at IS NULL")
+
+        where_clause = " AND ".join(filters) if filters else "1=1"
+
+        # Use FalkorDB's native vector search
+        # db.idx.vector.queryNodes expects vecf32() wrapped vector
+        result = self._graph.ro_query(
+            f"""
+            CALL db.idx.vector.queryNodes('Entity', 'embedding', $limit, vecf32($query_vector))
+            YIELD node, score
+            WHERE {where_clause}
+            RETURN node.id, node.entity_type, node.canonical_name, node.norm_key,
+                   node.created_at, node.embedding, node.expired_at, node.merged_into, score
+            ORDER BY score DESC
+            """,
+            {"limit": limit, "query_vector": query_vector},
+        )
+
+        results = []
+        for row in result.result_set:
+            entity = EntityNode(
+                id=row[0],
+                entity_type=row[1],
+                canonical_name=row[2],
+                norm_key=row[3],
+                created_at=row[4],
+                embedding=row[5] if isinstance(row[5], list) else None,
+                expired_at=row[6],
+                merged_into=row[7],
+                chunk_id=None,
+            )
+            score = float(row[8]) if row[8] is not None else 0.0
+            results.append((entity, score))
+
+        return results
 
     def expire_entity(self, entity_id: str, merged_into: str | None = None) -> None:
         """Mark entity as expired."""
@@ -1253,7 +1443,7 @@ class FalkorDBDatabase(DatabaseInterface):
         result = self._graph.ro_query(
             """
             MATCH (c:Chunk)-[:CONTAINS]->(m:Memory {id: $memory_id})
-            RETURN c.id, c.file_id, c.start, c.length, c.sequence, c.created_at
+            RETURN c.id, c.source_id, c.start, c.length, c.sequence, c.created_at
             LIMIT 1
             """,
             {"memory_id": memory_id},
@@ -1264,7 +1454,7 @@ class FalkorDBDatabase(DatabaseInterface):
         row = result.result_set[0]
         return ChunkNode(
             chunk_id=row[0],
-            file_id=row[1],
+            source_id=row[1],
             start=row[2],
             length=row[3],
             sequence=row[4],
@@ -1392,7 +1582,7 @@ class FalkorDBDatabase(DatabaseInterface):
     def transaction(self):
         """Context manager for transactions.
 
-        Note: FalkorDB doesn't have traditional transaction support like SQL.
+        Note: FalkorDB doesn't have traditional transaction support.
         Each query is atomic. This is provided for interface compatibility.
         """
         # FalkorDB queries are atomic, so just yield

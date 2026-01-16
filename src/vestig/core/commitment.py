@@ -3,15 +3,13 @@
 import hashlib
 import re
 import uuid
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-from vestig.core.db_interface import DatabaseInterface
+from vestig.core.db_interface import DatabaseInterface, EventStorageInterface
 from vestig.core.embeddings import EmbeddingEngine
 from vestig.core.events import CommitOutcome, OnCommitHook
-from vestig.core.models import MemoryNode
+from vestig.core.models import EdgeNode, MemoryNode
 
-if TYPE_CHECKING:
-    from vestig.core.event_storage import MemoryEventStorage
 
 # Default hygiene settings (used if not in config)
 DEFAULT_HYGIENE = {
@@ -94,7 +92,7 @@ def commit_memory(
     tags: list[str] = None,
     artifact_ref: str | None = None,
     on_commit: OnCommitHook | None = None,
-    event_storage: MemoryEventStorage | None = None,  # M3: Event logging
+    event_storage: EventStorageInterface | None = None,  # M3: Event logging
     m4_config: dict[str, Any] | None = None,  # M4: Graph config
     pre_extracted_entities: list[tuple[str, str, float, str]]
     | None = None,  # M4: Pre-extracted entities
@@ -128,8 +126,6 @@ def commit_memory(
     Raises:
         ValueError: If content fails hygiene validation
     """
-    from vestig.core.retrieval import cosine_similarity
-
     # Merge with defaults
     hygiene = {**DEFAULT_HYGIENE, **(hygiene_config or {})}
 
@@ -244,24 +240,20 @@ def commit_memory(
     should_check_near_dup = near_dup_config.get("enabled", True)
 
     if should_check_near_dup and (not skip_manual or source != "manual"):
-        # TODO(M4): Optimize with time-window (last 30 days) or rolling window (last 1000)
-        # For now: full scan for hook/batch/import sources
-        all_memories = storage.get_all_memories()
-
-        if all_memories:
-            # Find most similar existing memory
+        max_candidates = near_dup_config.get("max_candidates", 50)
+        results = storage.search_memories_by_vector(
+            query_vector=embedding,
+            limit=max_candidates,
+            include_expired=True,
+        )
+        if results:
             max_score = 0.0
             most_similar_id = None
-
-            for existing in all_memories:
-                score = cosine_similarity(embedding, existing.content_embedding)
+            for memory, score in results:
                 if score > max_score:
                     max_score = score
-                    most_similar_id = existing.id
-
-            # Check if near-duplicate
+                    most_similar_id = memory.id
             if max_score >= near_dup_threshold:
-                # M3 FIX: Don't create new memory - reinforce canonical instead
                 matched_id = most_similar_id
                 matched_score = max_score
 
@@ -299,16 +291,33 @@ def commit_memory(
                 temporal_stability_hint=temporal_stability_hint,  # Temporal classification
             )
 
-            # M5: Set chunk_id for positional metadata
-            if chunk_id:
-                node.chunk_id = chunk_id
-
-            # Phase 2: Set source_id for primary provenance (dual linking)
-            if source_id:
-                node.source_id = source_id
+            # Issue #10: chunk_id and source_id removed - relationships via edges only
 
             # Store (exact dedupe handled in storage layer)
             stored_id = storage.store_memory(node)
+
+            # Issue #10: Create provenance edges (Phase 2 dual linking)
+            # Create edges even for deduplicated memories (idempotent)
+
+            # Create (Source)-[:PRODUCED]->(Memory) edge
+            if source_id:
+                edge = EdgeNode.create(
+                    from_node=source_id,
+                    to_node=stored_id,
+                    edge_type="PRODUCED",
+                    weight=1.0,
+                )
+                storage.store_edge(edge)
+
+            # Create (Chunk)-[:CONTAINS]->(Memory) edge
+            if chunk_id:
+                edge = EdgeNode.create(
+                    from_node=chunk_id,
+                    to_node=stored_id,
+                    edge_type="CONTAINS",
+                    weight=1.0,
+                )
+                storage.store_edge(edge)
 
             # Build outcome based on what happened
             if stored_id != memory_id:
@@ -381,7 +390,7 @@ def _extract_and_link_entities(
     m4_config: dict[str, Any],
     artifact_ref: str | None = None,
     pre_extracted_entities: list[tuple[str, str, float, str]] | None = None,
-    event_storage: MemoryEventStorage | None = None,
+    event_storage: EventStorageInterface | None = None,
     extraction_model: str | None = None,
     prompt_hash: str | None = None,
     min_confidence: float | None = None,
@@ -520,7 +529,7 @@ def _create_related_edges(
 def _log_commit_event(
     outcome: CommitOutcome,
     storage: DatabaseInterface,
-    event_storage: MemoryEventStorage,
+    event_storage: EventStorageInterface,
 ) -> None:
     """
     Convert CommitOutcome to EventNode and persist (M3).

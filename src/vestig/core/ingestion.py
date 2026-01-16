@@ -7,14 +7,13 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from vestig.core.commitment import commit_memory
-from vestig.core.db_interface import DatabaseInterface
+from vestig.core.db_interface import DatabaseInterface, EventStorageInterface
 from vestig.core.embeddings import EmbeddingEngine
 from vestig.core.entity_extraction import (
     call_llm,
     load_prompts,
     substitute_tokens,
 )
-from vestig.core.event_storage import MemoryEventStorage
 from vestig.core.ingest_sources import (
     extract_claude_session_chunks,
     normalize_document_text,
@@ -486,7 +485,7 @@ def commit_summary(
     source_label: str,
     storage: DatabaseInterface,
     embedding_engine: EmbeddingEngine,
-    event_storage: MemoryEventStorage | None = None,
+    event_storage: EventStorageInterface | None = None,
     chunk_id: str | None = None,  # M5: Link summary to chunk (positional metadata)
     source_id: str | None = None,  # Phase 2: Link summary to source (primary provenance)
 ) -> str | None:
@@ -563,6 +562,7 @@ def commit_summary(
     content_hash = hashlib.sha256(summary_content.encode("utf-8")).hexdigest()
 
     # Build metadata
+    # Issue #10: summarized_ids removed - use (Summary)-[:SUMMARIZES]->(Memory) edges
     metadata = {
         "source": "summary_generation",
         "artifact_ref": artifact_ref,
@@ -570,12 +570,12 @@ def commit_summary(
         "title": summary_data.title,
         "themes": summary_data.themes,
         "memory_count": len(memory_ids),
-        "summarized_ids": memory_ids,
     }
 
     now = datetime.now(timezone.utc).isoformat()
 
     # Create MemoryNode with kind=SUMMARY
+    # Issue #10: chunk_id and source_id removed - use edges instead
     summary_node = MemoryNode(
         id=summary_id,
         content=summary_content,
@@ -590,8 +590,6 @@ def commit_summary(
         temporal_stability="static",  # Summaries are snapshots
         last_seen_at=None,
         reinforce_count=0,
-        chunk_id=chunk_id,  # M5: Link summary to chunk (positional metadata)
-        source_id=source_id,  # Phase 2: Link summary to source (primary provenance)
     )
 
     # Atomic transaction for summary + edges + event
@@ -599,7 +597,39 @@ def commit_summary(
         # Store summary with kind=SUMMARY
         storage.store_memory(summary_node, kind="SUMMARY")
 
-        # M6: Create SUMMARIZED_BY edge (Chunk → Summary, not Summary → Memory)
+        # Issue #10: Create provenance edges (graph-based relationships)
+
+        # Create (Source)-[:PRODUCED]->(Summary) edge
+        if source_id:
+            edge = EdgeNode.create(
+                from_node=source_id,
+                to_node=summary_id,
+                edge_type="PRODUCED",
+                weight=1.0,
+            )
+            storage.store_edge(edge)
+
+        # Create (Summary)-[:SUMMARIZES]->(Memory) edges
+        for memory_id in memory_ids:
+            edge = EdgeNode.create(
+                from_node=summary_id,
+                to_node=memory_id,
+                edge_type="SUMMARIZES",
+                weight=1.0,
+            )
+            storage.store_edge(edge)
+
+        # Create (Chunk)-[:CONTAINS]->(Summary) edge (positional metadata)
+        if chunk_id:
+            edge = EdgeNode.create(
+                from_node=chunk_id,
+                to_node=summary_id,
+                edge_type="CONTAINS",
+                weight=1.0,
+            )
+            storage.store_edge(edge)
+
+        # M6: Create SUMMARIZED_BY edge (Chunk → Summary, reverse lookup)
         if chunk_id:
             edge = EdgeNode.create(
                 from_node=chunk_id, to_node=summary_id, edge_type="SUMMARIZED_BY", weight=1.0
@@ -607,6 +637,7 @@ def commit_summary(
             storage.store_edge(edge)
 
         # Log SUMMARY_CREATED event
+        # Issue #10: Query SUMMARIZES edges instead of storing IDs in event
         if event_storage:
             event = EventNode.create(
                 memory_id=summary_id,
@@ -615,7 +646,6 @@ def commit_summary(
                 artifact_ref=artifact_ref,
                 payload={
                     "memory_count": len(memory_ids),
-                    "summarized_ids": memory_ids,
                     "title": summary_data.title,
                     "themes": summary_data.themes,
                 },
@@ -631,7 +661,7 @@ def ingest_document(
     storage: DatabaseInterface,
     embedding_engine: EmbeddingEngine,
     extraction_model: str,
-    event_storage: MemoryEventStorage | None = None,
+    event_storage: EventStorageInterface | None = None,
     m4_config: dict[str, Any] | None = None,
     prompts_config: dict[str, Any] | None = None,
     ingestion_config: dict[str, Any] | None = None,
@@ -643,6 +673,7 @@ def ingest_document(
     format_config: dict[str, Any] | None = None,
     force_entities: list[str] | None = None,
     verbose: bool = False,
+    show_timing: bool = False,
 ) -> IngestionResult:
     """
     Ingest document by extracting memories with LLM and committing them.
@@ -664,6 +695,7 @@ def ingest_document(
         format_config: Format-specific configuration
         force_entities: Entity list to attach to every memory
         verbose: Print detailed extraction output
+        show_timing: Print performance timing breakdown
 
     Returns:
         IngestionResult with statistics
@@ -672,6 +704,28 @@ def ingest_document(
         FileNotFoundError: If document doesn't exist
         ValueError: If extraction fails
     """
+    import time
+
+    t_start = time.perf_counter()
+    timings: dict[str, float] = {
+        "1_read_file": 0.0,
+        "2_normalize": 0.0,
+        "3_store_source": 0.0,
+        "4_chunking": 0.0,
+        "5_llm_extract_memories": 0.0,
+        "6_commit_memories": 0.0,
+        "7_entities_total": 0.0,
+        "7a_llm_extract_entities": 0.0,
+        "7b_store_entity_edges": 0.0,
+        "8_summary_generation": 0.0,
+        "9_chunk_loop_total": 0.0,
+    }
+    counters = {
+        "llm_memory_calls": 0,
+        "llm_entity_calls": 0,
+        "llm_summary_calls": 0,
+    }
+
     # Read document
     path = Path(document_path)
     if not path.exists():
@@ -700,14 +754,18 @@ def ingest_document(
                 flush=True,
             )
 
+    t0 = time.perf_counter()
     raw_text = path.read_text(encoding="utf-8")
+    timings["1_read_file"] = time.perf_counter() - t0
 
+    t0 = time.perf_counter()
     text, resolved_format, document_temporal_hints = normalize_document_text(
         raw_text,
         source_format=source_format,
         format_config=format_config,
         path=path,
     )
+    timings["2_normalize"] = time.perf_counter() - t0
     forced_entities = parse_force_entities(force_entities)
     if not text.strip():
         raise ValueError(f"No ingestible content found in {document_path}")
@@ -744,10 +802,13 @@ def ingest_document(
             "ingestion_source": source,
         },
     )
+    t0 = time.perf_counter()
     source_id = storage.store_source(source_node)
+    timings["3_store_source"] = time.perf_counter() - t0
     print(f"Created source record: {source_id} (type: file)")
 
     # Chunk text
+    t0 = time.perf_counter()
     if resolved_format == "claude-session":
         chunks_with_hints = extract_claude_session_chunks(
             raw_text,
@@ -772,6 +833,7 @@ def ingest_document(
             (chunk_text, start_pos, length, document_temporal_hints)
             for chunk_text, start_pos, length in chunks_with_positions
         ]
+    timings["4_chunking"] = time.perf_counter() - t0
 
     print(f"Processing {path.name}: {len(text):,} chars → {len(chunks)} chunks")
 
@@ -786,6 +848,7 @@ def ingest_document(
 
     # Process each chunk
     for i, (chunk_text, start_pos, length, chunk_hints) in enumerate(chunks_with_metadata, 1):
+        chunk_start = time.perf_counter()
         # Phase 2: Create CHUNK record (positional metadata for source)
         from vestig.core.models import ChunkNode
 
@@ -801,6 +864,7 @@ def ingest_document(
 
         try:
             # Extract memories from chunk
+            t0 = time.perf_counter()
             extracted = extract_memories_from_chunk(
                 chunk_text,
                 model=extraction_model,
@@ -809,6 +873,8 @@ def ingest_document(
                 extraction_config=extraction_config,
                 ontology=ontology,
             )
+            timings["5_llm_extract_memories"] += time.perf_counter() - t0
+            counters["llm_memory_calls"] += 1
 
             print(f"{len(extracted)} memories extracted", flush=True)
             memories_extracted += len(extracted)
@@ -824,11 +890,20 @@ def ingest_document(
                     )
                     print(f"      Confidence: {memory.confidence:.2f}")
                     print(f"      Rationale: {memory.rationale}")
+                if extraction_config and extraction_config.get("enabled"):
+                    print("    Entities: deferred to chunk-level extraction (two-pass)")
+                else:
+                    has_entities = any(memory.entities for memory in extracted)
+                    if has_entities:
+                        print("    Entities: extracted with memories (single-pass)")
+                    else:
+                        print("    Entities: none extracted with memories (single-pass)")
 
             # Commit each memory (without entities for two-pass)
             # Track which memories were actually inserted (not duplicates)
             committed_memories = []  # List of (memory_id, memory_content) tuples
 
+            t0 = time.perf_counter()
             for idx, memory in enumerate(extracted, 1):
                 try:
                     combined_entities = []
@@ -855,7 +930,7 @@ def ingest_document(
                         event_storage=event_storage,
                         m4_config=m4_config,
                         artifact_ref=path.name,
-                        pre_extracted_entities=combined_entities or None,
+                        pre_extracted_entities=combined_entities,
                         temporal_hints=memory,  # Pass ExtractedMemory with temporal fields
                         chunk_id=chunk_id,  # M5: Link to chunk (positional metadata)
                         source_id=source_id,  # Phase 2: Link to source (primary provenance)
@@ -877,6 +952,7 @@ def ingest_document(
                     error_msg = f"Failed to commit memory: {e}"
                     errors.append(error_msg)
                     print(f"    Error: {error_msg}")
+            timings["6_commit_memories"] += time.perf_counter() - t0
 
             # M6: Create CONTAINS edges (Chunk → Memory) for all committed memories
             if committed_memories and chunk_id:
@@ -896,6 +972,7 @@ def ingest_document(
                 and committed_memories
             ):
                 try:
+                    entity_t0 = time.perf_counter()
                     print(
                         f"    Extracting entities from chunk ({len(committed_memories)} memories committed)...",
                         flush=True,
@@ -903,6 +980,7 @@ def ingest_document(
                     from vestig.core.entity_extraction import extract_entities_from_text
 
                     entity_prompt = extraction_config.get("entity_prompt", "extract_entities")
+                    t0 = time.perf_counter()
                     chunk_entities = extract_entities_from_text(
                         text=chunk_text,
                         model=extraction_model,
@@ -911,6 +989,8 @@ def ingest_document(
                         max_retries=3,
                         backoff_seconds=1.0,
                     )
+                    timings["7a_llm_extract_entities"] += time.perf_counter() - t0
+                    counters["llm_entity_calls"] += 1
                     print(f"    Found {len(chunk_entities)} entities in chunk", flush=True)
 
                     # Link entities to committed memories
@@ -922,6 +1002,11 @@ def ingest_document(
                     # Store entities for each committed memory
                     from vestig.core.entity_extraction import store_entities
 
+                    total_entities_stored = 0
+                    total_mentions_edges = 0
+                    total_linked_edges = 0
+
+                    t0 = time.perf_counter()
                     for mem_idx, (memory_id, _) in enumerate(committed_memories):
                         entities = memory_entity_map.get(mem_idx, [])
                         if entities:
@@ -935,6 +1020,7 @@ def ingest_document(
                                     embedding_engine=embedding_engine,
                                     chunk_id=chunk_id,  # M5: Link entities to chunk hub
                                 )
+                                total_entities_stored += len(stored_entities)
 
                                 # M6: Create edges for entities
                                 from vestig.core.models import EdgeNode
@@ -945,6 +1031,7 @@ def ingest_document(
                                     .get("min_confidence", 0.75)
                                 )
                                 mentions_edges = 0
+                                linked_edges = 0
 
                                 for entity_id, entity_type, confidence, evidence in stored_entities:
                                     if confidence >= min_confidence:
@@ -971,6 +1058,10 @@ def ingest_document(
                                                 evidence=evidence,
                                             )
                                             storage.store_edge(linked_edge)
+                                            linked_edges += 1
+
+                                total_mentions_edges += mentions_edges
+                                total_linked_edges += linked_edges
 
                                 if verbose:
                                     print(
@@ -990,6 +1081,16 @@ def ingest_document(
                                 print(
                                     f"    Warning: Failed to store entities for memory {memory_id}: {e}"
                                 )
+                    timings["7b_store_entity_edges"] += time.perf_counter() - t0
+
+                    if verbose:
+                        print(
+                            "    Entities summary: "
+                            f"stored={total_entities_stored}, "
+                            f"mentions_edges={total_mentions_edges}, "
+                            f"linked_edges={total_linked_edges}"
+                        )
+                    timings["7_entities_total"] += time.perf_counter() - entity_t0
 
                 except Exception as e:
                     print(f"    Warning: Entity extraction failed for chunk: {e}", flush=True)
@@ -1017,6 +1118,7 @@ def ingest_document(
 
                     if chunk_memory_nodes:
                         # Generate summary from chunk memories
+                        t0 = time.perf_counter()
                         summary_result = generate_summary(
                             memories=chunk_memory_nodes,
                             model=extraction_model,
@@ -1024,6 +1126,8 @@ def ingest_document(
                             ingest_run_id=f"{path.name}_chunk_{i}",
                             prompt_name=prompt_name,
                         )
+                        timings["8_summary_generation"] += time.perf_counter() - t0
+                        counters["llm_summary_calls"] += 1
 
                         # Commit summary with chunk_id and source_id (dual linking)
                         summary_id = commit_summary(
@@ -1049,12 +1153,28 @@ def ingest_document(
             errors.append(error_msg)
             print(f"Error: {error_msg}")
 
+        timings["9_chunk_loop_total"] += time.perf_counter() - chunk_start
+
     # Track entities created
     entities_after = len(storage.get_all_entities())
     entities_created = entities_after - entities_before
 
     # M5: Per-chunk summaries are generated in the chunk loop above (not here)
     # Removed old per-document summary generation
+
+    if show_timing:
+        total = time.perf_counter() - t_start
+        print("\n[TIMING] Ingestion breakdown")
+        print(
+            f"[TIMING] Total: {total * 1000:.0f}ms | "
+            f"LLM calls: memories={counters['llm_memory_calls']}, "
+            f"entities={counters['llm_entity_calls']}, "
+            f"summaries={counters['llm_summary_calls']}"
+        )
+        for key, duration in timings.items():
+            ms = duration * 1000
+            pct = (duration / total * 100) if total > 0 else 0
+            print(f"[TIMING] {key}: {ms:.0f}ms ({pct:.1f}%)")
 
     return IngestionResult(
         document_path=document_path,

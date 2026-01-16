@@ -31,11 +31,8 @@ class MemoryNode:
     last_seen_at: str | None = None  # Most recent reinforcement
     reinforce_count: int = 0  # Total reinforcement events
 
-    # M5: Chunk provenance (hub link)
-    chunk_id: str | None = None  # Foreign key to chunks table (nullable for manual adds)
-
-    # Phase 2: Source abstraction - dual linking
-    source_id: str | None = None  # Direct link to source (primary provenance)
+    # Issue #10: chunk_id and source_id removed - use edges instead
+    # Query via: (Chunk)-[:CONTAINS]->(Memory) and (Source)-[:PRODUCED]->(Memory)
 
     @classmethod
     def create(
@@ -212,12 +209,15 @@ class EdgeNode:
         """
         # Enforce edge type constraints
         allowed_edge_types = {
-            "MENTIONS",
-            "RELATED",
-            "SUMMARIZES",
-            "CONTAINS",
-            "LINKED",
-            "SUMMARIZED_BY",
+            "MENTIONS",  # Memory → Entity (medium trust, LLM extraction)
+            "RELATED",  # Memory → Memory (semantic similarity)
+            "SUMMARIZES",  # Summary → Memory (what summary covers)
+            "CONTAINS",  # Chunk → Memory/Summary (chunk contains this content)
+            "LINKED",  # Chunk → Entity (1st class mentions)
+            "SUMMARIZED_BY",  # Chunk → Summary (reverse lookup)
+            "PRODUCED",  # Source → Memory/Summary (primary provenance)
+            "HAS_CHUNK",  # Source → Chunk (source has this chunk)
+            "AFFECTS",  # Event → Memory (event affects memory)
         }
         if edge_type not in allowed_edge_types:
             raise ValueError(f"Invalid edge_type: {edge_type}. Allowed: {allowed_edge_types}")
