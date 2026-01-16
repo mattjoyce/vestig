@@ -191,7 +191,6 @@ Source{type='legacy', agent='unknown'}
 ✅ Session-level tracking for agentic sources
 ✅ Trust signals (file vs agentic vs legacy)
 ✅ Positional metadata when needed (chunks)
-✅ Backward compatible (Files table deprecated but kept)
 
 ---
 
@@ -202,7 +201,7 @@ Source{type='legacy', agent='unknown'}
 **Implemented:** January 2026 (Phase 2)
 **Why:** Native graph traversal, Cypher query language, better relationship modeling, scalable querying
 
-FalkorDB provides a graph-native backend alternative to SQLite, using edges for provenance relationships rather than foreign key properties.
+FalkorDB provides a graph-native backend using edges for provenance relationships rather than foreign key properties.
 
 ### Node Types (Phase 2)
 
@@ -489,7 +488,7 @@ ORDER BY c.sequence
 
 ### Why Chunk-Centric vs. Entity-Centric?
 
-Most knowledge graph systems (GraphRAG, LlamaIndex, Neo4j+LangChain) use **entity-centric** architectures where entities are hub nodes. Vestig chooses **chunk-centric** for the following reasons:
+Most knowledge graph systems (GraphRAG, LlamaIndex, graph+LLM stacks) use **entity-centric** architectures where entities are hub nodes. Vestig chooses **chunk-centric** for the following reasons:
 
 #### 1. **Provenance is Fundamental**
 
@@ -569,7 +568,7 @@ Chunks anchor these temporal memories to source documents, enabling "show me the
 4. **File Lifecycle**: Handle renames, moves, re-ingestion without updating all chunks
 5. **Graph-Native Modeling**: FILE is logically a separate entity with its own lifecycle
 
-**Trade-off:** One extra hop in queries (`MEMORY → CHUNK → FILE`), but negligible in Neo4j and benefits outweigh cost.
+**Trade-off:** One extra hop in queries (`MEMORY → CHUNK → FILE`), but negligible in FalkorDB and benefits outweigh cost.
 
 ### Why Both Summaries AND Memories?
 
@@ -607,7 +606,7 @@ Chunks anchor these temporal memories to source documents, enabling "show me the
 - **Event-time queries**: "What was true on 2024-01-18?" (filter by t_valid)
 - **Audit trail**: "When did we first learn about this fact?" (t_created)
 
-**Inspiration:** Bi-temporal databases (Datomic, temporal SQL extensions), knowledge graph versioning research.
+**Inspiration:** Bi-temporal databases (Datomic, temporal data extensions), knowledge graph versioning research.
 
 ---
 
@@ -646,175 +645,10 @@ Chunks anchor these temporal memories to source documents, enabling "show me the
 
 ---
 
-## Migration Path
+## Roadmap Notes
 
-### Phase 1: Current (SQLite with String References)
-
-**Status:** ✅ Implemented (as of 2025-01-04)
-
-```python
-# Chunk reference stored in memory metadata
-memory.metadata = {
-    "source": "document_ingest",
-    "chunk_ref": "/path/to/file.md:0:3933"
-}
-```
-
-**Benefits:**
-- No schema changes required
-- Functional provenance tracking
-- Neo4j-migration-ready (parseable strings)
-
-**Limitations:**
-- No CHUNK or FILE nodes
-- Limited querying (string matching only)
-- No chunk-to-chunk linking
-
-### Phase 2: Add CHUNK Nodes to SQLite (Optional Intermediate)
-
-**Status:** ⏸️ Deferred (waiting for Neo4j migration)
-
-**If needed, could add:**
-
-```sql
-CREATE TABLE chunks (
-    chunk_id TEXT PRIMARY KEY,
-    file_path TEXT NOT NULL,
-    start_pos INTEGER NOT NULL,
-    length INTEGER NOT NULL,
-    sequence INTEGER NOT NULL,
-    chunk_text TEXT,  -- Optional: store for re-extraction
-    created_at TEXT NOT NULL,
-    UNIQUE(file_path, start_pos)
-);
-
-CREATE TABLE files (
-    file_id TEXT PRIMARY KEY,
-    path TEXT NOT NULL UNIQUE,
-    created_at TEXT NOT NULL,
-    modified_at TEXT,
-    ingested_at TEXT NOT NULL
-);
-```
-
-**Benefits:**
-- Start building chunk-centric graph in SQLite
-- Cleaner queries (JOIN vs. string parsing)
-- Easier Neo4j migration
-
-**Cons:**
-- Schema changes to existing database
-- Migration needed for existing chunk_ref strings
-- Additional complexity before Neo4j
-
-### Phase 3: Neo4j Migration (Target)
-
-**Status:** 🎯 Planned (Q1 2025)
-
-**Migration Script (Conceptual):**
-
-```python
-def migrate_sqlite_to_neo4j(sqlite_db, neo4j_session):
-    """
-    Migrate SQLite data to Neo4j graph model.
-    """
-    # Step 1: Create FILE nodes from unique chunk_refs
-    chunk_refs = sqlite_db.execute("""
-        SELECT DISTINCT json_extract(metadata, '$.chunk_ref')
-        FROM memories
-        WHERE json_extract(metadata, '$.chunk_ref') IS NOT NULL
-    """).fetchall()
-
-    file_nodes = {}
-    chunk_nodes = {}
-
-    for (chunk_ref,) in chunk_refs:
-        file_path, start, length = parse_chunk_ref(chunk_ref)
-
-        # Create or get FILE node
-        if file_path not in file_nodes:
-            file_id = neo4j_session.run("""
-                MERGE (f:FILE {path: $path})
-                ON CREATE SET f.file_id = randomUUID(),
-                             f.ingested_at = datetime()
-                RETURN f.file_id
-            """, path=file_path).single()["file_id"]
-            file_nodes[file_path] = file_id
-
-        # Create CHUNK node
-        chunk_id = f"chunk_{uuid.uuid4()}"
-        neo4j_session.run("""
-            CREATE (c:CHUNK {
-                chunk_id: $chunk_id,
-                start: $start,
-                length: $length
-            })
-        """, chunk_id=chunk_id, start=start, length=length)
-
-        chunk_nodes[chunk_ref] = chunk_id
-
-        # Link FILE → CHUNK
-        neo4j_session.run("""
-            MATCH (f:FILE {file_id: $file_id})
-            MATCH (c:CHUNK {chunk_id: $chunk_id})
-            CREATE (f)-[:CONTAINS]->(c)
-        """, file_id=file_nodes[file_path], chunk_id=chunk_id)
-
-    # Step 2: Create CHUNK → CHUNK :NEXT edges (sequential linking)
-    # Group chunks by file, sort by start position, link sequentially
-    for file_path in file_nodes.keys():
-        file_chunks = [(ref, chunk_nodes[ref]) for ref in chunk_nodes
-                       if ref.startswith(file_path)]
-        # Sort by start position
-        file_chunks.sort(key=lambda x: int(x[0].split(':')[1]))
-
-        # Create :NEXT edges
-        for i in range(len(file_chunks) - 1):
-            neo4j_session.run("""
-                MATCH (c1:CHUNK {chunk_id: $chunk_id1})
-                MATCH (c2:CHUNK {chunk_id: $chunk_id2})
-                CREATE (c1)-[:NEXT]->(c2)
-            """, chunk_id1=file_chunks[i][1], chunk_id2=file_chunks[i+1][1])
-
-    # Step 3: Migrate MEMORY nodes
-    memories = sqlite_db.execute("SELECT * FROM memories").fetchall()
-    for memory in memories:
-        chunk_ref = json.loads(memory['metadata']).get('chunk_ref')
-        chunk_id = chunk_nodes.get(chunk_ref)
-
-        neo4j_session.run("""
-            CREATE (m:MEMORY {
-                memory_id: $memory_id,
-                content: $content,
-                content_hash: $content_hash,
-                created_at: $created_at,
-                t_valid: $t_valid,
-                t_created: $t_created,
-                temporal_stability: $temporal_stability
-            })
-        """, memory_id=memory['id'], content=memory['content'], ...)
-
-        # Link CHUNK → MEMORY
-        if chunk_id:
-            neo4j_session.run("""
-                MATCH (c:CHUNK {chunk_id: $chunk_id})
-                MATCH (m:MEMORY {memory_id: $memory_id})
-                CREATE (c)-[:EXTRACTED]->(m)
-            """, chunk_id=chunk_id, memory_id=memory['id'])
-
-    # Step 4: Migrate ENTITY nodes (same pattern)
-    # Step 5: Migrate EDGE relationships (MENTIONS, RELATED, etc.)
-    # Step 6: Create indexes for performance
-    neo4j_session.run("CREATE INDEX file_path FOR (f:FILE) ON (f.path)")
-    neo4j_session.run("CREATE INDEX memory_id FOR (m:MEMORY) ON (m.memory_id)")
-    neo4j_session.run("CREATE INDEX entity_name FOR (e:ENTITY) ON (e.canonical_name)")
-```
-
-**Post-migration:**
-- Verify data integrity (count nodes/edges)
-- Performance test common queries
-- Create indexes on frequently queried properties
-- Deprecate SQLite database or keep as archival backup
+FalkorDB is the only supported backend. Forward-looking work stays within the
+graph-native model (M5/M6), with details tracked in `ROADMAP.md`.
 
 ---
 
@@ -863,11 +697,11 @@ Benefit: Understand narrative flow, not isolated facts
 
 #### 1. Graph Complexity
 - **More nodes/edges** than entity-centric (chunks + entities + memories + summaries)
-- **Mitigation**: Neo4j handles millions of nodes efficiently; complexity is managed via indexes
+- **Mitigation**: FalkorDB handles millions of nodes efficiently; complexity is managed via indexes
 
 #### 2. Query Complexity
 - **Multi-hop traversals** may be slower than direct lookups
-- **Mitigation**: Neo4j optimized for graph traversal; use indexes on hub nodes (CHUNK)
+- **Mitigation**: FalkorDB is optimized for graph traversal; use indexes on hub nodes (CHUNK)
 
 #### 3. Storage Overhead
 - **Chunk text storage** (optional) increases database size
@@ -904,18 +738,17 @@ Vestig's chunk-centric architecture represents a novel approach to knowledge gra
 
 **Key Innovation:** CHUNK as hub node enables traceability from any knowledge artifact (memory, entity, summary) back to exact source locations while supporting multiple abstraction levels.
 
-**Target State:** Neo4j graph database with FILE → CHUNK → {MEMORY, ENTITY, SUMMARY} structure, bi-temporal tracking, and sequential chunk linking.
+**Target State:** FalkorDB graph database with Source → Chunk → {Memory, Entity, Summary} structure, bi-temporal tracking, and sequential chunk linking.
 
-**Current Status:** SQLite implementation with string-based chunk references (migration-ready).
+**Current Status:** FalkorDB backend in production with graph-native storage and vector search.
 
 **Next Steps:**
-1. Continue building on SQLite with chunk_ref strings
-2. Plan Neo4j migration (Q1 2025)
-3. Develop migration scripts and test queries
-4. Evaluate performance at scale (millions of nodes)
+1. Advance M5 retrieval and scoring in FalkorDB
+2. Harden provenance and chunk traversal behaviors (M6)
+3. Expand observability and inspection tooling
 
 ---
 
-**Document Version:** 1.0
+**Document Version:** 2.2
 **Author:** Matt Joyce (with Claude Sonnet 4.5)
-**Last Updated:** 2025-01-04
+**Last Updated:** 2026-01-16

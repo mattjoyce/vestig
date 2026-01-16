@@ -89,7 +89,7 @@ Ingest:
 - `vestig ingest <document>`
 - Options: `--format auto|plain|claude-session`, `--force-entity TYPE:Name` (repeatable),
   `--chunk-size N`, `--chunk-overlap N`, `--model <name>`, `--min-confidence F`,
-  `--verbose`, `--recurse` (or `-r`) for recursive globbing (enables `**` patterns)
+  `--verbose`, `--timing`, `--recurse` (or `-r`) for recursive globbing (enables `**` patterns)
 
 Memory:
 - `vestig memory add "<text>"` with `--agent <name>`, `--session-id <id>`, `--tags a,b,c`

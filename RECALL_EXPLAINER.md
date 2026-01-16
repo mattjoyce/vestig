@@ -130,4 +130,4 @@ Graph is not used directly in baseline recall yet, but supports:
 ## 9) Key Files
 - `src/vestig/core/retrieval.py` — similarity search + formatting
 - `src/vestig/core/tracerank.py` — TraceRank implementation
-- `src/vestig/core/storage.py` — memory/event persistence
+- `src/vestig/core/db_falkordb.py` — FalkorDB persistence

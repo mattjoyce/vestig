@@ -35,39 +35,24 @@ Source (PRIMARY - always present)
 
 ### 3. Database Schema Updates
 
-#### SQLite
-- **New:** `sources` table with type discriminator
-- **Updated:** `chunks.file_id` → `chunks.source_id`
-- **Updated:** `memories` gained `source_id` column
-- **Deprecated:** `files` table (kept for compatibility)
-
 #### FalkorDB
 - **New:** `Source` node with constraints
 - **Updated:** Chunk → Source relationships
 - **New:** `(Source)-[:PRODUCED]->(Memory)` edge
 - **New:** `(Source)-[:HAS_CHUNK]->(Chunk)` edge
 
-### 4. Automatic Migration
+### 4. Graph Initialization
 
-Migration runs automatically on database open:
-1. Creates `sources` table
-2. Migrates existing `files` → `sources` with `type='file'`
-3. Updates `chunks` table structure (`file_id` → `source_id`)
-4. Adds `source_id` column to `memories`
-5. Creates all necessary indexes
-
-**Idempotent:** Safe to run multiple times
+Constraints and indexes are created on FalkorDB startup to enforce uniqueness and
+support the new Source relationships.
 
 ### 5. Updated Components
 
 **Core Files:**
 - `models.py` - SourceNode class with factory methods
-- `schema.sql` - Sources table + dual linking
 - `schema_falkor.cypher` - Source node + relationships
 - `db_interface.py` - Source operation interfaces
-- `storage.py` - SQLite implementation + migration
 - `db_falkordb.py` - FalkorDB implementation
-- `db_sqlite.py` - Wrapper delegation
 - `ingestion.py` - SourceNode usage + dual linking
 - `commitment.py` - Dual linking support
 

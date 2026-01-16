@@ -4,9 +4,9 @@
 
 This is the first chunk of a multi-chunk document designed to test chunk provenance tracking across multiple chunks. The chunk provenance feature tracks the exact location in source documents where each memory was extracted from. This enables tracing memories back to their original source with precise character offsets.
 
-The implementation stores chunk references in the format "path:start:length" in the metadata field of each memory. This simple text format can later be parsed to create proper FILE and CHUNK nodes when migrating to Neo4j. This is a critical feature for maintaining data lineage and provenance.
+The implementation stores chunk nodes in FalkorDB and links Source → Chunk → Memory with edges. This graph-native model preserves provenance without string parsing and keeps lineage explicit.
 
-Key aspects of the chunk provenance system include maintaining absolute file paths to ensure uniqueness across the filesystem, tracking both start position and length to enable precise extraction, storing in existing metadata fields to avoid schema changes, and supporting future migration to graph databases like Neo4j.
+Key aspects of the chunk provenance system include maintaining absolute file paths to ensure uniqueness across the filesystem, tracking both start position and length to enable precise extraction, and supporting graph-native traversal in FalkorDB.
 
 ## Chapter 2: Technical Details (Characters 1000-2000)
 
@@ -14,7 +14,7 @@ The chunking algorithm works by dividing large documents into smaller segments w
 
 The chunk reference format follows a simple pattern: full absolute path, colon, start character position, colon, length in characters. For example: "/path/to/file.md:1000:3500" indicates the chunk starts at position 1000 and is 3500 characters long.
 
-This metadata is stored as JSON in the memories table, making it queryable via SQLite's json_extract function. The storage approach was chosen to minimize changes to the existing schema while maximizing future flexibility. When migrating to Neo4j, these strings can be parsed to create proper FILE and CHUNK node types with CONTAINS and EXTRACTED_FROM relationships.
+Chunk metadata is stored on the Chunk nodes and relationships in the graph, making it queryable via traversal. The storage approach keeps provenance explicit and avoids schema gymnastics.
 
 ## Chapter 3: Benefits and Use Cases (Characters 2000-3000)
 
@@ -40,6 +40,6 @@ Finally, the system could implement chunk deduplication detection, identifying w
 
 The chunk provenance tracking system represents an important step toward production-ready knowledge management. By maintaining precise source location references without requiring schema changes, it provides a lightweight yet powerful foundation for traceability and future enhancements.
 
-The design balances immediate practical needs with long-term architectural goals. The simple string format is easy to implement and query, while remaining forward-compatible with more sophisticated graph database migrations planned for future releases.
+The design balances immediate practical needs with long-term architectural goals. The graph-native structure keeps provenance and traversal first-class while remaining extensible.
 
 This implementation demonstrates how thoughtful metadata design can unlock significant value without major system changes, providing a model for other incremental enhancements to the Vestig knowledge management platform.

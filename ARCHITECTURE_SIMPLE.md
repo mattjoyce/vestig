@@ -1,7 +1,7 @@
 # Chunk-Centric Knowledge Graph Architecture
 
 **Version:** 1.0  
-**Target:** SQLite3 Implementation  
+**Target:** FalkorDB Implementation  
 **Status:** Initial Build
 
 ---
@@ -128,7 +128,7 @@ CHUNK → CHUNK      (via shared entities: CHUNK → ENTITY ← CHUNK)
 
 ---
 
-## SQLite3 Schema Overview
+## FalkorDB Graph Model Overview
 
 **Tables:**
 - `files` - Source documents
@@ -209,14 +209,14 @@ Query at different granularities:
 
 ## Implementation Phases
 
-### Phase 1: Core Tables (SQLite3)
-- Create tables: files, chunks, memories, entities, summaries
-- Implement chunk pointer system (file_id + start + length)
+### Phase 1: Core Nodes and Edges (FalkorDB)
+- Create nodes: Source, Chunk, Memory, Entity, Summary
+- Implement chunk pointer system (source_id + start + length)
 - Basic insert and retrieval functions
 
 ### Phase 2: Vector Search
 - Add embedding columns
-- Implement vector similarity search (using sqlite-vec or similar)
+- Implement vector similarity search using FalkorDB native indexes
 - Test semantic retrieval
 
 ### Phase 3: Graph Traversal
@@ -227,7 +227,7 @@ Query at different granularities:
 ### Phase 4: Evaluation
 - Test with 2WikiMultiHopQA dataset or real documents
 - Measure: precision, recall, storage efficiency
-- Decide: Continue with SQLite3 or migrate to FalkorDB?
+- Keep storage FalkorDB-only
 
 ---
 
@@ -243,15 +243,15 @@ Query at different granularities:
 
 ---
 
-## Future Migration Path
+## Future Evolution
 
-If SQLite3 implementation proves successful, migrate to **FalkorDB** for:
-- Native graph traversal (vs. JOIN operations)
+FalkorDB is the primary backend for:
+- Native graph traversal (vs. relational joins)
 - Better performance at scale
 - Built-in vector search optimization
 - More natural graph query language
 
-**Migration preserves the same hub-and-spoke model** - just moves from relational tables to graph nodes/edges.
+**Evolution preserves the same hub-and-spoke model** while deepening graph-native capabilities.
 
 ---
 
@@ -270,11 +270,11 @@ If SQLite3 implementation proves successful, migrate to **FalkorDB** for:
 1. **Chunking strategy:** Fixed size? Semantic boundaries? Overlap?
 2. **Entity extraction:** LLM-based or NER model?
 3. **Vector embeddings:** Which model? (OpenAI, local, etc.)
-4. **Vector search:** sqlite-vec, external service, or custom implementation?
+4. **Vector search:** FalkorDB vector index or external service
 5. **Deduplication:** How to handle same entity appearing multiple times?
 
 ---
 
 **Document Author:** Matt Joyce  
 **Date:** 2025-01-05  
-**Purpose:** Developer guide for initial SQLite3 implementation
+**Purpose:** Developer guide for initial FalkorDB implementation

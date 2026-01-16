@@ -6,7 +6,11 @@ Create `config_test.yaml`:
 ```yaml
 # Test config - uses Haiku for cost efficiency
 storage:
-  db_path: "test_vestig.db"  # Fresh database
+  backend: falkordb
+  falkordb:
+    host: localhost
+    port: 6379
+    graph_name: vestig_test
 
 embedding:
   model: "BAAI/bge-m3"
@@ -126,20 +130,22 @@ python -m vestig.core.cli --config config_test.yaml memory recall "PostgreSQL op
 # Show specific memory
 python -m vestig.core.cli --config config_test.yaml memory show mem_<id>
 
+# Set FalkorDB env to match config_test.yaml
+export FALKOR_HOST=localhost
+export FALKOR_PORT=6379
+export FALKOR_GRAPH=vestig_test
+
 # Show all memories (raw)
-sqlite3 test_vestig.db "SELECT id, substr(content, 1, 60) FROM memories LIMIT 10;"
+scripts/falkor "MATCH (m:Memory) RETURN m.id, substring(m.content, 0, 60) LIMIT 10"
 
 # Show all entities
-sqlite3 test_vestig.db "SELECT canonical_name, entity_type FROM entities;"
+scripts/falkor "MATCH (e:Entity) RETURN e.canonical_name, e.entity_type LIMIT 10"
 
 # Show MENTIONS edges
-sqlite3 test_vestig.db "
-  SELECT m.content, e.canonical_name, e.entity_type
-  FROM edges ed
-  JOIN memories m ON ed.from_node = m.id
-  JOIN entities e ON ed.to_node = e.id
-  WHERE ed.edge_type = 'MENTIONS'
-  LIMIT 10;
+scripts/falkor "
+  MATCH (m:Memory)-[:MENTIONS]->(e:Entity)
+  RETURN m.content, e.canonical_name, e.entity_type
+  LIMIT 10
 "
 ```
 
@@ -147,13 +153,14 @@ sqlite3 test_vestig.db "
 
 ```bash
 # Count what was created
-echo "Memories: $(sqlite3 test_vestig.db 'SELECT COUNT(*) FROM memories;')"
-echo "Entities: $(sqlite3 test_vestig.db 'SELECT COUNT(*) FROM entities;')"
-echo "Edges: $(sqlite3 test_vestig.db 'SELECT COUNT(*) FROM edges;')"
+echo "Memories: $(scripts/falkor 'MATCH (m:Memory) RETURN COUNT(m)' | tail -1)"
+echo "Entities: $(scripts/falkor 'MATCH (e:Entity) RETURN COUNT(e)' | tail -1)"
+echo "Edges: $(scripts/falkor 'MATCH ()-[r]->() RETURN COUNT(r)' | tail -1)"
 ```
 
 ## Cleanup
 
 ```bash
-rm test_vestig.db
+# Drop the test graph if needed
+# redis-cli -h "$FALKOR_HOST" -p "$FALKOR_PORT" GRAPH.DELETE "$FALKOR_GRAPH"
 ```

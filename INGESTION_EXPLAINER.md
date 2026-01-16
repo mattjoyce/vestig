@@ -7,7 +7,7 @@ This document explains how Vestig ingests artifacts, extracts memories, and stor
 2. **Normalize and filter** input text based on format (plain text or Claude session JSONL).
 3. **Chunk** normalized text into manageable segments.
 4. **Extract memories** with the LLM, producing structured memory objects with entities and temporal hints.
-5. **Commit memories**: apply hygiene + dedupe, store in SQLite, create events, extract entities, and create graph edges.
+5. **Commit memories**: apply hygiene + dedupe, store in FalkorDB, create events, extract entities, and create graph edges.
 
 ---
 
@@ -63,7 +63,7 @@ Each extracted memory becomes an `ExtractedMemory` with:
 ---
 
 ## 5) Commit Pipeline (Storage + Graph)
-The commit pipeline applies quality gates and stores nodes in SQLite.
+The commit pipeline applies quality gates and stores nodes in FalkorDB.
 
 ### 5.1 Hygiene (Quality Firewall)
 Before storing anything:
@@ -93,7 +93,7 @@ Two layers:
 
 ### 5.4 Event logging (M3)
 When event storage is enabled:
-- ADD / REINFORCE events are stored in `memory_events`.
+- ADD / REINFORCE events are stored as `Event` nodes with `AFFECTS` edges.
 - Reinforcement updates `reinforce_count` and `last_seen_at`.
 
 ---
@@ -117,11 +117,11 @@ Edges include:
 ---
 
 ## 7) What gets stored
-Tables created in SQLite:
-- `memories` (MemoryNode)
-- `entities` (EntityNode)
-- `edges` (EdgeNode)
-- `memory_events` (EventNode)
+Nodes and edges in FalkorDB:
+- `Memory` nodes (MemoryNode)
+- `Entity` nodes (EntityNode)
+- `Edge` relationships (EdgeNode)
+- `Event` nodes (EventNode) with `AFFECTS` edges
 
 ---
 
@@ -129,5 +129,5 @@ Tables created in SQLite:
 - `src/vestig/core/ingestion.py` — main ingest pipeline
 - `src/vestig/core/ingest_sources.py` — format-specific parsing
 - `src/vestig/core/commitment.py` — hygiene, dedupe, node creation
-- `src/vestig/core/storage.py` — SQLite schema + persistence
-
+- `src/vestig/core/db_falkordb.py` — FalkorDB persistence
+- `src/vestig/core/schema_falkor.cypher` — graph schema

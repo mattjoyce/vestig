@@ -150,7 +150,7 @@ Memories and Summaries connect to Entities via MENTIONS edges. This provides an 
 
 ## Technical Debt
 
-- [ ] Conditional validation for backend-specific config (done: db_path)
+- [ ] Conditional validation for backend-specific config (done: falkordb)
 - [ ] FalkorDB adapter edge cases (weight field nulls)
 - [ ] Test coverage for dual-backend scenarios
 - [ ] Embedding timeout configurability (done: `embedding.timeout`)
