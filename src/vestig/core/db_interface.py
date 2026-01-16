@@ -1,7 +1,7 @@
 """Database abstraction layer for Vestig storage backends.
 
-This module provides an abstract interface that mirrors the existing MemoryStorage API,
-enabling pluggable backends (SQLite, FalkorDB) via configuration.
+This module provides an abstract interface that mirrors the storage API,
+enabling a FalkorDB-backed implementation.
 """
 
 from abc import ABC, abstractmethod
@@ -34,7 +34,7 @@ class EventStorageInterface(ABC):
 class DatabaseInterface(ABC):
     """Abstract interface for Vestig storage backends.
 
-    This interface mirrors the existing MemoryStorage API to enable
+    This interface mirrors the storage API to enable
     a thin wrapper pattern. All methods delegate to the underlying
     storage implementation.
     """
@@ -118,6 +118,17 @@ class DatabaseInterface(ABC):
     @abstractmethod
     def get_summary_for_chunk(self, chunk_id: str) -> "MemoryNode | None":
         """Find SUMMARY node for specific chunk via kind='SUMMARY'."""
+        ...
+
+    @abstractmethod
+    def search_memories_by_vector(
+        self,
+        query_vector: list[float],
+        limit: int = 10,
+        kind_filter: str | None = None,
+        include_expired: bool = False,
+    ) -> list[tuple["MemoryNode", float]]:
+        """Search memories using native vector index."""
         ...
 
     @abstractmethod

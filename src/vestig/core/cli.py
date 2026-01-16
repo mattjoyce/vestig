@@ -12,7 +12,7 @@ from vestig.core.commitment import commit_memory
 from vestig.core.config import load_config
 from vestig.core.db_interface import DatabaseInterface, EventStorageInterface
 
-# SQLite removed - using FalkorDB only
+# FalkorDB only
 from vestig.core.embeddings import EmbeddingEngine
 from vestig.core.tracerank import TraceRankConfig
 
@@ -107,6 +107,7 @@ def create_database(config: dict[str, Any]) -> DatabaseInterface:
         host=falkor_cfg["host"],
         port=falkor_cfg["port"],
         graph_name=falkor_cfg["graph_name"],
+        config=config,
     )
 
 
@@ -1225,6 +1226,7 @@ def cmd_ingest(args):
                 format_config=format_config,
                 force_entities=force_entities if not args.no_entities else [],
                 verbose=args.verbose,
+                show_timing=args.timing,
             )
 
             total["chunks"] += result.chunks_processed
@@ -1421,6 +1423,11 @@ def main():
         "--verbose",
         action="store_true",
         help="Show detailed extraction output (memories, entities, confidence values)",
+    )
+    parser_ingest.add_argument(
+        "--timing",
+        action="store_true",
+        help="Show performance timing breakdown for ingestion",
     )
     parser_ingest.add_argument(
         "--no-entities",

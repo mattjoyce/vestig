@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Performance benchmark for vestig memory ingestion"""
 
-import os
 import sys
 import time
 from pathlib import Path
@@ -11,11 +10,11 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 from vestig.core.commitment import commit_memory
 from vestig.core.config import load_config
 from vestig.core.embeddings import EmbeddingEngine
-from vestig.core.storage import MemoryStorage
+from vestig.core.db_falkordb import FalkorDBDatabase
 
 
 def benchmark_memory_commit(
-    storage: MemoryStorage,
+    storage: FalkorDBDatabase,
     embedding_engine: EmbeddingEngine,
     m4_config: dict,
     test_memories: list[str],
@@ -106,12 +105,6 @@ def main():
     print("VESTIG PERFORMANCE BENCHMARK")
     print("=" * 70)
 
-    # Clean up any existing benchmark DB
-    db_path = "benchmark_test.db"
-    if os.path.exists(db_path):
-        os.unlink(db_path)
-        print(f"Cleaned up existing {db_path}")
-
     # Load test memories from file
     test_memories_file = Path("benchmark_test_memories.txt")
     if not test_memories_file.exists():
@@ -142,21 +135,28 @@ def main():
     # Scenario 1: No M4 (baseline)
     print("\n" + "=" * 70)
     print("SCENARIO 1: No M4 (Embedding + Storage only)")
-    storage = MemoryStorage(db_path)
+    storage = FalkorDBDatabase(
+        host=config["storage"]["falkordb"]["host"],
+        port=config["storage"]["falkordb"]["port"],
+        graph_name=config["storage"]["falkordb"]["graph_name"],
+        config=config,
+    )
     result = benchmark_memory_commit(
         storage, embedding_engine, {}, test_memories, "No M4 (baseline)", hygiene_no_neardup
     )
     results.append(result)
+    storage._graph.query("MATCH (n) DETACH DELETE n")
     storage.close()
-
-    # Clean DB between scenarios
-    if os.path.exists(db_path):
-        os.unlink(db_path)
 
     # Scenario 2: M4 with Sonnet 4.5
     print("\n" + "=" * 70)
     print("SCENARIO 2: M4 with claude-sonnet-4.5")
-    storage = MemoryStorage(db_path)
+    storage = FalkorDBDatabase(
+        host=config["storage"]["falkordb"]["host"],
+        port=config["storage"]["falkordb"]["port"],
+        graph_name=config["storage"]["falkordb"]["graph_name"],
+        config=config,
+    )
     result = benchmark_memory_commit(
         storage,
         embedding_engine,
@@ -167,16 +167,18 @@ def main():
         m4_model="claude-sonnet-4.5",
     )
     results.append(result)
+    storage._graph.query("MATCH (n) DETACH DELETE n")
     storage.close()
-
-    # Clean DB between scenarios
-    if os.path.exists(db_path):
-        os.unlink(db_path)
 
     # Scenario 3: M4 with Haiku 4.5
     print("\n" + "=" * 70)
     print("SCENARIO 3: M4 with claude-haiku-4.5")
-    storage = MemoryStorage(db_path)
+    storage = FalkorDBDatabase(
+        host=config["storage"]["falkordb"]["host"],
+        port=config["storage"]["falkordb"]["port"],
+        graph_name=config["storage"]["falkordb"]["graph_name"],
+        config=config,
+    )
     result = benchmark_memory_commit(
         storage,
         embedding_engine,
@@ -187,6 +189,7 @@ def main():
         m4_model="claude-haiku-4.5",
     )
     results.append(result)
+    storage._graph.query("MATCH (n) DETACH DELETE n")
     storage.close()
 
     # Summary comparison
@@ -213,10 +216,7 @@ def main():
         print(f"  Haiku overhead:  {haiku/baseline:.1f}x slower")
         print(f"  Haiku vs Sonnet: {sonnet/haiku:.1f}x faster")
 
-    # Cleanup
-    if os.path.exists(db_path):
-        os.unlink(db_path)
-        print(f"\nCleaned up {db_path}")
+    print("\nBenchmark complete")
 
 
 if __name__ == "__main__":

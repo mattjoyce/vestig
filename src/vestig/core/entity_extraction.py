@@ -10,6 +10,7 @@ from typing import Any
 import yaml
 from pydantic import BaseModel, ValidationError
 
+from vestig.core.db_interface import DatabaseInterface
 from vestig.core.entity_ontology import EntityOntology, EntityType
 
 logger = logging.getLogger(__name__)
@@ -406,7 +407,7 @@ def extract_entities_from_text(
 def store_entities(
     entities: list[tuple[str, str, float, str]],
     memory_id: str,
-    storage,  # MemoryStorage instance
+    storage: DatabaseInterface,
     config: dict[str, Any],
     embedding_engine=None,  # Optional EmbeddingEngine instance
     chunk_id: str | None = None,  # M5: Optional chunk ID for hub-and-spoke provenance
@@ -419,7 +420,7 @@ def store_entities(
     Args:
         entities: List of (name, type, confidence, evidence) tuples
         memory_id: Memory ID (for event logging)
-        storage: MemoryStorage instance
+        storage: Storage backend instance
         config: Full config dict (or M4 config dict if embedding_engine provided)
         embedding_engine: Optional EmbeddingEngine for generating entity embeddings
             If None, will be created from config.embedding settings
@@ -495,7 +496,7 @@ def store_entities(
             # Generate embedding for entity (lowercase for consistency)
             embedding_text = name.lower()
             embedding_vector = embedding_engine.embed_text(embedding_text)
-            new_entity.embedding = json.dumps(embedding_vector)
+            new_entity.embedding = embedding_vector  # Native list format for vecf32 (Issue #7)
 
             entity_id = storage.store_entity(new_entity)
 
@@ -506,7 +507,7 @@ def store_entities(
 
 
 def process_memories_for_entities(
-    storage,
+    storage: DatabaseInterface,
     config: dict[str, Any],
     ontology: EntityOntology,
     reprocess: bool = False,
@@ -517,7 +518,7 @@ def process_memories_for_entities(
     Extract entities from memories that don't have entities yet.
 
     Args:
-        storage: MemoryStorage instance
+        storage: Storage backend instance
         config: Full config dict with m4 settings
         ontology: EntityOntology instance for entity extraction
         reprocess: If True, re-extract entities for ALL memories

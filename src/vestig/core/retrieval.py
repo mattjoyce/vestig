@@ -1,18 +1,16 @@
 """Retrieval: M1 semantic similarity + M3 TraceRank + M5 hybrid entity retrieval"""
 
-import json
 import time
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 import numpy as np
 
-from vestig.core.db_interface import DatabaseInterface
+from vestig.core.db_interface import DatabaseInterface, EventStorageInterface
 from vestig.core.embeddings import EmbeddingEngine
 from vestig.core.models import MemoryNode
 
 if TYPE_CHECKING:
-    from vestig.core.event_storage import MemoryEventStorage
     from vestig.core.tracerank import TraceRankConfig
 
 
@@ -72,28 +70,21 @@ def match_query_entities_to_db(
             matched_entities.append((exact_match.id, q_ent_name, 1.0))
             continue
 
-        # No exact match - try semantic similarity
+        # No exact match - try semantic similarity using native vector search
         q_ent_embedding = embedding_engine.embed_text(q_ent_name.lower())
 
-        # Get all entities of same type
-        all_entities = storage.get_all_entities(include_expired=False)
-        type_entities = [e for e in all_entities if e.entity_type == q_ent_type]
+        # Use FalkorDB native vector search for semantic fallback (Issue #7)
+        vector_results = storage.search_entities_by_vector(
+            query_vector=q_ent_embedding,
+            entity_type=q_ent_type,
+            limit=1,  # Only need the best match
+            include_expired=False,
+        )
 
-        # Find best match above threshold
-        best_match = None
-        best_similarity = 0.0
-
-        for db_entity in type_entities:
-            if db_entity.embedding:
-                db_embedding = json.loads(db_entity.embedding)
-                similarity = cosine_similarity(q_ent_embedding, db_embedding)
-
-                if similarity >= similarity_threshold and similarity > best_similarity:
-                    best_match = db_entity.id
-                    best_similarity = similarity
-
-        if best_match:
-            matched_entities.append((best_match, q_ent_name, best_similarity))
+        if vector_results:
+            best_entity, best_similarity = vector_results[0]
+            if best_similarity >= similarity_threshold:
+                matched_entities.append((best_entity.id, q_ent_name, best_similarity))
 
     return matched_entities
 
@@ -140,7 +131,7 @@ def search_memories(
     storage: DatabaseInterface,
     embedding_engine: EmbeddingEngine,
     limit: int = 5,
-    event_storage: MemoryEventStorage | None = None,  # M3
+    event_storage: EventStorageInterface | None = None,  # M3
     tracerank_config: TraceRankConfig | None = None,  # M3
     include_expired: bool = False,  # M3
     show_timing: bool = False,  # Performance instrumentation
@@ -177,26 +168,23 @@ def search_memories(
     query_embedding = embedding_engine.embed_text(query)
     timings["1_embedding_generation"] = time.perf_counter() - t0
 
-    # Load memories (active only or all) - M3
+    # Use native vector search for semantic scoring (Issue #7)
+    # Get more candidates than needed to allow for TraceRank/entity re-ranking
     t0 = time.perf_counter()
-    if include_expired or event_storage is None:
-        all_memories = storage.get_all_memories()
-    else:
-        all_memories = storage.get_active_memories()
-    timings["2_load_memories"] = time.perf_counter() - t0
+    candidate_limit = limit * 10  # Safety margin for re-ranking
 
-    if not all_memories:
+    scored_memories = storage.search_memories_by_vector(
+        query_vector=query_embedding,
+        limit=candidate_limit,
+        kind_filter=None,  # Get all kinds
+        include_expired=include_expired,
+    )
+    timings["2_native_vector_search"] = time.perf_counter() - t0
+
+    if not scored_memories:
         if show_timing:
             print(f"\n[TIMING] Total: {(time.perf_counter() - t_start) * 1000:.0f}ms (no memories)")
         return []
-
-    # Compute semantic scores
-    t0 = time.perf_counter()
-    scored_memories = []
-    for memory in all_memories:
-        semantic_score = cosine_similarity(query_embedding, memory.content_embedding)
-        scored_memories.append((memory, semantic_score))
-    timings["3_semantic_scoring"] = time.perf_counter() - t0
 
     # M5: Entity-based retrieval (optional)
     entity_scores = {}
@@ -328,7 +316,7 @@ def recall_with_chunk_expansion(
     storage: DatabaseInterface,
     embedding_engine: EmbeddingEngine,
     limit: int = 5,
-    event_storage: MemoryEventStorage | None = None,
+    event_storage: EventStorageInterface | None = None,
     tracerank_config: TraceRankConfig | None = None,
     include_expired: bool = False,
     show_timing: bool = False,
@@ -356,29 +344,23 @@ def recall_with_chunk_expansion(
     query_embedding = embedding_engine.embed_text(query)
 
     # For recall, we ONLY want summaries (chunk representatives)
-    # Get all summaries first, then score them
-    all_summaries = [m for m in storage.get_all_memories() if m.kind == "SUMMARY"]
+    # Use native vector search for summaries (Issue #7)
+    initial_limit = limit * 5  # Cast wider net for chunk discovery
 
-    if not all_summaries:
+    summary_results = storage.search_memories_by_vector(
+        query_vector=query_embedding,
+        limit=initial_limit,
+        kind_filter="SUMMARY",
+        include_expired=include_expired,
+    )
+
+    if not summary_results:
         if show_timing:
             elapsed = (time.perf_counter() - t_start) * 1000
             print(f"\n[RECALL] {elapsed:.0f}ms total")
             print("  Summaries found: 0")
             print("  No summaries to expand from")
         return []
-
-    # Score summaries by semantic similarity
-    from vestig.core.retrieval import cosine_similarity
-
-    scored_summaries = []
-    for summary in all_summaries:
-        semantic_score = cosine_similarity(query_embedding, summary.content_embedding)
-        scored_summaries.append((summary, semantic_score))
-
-    # Sort by score and take top summaries for expansion
-    scored_summaries.sort(key=lambda x: -x[1])
-    initial_limit = limit * 5  # Cast wider net for chunk discovery
-    summary_results = scored_summaries[:initial_limit]
 
     # Track which chunks we've expanded and collect all memories
     expanded_chunks = set()
@@ -574,7 +556,7 @@ def format_recall_results(results: list[tuple[MemoryNode, float]]) -> str:
 
 def format_recall_results_with_explanation(
     results: list[tuple[MemoryNode, float]],
-    event_storage: "MemoryEventStorage",
+    event_storage: EventStorageInterface,
     storage: "DatabaseInterface",
     tracerank_config: "TraceRankConfig",
 ) -> str:

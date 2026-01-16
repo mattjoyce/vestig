@@ -1,5 +1,5 @@
 # Vestig Test Config - Minimal config for smoke tests
-# db_path will be overridden by test scripts
+# graph_name will be overridden by test scripts
 
 # Embedding configuration
 embedding:

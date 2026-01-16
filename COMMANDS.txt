@@ -9,7 +9,7 @@ source ~/Environments/vestig/bin/activate
 # Dev: run deadcode via Python 3.12 helper venv (defaults to ./src)
 scripts/deadcode
 
-# 3. Ingest session file (creates test_vestig.db)
+# 3. Ingest session file (writes to FalkorDB graph)
 # Model now comes from config (config_test.yaml: ingestion.model)
 python -m vestig.core.cli --config config_test.yaml ingest your_session.txt
 
@@ -22,26 +22,24 @@ python -m vestig.core.cli --config config_test.yaml memory search "your query he
 # 4b. Recall memories with explanation
 python -m vestig.core.cli --config config_test.yaml memory recall "your query here" --explain
 
-# 5. Quick stats
-sqlite3 test_vestig.db "SELECT COUNT(*) as memories FROM memories;"
-sqlite3 test_vestig.db "SELECT COUNT(*) as entities FROM entities;"
-sqlite3 test_vestig.db "SELECT COUNT(*) as edges FROM edges;"
+# 5. Quick stats (set FALKOR_* env vars to match config)
+export FALKOR_HOST=localhost
+export FALKOR_PORT=6379
+export FALKOR_GRAPH=vestig_test
+scripts/falkor "MATCH (m:Memory) RETURN COUNT(m)"
+scripts/falkor "MATCH (e:Entity) RETURN COUNT(e)"
+scripts/falkor "MATCH ()-[r]->() RETURN COUNT(r)"
 
 # 6. Show entities
-sqlite3 test_vestig.db "SELECT canonical_name, entity_type FROM entities;"
+scripts/falkor "MATCH (e:Entity) RETURN e.canonical_name, e.entity_type LIMIT 20"
 
 # 7. Show memories with entities
-sqlite3 test_vestig.db "
-  SELECT
-    substr(m.content, 1, 80) as memory,
-    e.canonical_name as entity,
-    e.entity_type as type
-  FROM edges ed
-  JOIN memories m ON ed.from_node = m.id
-  JOIN entities e ON ed.to_node = e.id
-  WHERE ed.edge_type = 'MENTIONS'
-  LIMIT 20;
+scripts/falkor "
+  MATCH (m:Memory)-[:MENTIONS]->(e:Entity)
+  RETURN substring(m.content, 0, 80), e.canonical_name, e.entity_type
+  LIMIT 20
 "
 
 # 8. Cleanup
-rm test_vestig.db
+# Drop the test graph with redis-cli if needed:
+# redis-cli -h "$FALKOR_HOST" -p "$FALKOR_PORT" GRAPH.DELETE "$FALKOR_GRAPH"

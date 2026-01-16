@@ -1,5 +1,5 @@
-# Core dependencies
-python-sqlite-graph>=0.1.0  # Graph database with Python bindings
+# Graph storage
+falkordb>=1.0.0
 
 # LLM and embeddings
 llm>=0.13.0                 # Simon Willison's LLM CLI tool
