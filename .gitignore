@@ -37,6 +37,7 @@ ENV/
 data/
 *.db
 logs/
+test/
 
 # Agent guidance (local)
 AGENTS.md

@@ -143,7 +143,6 @@ Storage is handled by FalkorDB, a graph database optimized for relationships and
 Typical structure (may evolve slightly as we implement):
 
 - `src/vestig/` — implementation package (includes core/prompts.yaml)
-- `test/` — test configuration files (config.yaml, test-specific prompts.yaml)
 - `tests/` — test scripts and smoke tests
 - `tests/` — smoke tests (`tests/test_m2_smoke.sh`, `tests/test_m4_smoke.sh`, etc.)
 - `benchmarks/` — performance benchmarking scripts
