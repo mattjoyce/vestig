@@ -16,13 +16,15 @@ mkdir -p "$TMP_DIR"
 VENV_PYTHON="$HOME/Environments/vestig/bin/python3"
 VESTIG_CMD=(env HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONPATH="$REPO_ROOT/src" "$VENV_PYTHON" -m vestig.core.cli)
 
-# Use temp database + config
-DB=$(mktemp "$TMP_DIR/vestig-m2.XXXXXX")
+# Use temp graph + config
+GRAPH_NAME="vestig_m2_smoke_${RANDOM}_${RANDOM}"
 CONFIG=$(mktemp "$TMP_DIR/vestig-m2-config.XXXXXX")
-sed "s|db_path:.*|db_path: \"$DB\"|g" "$REPO_ROOT/config_test.yaml" > "$CONFIG"
-echo "✓ Using temp database: $DB"
+sed "s|graph_name:.*|graph_name: $GRAPH_NAME|g" "$REPO_ROOT/config_test.yaml" > "$CONFIG"
+echo "✓ Using temp graph: $GRAPH_NAME"
 echo "✓ Using config: $CONFIG"
-trap 'rm -f "$DB" "$CONFIG"' EXIT
+export FALKOR_HOST=localhost
+export FALKOR_PORT=6379
+trap 'rm -f "$CONFIG"; redis-cli -h "$FALKOR_HOST" -p "$FALKOR_PORT" GRAPH.DELETE "$GRAPH_NAME" >/dev/null 2>&1 || true' EXIT
 echo ""
 
 # Test 1: Content hygiene - reject too short

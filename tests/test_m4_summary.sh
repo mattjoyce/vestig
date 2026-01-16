@@ -14,10 +14,15 @@ echo "========================================="
 echo ""
 
 # Setup
-TEST_DIR="tests/tmp"
-TEST_DB="$TEST_DIR/test_m4_summary.db"
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+TEST_DIR="$REPO_ROOT/tests/tmp"
 TEST_DOC="$TEST_DIR/test_summary_doc.txt"
-CONFIG="test/config-matt.yaml"
+CONFIG_TEMPLATE="$REPO_ROOT/config_test.yaml"
+CONFIG="$TEST_DIR/test_m4_summary.yaml"
+GRAPH_NAME="vestig_m4_summary_${RANDOM}_${RANDOM}"
+export FALKOR_HOST=localhost
+export FALKOR_PORT=6379
+trap 'redis-cli -h "$FALKOR_HOST" -p "$FALKOR_PORT" GRAPH.DELETE "$GRAPH_NAME" >/dev/null 2>&1 || true' EXIT
 
 # Clean up previous test
 rm -rf "$TEST_DIR"
@@ -46,8 +51,11 @@ EOF
 echo "✅ Test document created"
 echo ""
 
+# Build config with unique graph name
+sed "s|graph_name:.*|graph_name: $GRAPH_NAME|g" "$CONFIG_TEMPLATE" > "$CONFIG"
+
 # Set PYTHONPATH
-export PYTHONPATH="/Users/mattjoyce/Projects/vestig/src:$PYTHONPATH"
+export PYTHONPATH="$REPO_ROOT/src:$PYTHONPATH"
 
 # Test 1: Ingest document (should create summary)
 echo "Test 1: Ingest document with summary generation"
@@ -57,9 +65,8 @@ export HF_HUB_DISABLE_PROGRESS_BARS=1
 python3 << EOF
 import sys
 from pathlib import Path
-from vestig.core.storage import MemoryStorage
+from vestig.core.db_falkordb import FalkorDBDatabase
 from vestig.core.embeddings import EmbeddingEngine
-from vestig.core.event_storage import MemoryEventStorage
 from vestig.core.ingestion import ingest_document
 import yaml
 
@@ -68,14 +75,19 @@ with open('$CONFIG') as f:
     config = yaml.safe_load(f)
 
 # Initialize components
-storage = MemoryStorage('$TEST_DB')
+storage = FalkorDBDatabase(
+    host=config['storage']['falkordb']['host'],
+    port=config['storage']['falkordb']['port'],
+    graph_name=config['storage']['falkordb']['graph_name'],
+    config=config,
+)
 embedding_config = config['embedding']
 embedding_engine = EmbeddingEngine(
     model_name=embedding_config['model'],
     expected_dimension=embedding_config['dimension'],
     normalize=embedding_config.get('normalize', True)
 )
-event_storage = MemoryEventStorage(storage.conn)
+event_storage = storage.event_storage
 
 # Ingest document
 result = ingest_document(
@@ -109,15 +121,22 @@ echo "Test 2: Verify summary exists in database"
 echo "------------------------------------------"
 python3 << EOF
 import sys
-from vestig.core.storage import MemoryStorage
+from vestig.core.db_falkordb import FalkorDBDatabase
+import yaml
 
-storage = MemoryStorage('$TEST_DB')
+# Load config
+with open('$CONFIG') as f:
+    config = yaml.safe_load(f)
+
+storage = FalkorDBDatabase(
+    host=config['storage']['falkordb']['host'],
+    port=config['storage']['falkordb']['port'],
+    graph_name=config['storage']['falkordb']['graph_name'],
+    config=config,
+)
 
 # Check for summary with kind=SUMMARY
-cursor = storage.conn.execute(
-    "SELECT id, content, metadata FROM memories WHERE kind = 'SUMMARY'"
-)
-summaries = cursor.fetchall()
+summaries = [memory for memory in storage.get_all_memories() if memory.kind == 'SUMMARY']
 
 if len(summaries) == 0:
     print("❌ No summary found in database")
@@ -126,13 +145,14 @@ if len(summaries) == 0:
 if len(summaries) > 1:
     print(f"⚠️  Warning: Found {len(summaries)} summaries (expected 1)")
 
-summary_id, content, metadata_json = summaries[0]
+summary = summaries[0]
+summary_id = summary.id
+content = summary.content
+metadata = summary.metadata or {}
 print(f"✅ Found summary: {summary_id}")
 print(f"\nSummary content preview:")
 print(content[:200] + "...")
 
-import json
-metadata = json.loads(metadata_json)
 print(f"\nMetadata:")
 print(f"   Title: {metadata.get('title')}")
 print(f"   Themes: {metadata.get('themes')}")
@@ -149,15 +169,26 @@ echo "Test 3: Verify SUMMARIZES edges exist"
 echo "--------------------------------------"
 python3 << EOF
 import sys
-from vestig.core.storage import MemoryStorage
+from vestig.core.db_falkordb import FalkorDBDatabase
+import yaml
 
-storage = MemoryStorage('$TEST_DB')
+# Load config
+with open('$CONFIG') as f:
+    config = yaml.safe_load(f)
+
+storage = FalkorDBDatabase(
+    host=config['storage']['falkordb']['host'],
+    port=config['storage']['falkordb']['port'],
+    graph_name=config['storage']['falkordb']['graph_name'],
+    config=config,
+)
 
 # Get summary ID
-cursor = storage.conn.execute(
-    "SELECT id FROM memories WHERE kind = 'SUMMARY'"
-)
-summary_id = cursor.fetchone()[0]
+summaries = [memory for memory in storage.get_all_memories() if memory.kind == 'SUMMARY']
+summary_id = summaries[0].id if summaries else None
+if not summary_id:
+    print("❌ No summary found in database")
+    sys.exit(1)
 
 # Get SUMMARIZES edges
 edges = storage.get_edges_from_memory(summary_id, edge_type='SUMMARIZES')
@@ -187,26 +218,45 @@ echo "Test 4: Verify SUMMARY_CREATED event logged"
 echo "--------------------------------------------"
 python3 << EOF
 import sys
-from vestig.core.storage import MemoryStorage
+from vestig.core.db_falkordb import FalkorDBDatabase
+import yaml
 
-storage = MemoryStorage('$TEST_DB')
+# Load config
+with open('$CONFIG') as f:
+    config = yaml.safe_load(f)
+
+storage = FalkorDBDatabase(
+    host=config['storage']['falkordb']['host'],
+    port=config['storage']['falkordb']['port'],
+    graph_name=config['storage']['falkordb']['graph_name'],
+    config=config,
+)
+event_storage = storage.event_storage
 
 # Check for SUMMARY_CREATED event
-cursor = storage.conn.execute(
-    "SELECT event_id, memory_id, payload_json FROM memory_events WHERE event_type = 'SUMMARY_CREATED'"
-)
-events = cursor.fetchall()
+summaries = [memory for memory in storage.get_all_memories() if memory.kind == 'SUMMARY']
+if not summaries:
+    print("❌ No summary found in database")
+    sys.exit(1)
+
+summary_id = summaries[0].id
+events = [
+    event
+    for event in event_storage.get_events_for_memory(summary_id)
+    if event.event_type == 'SUMMARY_CREATED'
+]
 
 if len(events) == 0:
     print("❌ No SUMMARY_CREATED event found")
     sys.exit(1)
 
-event_id, memory_id, payload_json = events[0]
+event = events[0]
+event_id = event.event_id
+memory_id = event.memory_id
 print(f"✅ Found SUMMARY_CREATED event: {event_id}")
 print(f"   Memory ID: {memory_id}")
 
-import json
-payload = json.loads(payload_json)
+payload = event.payload
 print(f"   Payload: {payload}")
 
 storage.close()
@@ -221,9 +271,8 @@ echo "------------------------------------"
 python3 << EOF
 import sys
 from pathlib import Path
-from vestig.core.storage import MemoryStorage
+from vestig.core.db_falkordb import FalkorDBDatabase
 from vestig.core.embeddings import EmbeddingEngine
-from vestig.core.event_storage import MemoryEventStorage
 from vestig.core.ingestion import ingest_document
 import yaml
 
@@ -232,18 +281,22 @@ with open('$CONFIG') as f:
     config = yaml.safe_load(f)
 
 # Initialize components
-storage = MemoryStorage('$TEST_DB')
+storage = FalkorDBDatabase(
+    host=config['storage']['falkordb']['host'],
+    port=config['storage']['falkordb']['port'],
+    graph_name=config['storage']['falkordb']['graph_name'],
+    config=config,
+)
 embedding_config = config['embedding']
 embedding_engine = EmbeddingEngine(
     model_name=embedding_config['model'],
     expected_dimension=embedding_config['dimension'],
     normalize=embedding_config.get('normalize', True)
 )
-event_storage = MemoryEventStorage(storage.conn)
+event_storage = storage.event_storage
 
 # Count summaries before re-ingest
-cursor = storage.conn.execute("SELECT COUNT(*) FROM memories WHERE kind = 'SUMMARY'")
-count_before = cursor.fetchone()[0]
+count_before = len([memory for memory in storage.get_all_memories() if memory.kind == 'SUMMARY'])
 
 # Re-ingest same document
 result = ingest_document(
@@ -257,8 +310,7 @@ result = ingest_document(
 )
 
 # Count summaries after re-ingest
-cursor = storage.conn.execute("SELECT COUNT(*) FROM memories WHERE kind = 'SUMMARY'")
-count_after = cursor.fetchone()[0]
+count_after = len([memory for memory in storage.get_all_memories() if memory.kind == 'SUMMARY'])
 
 print(f"Summaries before: {count_before}")
 print(f"Summaries after:  {count_after}")
@@ -278,10 +330,20 @@ echo "Test 6: Test get_summary_for_artifact() helper"
 echo "-----------------------------------------------"
 python3 << EOF
 import sys
-from vestig.core.storage import MemoryStorage
 from pathlib import Path
+from vestig.core.db_falkordb import FalkorDBDatabase
+import yaml
 
-storage = MemoryStorage('$TEST_DB')
+# Load config
+with open('$CONFIG') as f:
+    config = yaml.safe_load(f)
+
+storage = FalkorDBDatabase(
+    host=config['storage']['falkordb']['host'],
+    port=config['storage']['falkordb']['port'],
+    graph_name=config['storage']['falkordb']['graph_name'],
+    config=config,
+)
 
 # Get summary using helper method
 artifact_ref = Path('$TEST_DOC').name
@@ -307,7 +369,7 @@ echo "✅ ALL M4 TESTS PASSED!"
 echo "========================================="
 echo ""
 echo "Summary:"
-echo "- Schema migration: ✅"
+echo "- Graph initialization: ✅"
 echo "- Summary generation: ✅"
 echo "- SUMMARIZES edges: ✅"
 echo "- SUMMARY_CREATED event: ✅"

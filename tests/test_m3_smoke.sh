@@ -15,22 +15,24 @@ mkdir -p "$TMP_DIR"
 VENV_PYTHON="$HOME/Environments/vestig/bin/python3"
 VESTIG_CMD=(env HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONPATH="$REPO_ROOT/src" "$VENV_PYTHON" -m vestig.core.cli)
 
-# Use temp database + config
-DB=$(mktemp "$TMP_DIR/vestig-m3.XXXXXX")
+# Use temp graph + config
+GRAPH_NAME="vestig_m3_smoke_${RANDOM}_${RANDOM}"
 CONFIG=$(mktemp "$TMP_DIR/vestig-m3-config.XXXXXX")
-sed "s|db_path:.*|db_path: \"$DB\"|g" "$REPO_ROOT/config_test.yaml" > "$CONFIG"
-echo "✓ Using temp database: $DB"
+sed "s|graph_name:.*|graph_name: $GRAPH_NAME|g" "$REPO_ROOT/config_test.yaml" > "$CONFIG"
+echo "✓ Using temp graph: $GRAPH_NAME"
 echo "✓ Using config: $CONFIG"
-trap 'rm -f "$DB" "$CONFIG"' EXIT
+export FALKOR_HOST=localhost
+export FALKOR_PORT=6379
+trap 'rm -f "$CONFIG"; redis-cli -h "$FALKOR_HOST" -p "$FALKOR_PORT" GRAPH.DELETE "$GRAPH_NAME" >/dev/null 2>&1 || true' EXIT
 echo ""
 
-# Test 1: Schema migration handles new columns
-echo "Test 1: Schema migration (backward compatibility)"
+# Test 1: Basic ingest and retrieval
+echo "Test 1: Graph initialization and ingest"
 "${VESTIG_CMD[@]}" --config "$CONFIG" memory add "Testing M3 migration with temporal fields" > /dev/null
 if "${VESTIG_CMD[@]}" --config "$CONFIG" memory search "migration" --limit 1 | grep -q "mem_"; then
-    echo "✓ Schema migration successful"
+    echo "✓ Ingest and search successful"
 else
-    echo "✗ FAIL: Schema migration failed"
+    echo "✗ FAIL: Ingest/search failed"
     exit 1
 fi
 echo ""
@@ -108,13 +110,17 @@ echo "Test 5: Event history (verify events logged in database)"
 "$VENV_PYTHON" -c "
 import sys
 sys.path.insert(0, '$REPO_ROOT/src')
-from vestig.core.storage import MemoryStorage
-from vestig.core.event_storage import MemoryEventStorage
+from vestig.core.db_falkordb import FalkorDBDatabase
 from vestig.core.config import load_config
 
 config = load_config('$CONFIG')
-storage = MemoryStorage(config['storage']['db_path'])
-event_storage = MemoryEventStorage(storage.conn)
+storage = FalkorDBDatabase(
+    host=config['storage']['falkordb']['host'],
+    port=config['storage']['falkordb']['port'],
+    graph_name=config['storage']['falkordb']['graph_name'],
+    config=config,
+)
+event_storage = storage.event_storage
 
 # Check events for the reinforced Python memory
 memory_id = '$ID2'
@@ -147,7 +153,7 @@ echo ""
 echo "=== M3 Smoke Test Complete ==="
 echo ""
 echo "Summary:"
-echo "  ✓ Schema migrations (M3 columns added)"
+echo "  ✓ Graph initialization"
 echo "  ✓ Event logging (ADD, REINFORCE_EXACT events)"
 echo "  ✓ TraceRank ranking (reinforced memories boosted)"
 echo "  ✓ Recall M3 hints (reinforced=Nx, last_seen)"

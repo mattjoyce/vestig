@@ -38,6 +38,7 @@ data/
 *.db
 logs/
 test/
+tests/tmp/
 
 # Agent guidance (local)
 AGENTS.md

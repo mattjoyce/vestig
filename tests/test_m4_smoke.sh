@@ -14,18 +14,19 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 TMP_DIR="$REPO_ROOT/tests/tmp"
 mkdir -p "$TMP_DIR"
 
-# Use temp database + config
-DB=$(mktemp "$TMP_DIR/vestig-m4-smoke.XXXXXX")
+# Use temp graph + config
+GRAPH_NAME="vestig_m4_smoke_${RANDOM}_${RANDOM}"
 CONFIG=$(mktemp "$TMP_DIR/vestig-m4-config.XXXXXX")
-sed "s|db_path:.*|db_path: \"$DB\"|g" "$REPO_ROOT/config_test.yaml" > "$CONFIG"
-echo "Using temp database: $DB"
+sed "s|graph_name:.*|graph_name: $GRAPH_NAME|g" "$REPO_ROOT/config_test.yaml" > "$CONFIG"
+echo "Using temp graph: $GRAPH_NAME"
 echo "Using config: $CONFIG"
-export DB_PATH="$DB"
 export CONFIG_PATH="$CONFIG"
+export FALKOR_HOST=localhost
+export FALKOR_PORT=6379
 export REPO_ROOT
 export HF_HUB_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1
-trap 'rm -f "$DB" "$CONFIG"' EXIT
+trap 'rm -f "$CONFIG"; redis-cli -h "$FALKOR_HOST" -p "$FALKOR_PORT" GRAPH.DELETE "$GRAPH_NAME" >/dev/null 2>&1 || true' EXIT
 
 # Activate virtual environment
 source ~/Environments/vestig/bin/activate
@@ -42,19 +43,20 @@ sys.path.insert(0, str(Path(os.environ["REPO_ROOT"]) / "src"))
 
 from vestig.core.commitment import commit_memory
 from vestig.core.embeddings import EmbeddingEngine
-from vestig.core.storage import MemoryStorage
-from vestig.core.event_storage import MemoryEventStorage
+from vestig.core.db_falkordb import FalkorDBDatabase
 from vestig.core.config import load_config
 from vestig.core.graph import expand_via_entities, expand_via_related
 from vestig.core.ingestion import MemoryExtractionResult
 
-# Get temp DB path
-db_path = os.environ["DB_PATH"]
-
 # Load config
 config = load_config(os.environ["CONFIG_PATH"])
-storage = MemoryStorage(db_path)
-event_storage = MemoryEventStorage(storage.conn)
+storage = FalkorDBDatabase(
+    host=config["storage"]["falkordb"]["host"],
+    port=config["storage"]["falkordb"]["port"],
+    graph_name=config["storage"]["falkordb"]["graph_name"],
+    config=config,
+)
+event_storage = storage.event_storage
 embedding_engine = EmbeddingEngine(
     model_name=config["embedding"]["model"],
     expected_dimension=config["embedding"]["dimension"],

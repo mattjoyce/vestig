@@ -64,16 +64,20 @@ def storage(request) -> DatabaseInterface:
         VESTIG_FALKORDB_PORT    - FalkorDB port (default: 6379)
         VESTIG_FALKORDB_GRAPH   - Graph name (default: random per test)
     """
+    from vestig.core.config import load_config
     from vestig.core.db_falkordb import FalkorDBDatabase
 
-    config = get_falkordb_config()
+    falkor_config = get_falkordb_config()
+    # Load full config for embedding dimension
+    vestig_config = load_config("config_test.yaml")
     # Use unique graph name per test to avoid conflicts
     graph_name = f"vestig_test_{uuid.uuid4().hex[:8]}"
 
     db = FalkorDBDatabase(
-        host=config["host"],
-        port=config["port"],
+        host=falkor_config["host"],
+        port=falkor_config["port"],
         graph_name=graph_name,
+        config=vestig_config,
     )
     yield db
 
@@ -85,7 +89,7 @@ def storage(request) -> DatabaseInterface:
     db.close()
 
 
-# SQLite removed - using FalkorDB only
+# FalkorDB only
 
 
 @pytest.fixture
@@ -94,15 +98,19 @@ def falkordb_storage() -> DatabaseInterface:
     if not falkordb_available():
         pytest.skip("FalkorDB not available")
 
+    from vestig.core.config import load_config
     from vestig.core.db_falkordb import FalkorDBDatabase
 
-    config = get_falkordb_config()
+    falkor_config = get_falkordb_config()
+    # Load full config for embedding dimension
+    vestig_config = load_config("config_test.yaml")
     graph_name = f"vestig_test_{uuid.uuid4().hex[:8]}"
 
     db = FalkorDBDatabase(
-        host=config["host"],
-        port=config["port"],
+        host=falkor_config["host"],
+        port=falkor_config["port"],
         graph_name=graph_name,
+        config=vestig_config,
     )
     yield db
 
