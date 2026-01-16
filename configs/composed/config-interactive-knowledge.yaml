@@ -1,0 +1,22 @@
+# Interactive config (real-time recall, Anthropic SaaS)
+# Usage: vestig --config configs/composed/config-interactive-knowledge.yaml memory recall ...
+
+include:
+  - ../base/storage-falkordb.yaml
+  - ../base/embedding-gemma.yaml
+  - ../ontologies/ontology-knowledge.yaml
+  - ../models/models-anthropic-saas.yaml
+
+# Override graph name for interactive use (or same as batch)
+storage:
+  falkordb:
+    graph_name: vestig-batch  # Use same graph as batch!
+
+# Interactive-specific settings
+retrieval:
+  default_results: 10
+  max_results: 30
+
+hygiene:
+  auto_expire_memories: true
+  retention_days: 180

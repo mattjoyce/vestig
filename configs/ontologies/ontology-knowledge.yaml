@@ -1,0 +1,12 @@
+# Knowledge domain ontology
+m4:
+  entity_types:
+    - Person
+    - Organization
+    - Location
+    - Technology
+    - Concept
+    - Project
+    - Tool
+    - Method
+  entity_extraction_mode: semantic

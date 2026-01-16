@@ -1,0 +1,22 @@
+# Batch ingestion config (overnight, local Ollama)
+# Usage: vestig --config configs/composed/config-batch-knowledge.yaml memory ingest ...
+
+include:
+  - ../base/storage-falkordb.yaml
+  - ../base/embedding-gemma.yaml
+  - ../ontologies/ontology-knowledge.yaml
+  - ../models/models-ollama-local.yaml
+
+# Override graph name for batch processing
+storage:
+  falkordb:
+    graph_name: vestig-batch
+
+# Batch-specific settings
+hygiene:
+  auto_expire_memories: false  # Don't expire during batch
+  retention_days: 365
+
+retrieval:
+  default_results: 20
+  max_results: 50

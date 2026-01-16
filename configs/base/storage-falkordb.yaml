@@ -1,0 +1,6 @@
+# Base FalkorDB storage configuration
+storage:
+  falkordb:
+    host: localhost
+    port: 6379
+    graph_name: vestig

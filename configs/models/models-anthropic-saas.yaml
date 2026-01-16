@@ -1,0 +1,8 @@
+# Anthropic SaaS models (for real-time recall and interactive use)
+m4:
+  llm_provider: anthropic
+  model_name: claude-3-5-sonnet-20241022
+
+m7:
+  llm_provider: anthropic
+  model_name: claude-3-5-sonnet-20241022

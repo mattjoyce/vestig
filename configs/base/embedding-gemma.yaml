@@ -1,0 +1,6 @@
+# Base embedding configuration (embeddinggemma)
+embedding:
+  model: embeddinggemma
+  dimension: 768
+  provider: llm
+  normalize: true
