@@ -77,6 +77,63 @@ storage:
 4. **Relative paths**: Include paths are relative to the config file containing them
 5. **Recursive**: Included files can themselves include other files
 
+## Configuration Schema
+
+### Entity Ontology (m4.entity_types)
+
+Two formats are supported:
+
+**Legacy format** (simple list):
+```yaml
+m4:
+  entity_types:
+    allowed_types:
+      - Person
+      - Organization
+      - Project
+```
+
+**Full ontology format** (with descriptions, tiers, synonyms):
+```yaml
+m4:
+  entity_types:
+    ontology:
+      - name: "Person"
+        description: "Named individuals"
+        tier: 1
+        synonyms: ["individual"]
+        examples: ["Dr. Smith", "Jane Doe"]
+
+      - name: "Organization"
+        description: "Companies, institutions"
+        tier: 1
+        synonyms: ["company", "org"]
+        examples: ["Acme Corp", "MIT"]
+```
+
+See `test/config-custom-ontology-falkordb.yaml` for a complete ontology example.
+
+### Model Configuration
+
+**Document ingestion** uses `ingestion.model`:
+```yaml
+ingestion:
+  model: qwen2.5:14b  # or claude-3-5-sonnet-20241022
+```
+
+**Entity extraction** uses `m4.entity_extraction.llm.model`:
+```yaml
+m4:
+  entity_extraction:
+    enabled: true
+    llm:
+      model: qwen2.5:14b  # or claude-3-5-sonnet-20241022
+      max_entities_per_memory: 10
+      min_confidence: 0.75
+```
+
+Both can be set in model config files (e.g., `configs/models/models-ollama-local.yaml`).
+
 ## Creating Custom Configs
 
 ### Example: Development Config
@@ -103,12 +160,12 @@ hygiene:
 # configs/ontologies/ontology-research-v2.yaml
 m4:
   entity_types:
-    - Person
-    - Paper
-    - Experiment
-    - Dataset
-    - Metric
-  entity_extraction_mode: hybrid
+    allowed_types:
+      - Person
+      - Paper
+      - Experiment
+      - Dataset
+      - Metric
 ```
 
 Then create composed config:
@@ -149,10 +206,14 @@ storage:
 embedding:
   model: embeddinggemma
   dimension: 768
+ingestion:
+  model: qwen2.5:14b
 m4:
-  llm_provider: ollama
-  model_name: qwen2.5:14b
-  entity_types: [Person, Organization]
+  entity_types:
+    allowed_types: [Person, Organization]
+  entity_extraction:
+    llm:
+      model: qwen2.5:14b
 ```
 
 New modular equivalent:
@@ -165,7 +226,8 @@ include:
   - ../models/models-ollama-local.yaml
 
 m4:
-  entity_types: [Person, Organization]
+  entity_types:
+    allowed_types: [Person, Organization]
 ```
 
 ## Tips
