@@ -31,8 +31,9 @@ pytz>=2023.3               # Timezone support
 # Optional: GPU acceleration
 # torch>=2.0.0             # PyTorch for GPU (uncomment if using GPU)
 
-# Development tools (optional)
-# pytest>=7.4.0            # Testing framework (when we add tests later)
-# black>=23.0.0            # Code formatting
-# ruff>=0.1.0              # Fast linting
+# Development tools
+pytest>=7.4.0              # Testing framework
+ruff>=0.1.0                # Fast linting and formatting
+mypy>=1.0.0                # Type checking
+types-PyYAML>=6.0.0        # Type stubs for PyYAML
 anthropic>=0.39.0

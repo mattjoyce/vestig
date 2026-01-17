@@ -1,12 +1,12 @@
-# Knowledge domain ontology
+# Knowledge domain ontology (legacy format)
 m4:
   entity_types:
-    - Person
-    - Organization
-    - Location
-    - Technology
-    - Concept
-    - Project
-    - Tool
-    - Method
-  entity_extraction_mode: semantic
+    allowed_types:
+      - Person
+      - Organization
+      - Location
+      - Technology
+      - Concept
+      - Project
+      - Tool
+      - Method

@@ -1,8 +1,8 @@
 # Local Ollama models (for overnight batch ingestion)
-m4:
-  llm_provider: ollama
-  model_name: qwen2.5:14b
+ingestion:
+  model: qwen2.5:14b
 
-m7:
-  llm_provider: ollama
-  model_name: qwen2.5:14b
+m4:
+  entity_extraction:
+    llm:
+      model: qwen2.5:14b

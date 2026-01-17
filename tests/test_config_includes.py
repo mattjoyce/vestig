@@ -210,3 +210,122 @@ def test_config_include_file_not_found():
             load_config(str(tmppath / "main.yaml"))
 
         assert "nonexistent.yaml" in str(exc_info.value)
+
+
+def test_config_empty_file():
+    """Test that empty config file is handled gracefully."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+
+        # Create valid storage base
+        storage_config = {
+            "storage": {
+                "falkordb": {
+                    "host": "localhost",
+                    "port": 6379,
+                    "graph_name": "test",
+                }
+            }
+        }
+        (tmppath / "storage.yaml").write_text(yaml.dump(storage_config))
+
+        # Create empty config file (yaml.safe_load returns None)
+        (tmppath / "empty.yaml").write_text("")
+
+        # Create main config that includes both
+        main_config = {"include": ["storage.yaml", "empty.yaml"]}
+        (tmppath / "main.yaml").write_text(yaml.dump(main_config))
+
+        # Should load successfully (empty file treated as {})
+        result = load_config(str(tmppath / "main.yaml"))
+        assert result["storage"]["falkordb"]["host"] == "localhost"
+
+
+def test_config_null_file():
+    """Test that null config file is handled gracefully."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+
+        # Create valid storage base
+        storage_config = {
+            "storage": {
+                "falkordb": {
+                    "host": "localhost",
+                    "port": 6379,
+                    "graph_name": "test",
+                }
+            }
+        }
+        (tmppath / "storage.yaml").write_text(yaml.dump(storage_config))
+
+        # Create null config file
+        (tmppath / "null.yaml").write_text("null\n")
+
+        # Create main config that includes both
+        main_config = {"include": ["storage.yaml", "null.yaml"]}
+        (tmppath / "main.yaml").write_text(yaml.dump(main_config))
+
+        # Should load successfully (null treated as {})
+        result = load_config(str(tmppath / "main.yaml"))
+        assert result["storage"]["falkordb"]["host"] == "localhost"
+
+
+def test_config_non_dict():
+    """Test that non-dict config raises clear error."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+
+        # Create config that's a list instead of dict
+        (tmppath / "list.yaml").write_text("[1, 2, 3]\n")
+
+        # Should raise ValueError
+        with pytest.raises(ValueError) as exc_info:
+            load_config(str(tmppath / "list.yaml"))
+
+        assert "must be a YAML dictionary" in str(exc_info.value)
+        assert "list" in str(exc_info.value)
+
+
+def test_config_circular_include_direct():
+    """Test that direct circular include is detected."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+
+        # Create config that includes itself
+        circular_config = {
+            "include": "circular.yaml",
+            "storage": {
+                "falkordb": {
+                    "host": "localhost",
+                    "port": 6379,
+                    "graph_name": "test",
+                }
+            },
+        }
+        (tmppath / "circular.yaml").write_text(yaml.dump(circular_config))
+
+        # Should raise ValueError about circular include
+        with pytest.raises(ValueError) as exc_info:
+            load_config(str(tmppath / "circular.yaml"))
+
+        assert "Circular include detected" in str(exc_info.value)
+
+
+def test_config_circular_include_indirect():
+    """Test that indirect circular include (A->B->A) is detected."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+
+        # Create A that includes B
+        config_a = {"include": "b.yaml", "value": "A"}
+        (tmppath / "a.yaml").write_text(yaml.dump(config_a))
+
+        # Create B that includes A (circular!)
+        config_b = {"include": "a.yaml", "value": "B"}
+        (tmppath / "b.yaml").write_text(yaml.dump(config_b))
+
+        # Should raise ValueError about circular include
+        with pytest.raises(ValueError) as exc_info:
+            load_config(str(tmppath / "a.yaml"))
+
+        assert "Circular include detected" in str(exc_info.value)

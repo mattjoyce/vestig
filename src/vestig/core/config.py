@@ -39,7 +39,11 @@ def deep_merge(base: dict[str, Any], overlay: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
-def load_config(config_path: str = "config.yaml", _skip_validation: bool = False) -> dict[str, Any]:
+def load_config(
+    config_path: str = "config.yaml",
+    _skip_validation: bool = False,
+    _include_stack: list[str] | None = None,
+) -> dict[str, Any]:
     """
     Load configuration from YAML file with include support.
 
@@ -53,6 +57,7 @@ def load_config(config_path: str = "config.yaml", _skip_validation: bool = False
     Args:
         config_path: Path to config file
         _skip_validation: Internal parameter to skip validation for included files
+        _include_stack: Internal parameter to detect circular includes
 
     Returns:
         Configuration dictionary
@@ -60,6 +65,7 @@ def load_config(config_path: str = "config.yaml", _skip_validation: bool = False
     Raises:
         FileNotFoundError: If config file doesn't exist
         yaml.YAMLError: If config file is invalid YAML
+        ValueError: If config file is empty/invalid or circular include detected
     """
     path = Path(config_path)
     if not path.exists():
@@ -68,26 +74,57 @@ def load_config(config_path: str = "config.yaml", _skip_validation: bool = False
             f"Please create a config.yaml file or specify path with --config"
         )
 
-    with open(path) as f:
-        config = yaml.safe_load(f)
+    # Detect circular includes
+    if _include_stack is None:
+        _include_stack = []
 
-    # Process includes recursively
-    if "include" in config:
-        includes = config.pop("include")
-        if isinstance(includes, str):
-            includes = [includes]
+    resolved_path = str(path.resolve())
+    if resolved_path in _include_stack:
+        cycle = " -> ".join(_include_stack + [resolved_path])
+        raise ValueError(f"Circular include detected: {cycle}")
 
-        # Build base config from all includes (in order)
-        base_config: dict[str, Any] = {}
-        for include_path in includes:
-            # Resolve relative to current config file
-            include_full = path.parent / include_path
-            # Skip validation for included files (they may be partial configs)
-            included = load_config(str(include_full), _skip_validation=True)
-            base_config = deep_merge(base_config, included)
+    # Add to stack for cycle detection
+    _include_stack.append(resolved_path)
 
-        # Merge main config on top (main config takes precedence)
-        config = deep_merge(base_config, config)
+    try:
+        with open(path) as f:
+            config = yaml.safe_load(f)
+
+        # Guard against empty or non-dict configs
+        if config is None:
+            config = {}
+        if not isinstance(config, dict):
+            raise ValueError(
+                f"Invalid config file: {config_path}\n"
+                f"Config must be a YAML dictionary, got {type(config).__name__}"
+            )
+
+        # Process includes recursively
+        if "include" in config:
+            includes = config.pop("include")
+            if isinstance(includes, str):
+                includes = [includes]
+
+            # Build base config from all includes (in order)
+            base_config: dict[str, Any] = {}
+            for include_path in includes:
+                # Resolve relative to current config file
+                include_full = path.parent / include_path
+                # Skip validation for included files (they may be partial configs)
+                # Pass copy of include_stack to detect cycles in this branch
+                included = load_config(
+                    str(include_full),
+                    _skip_validation=True,
+                    _include_stack=_include_stack.copy(),
+                )
+                base_config = deep_merge(base_config, included)
+
+            # Merge main config on top (main config takes precedence)
+            config = deep_merge(base_config, config)
+    finally:
+        # Remove from stack after processing (allows diamond dependencies)
+        if resolved_path in _include_stack:
+            _include_stack.remove(resolved_path)
 
     # Only validate final merged config (not partial included files)
     if not _skip_validation:
