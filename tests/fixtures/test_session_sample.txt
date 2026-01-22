@@ -1,0 +1,1 @@
+User: We've been having performance issues with our PostgreSQL database. Some queries on the user_events table are taking over 5 seconds according to the slow query log.

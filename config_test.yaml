@@ -12,8 +12,8 @@ embedding:
 storage:
   backend: falkordb
   falkordb:
-    host: localhost
-    port: 6379
+    host: ${VESTIG_FALKORDB_HOST:-192.168.20.4}
+    port: ${VESTIG_FALKORDB_PORT:-6379}
     graph_name: vestig_test
 
 # Retrieval

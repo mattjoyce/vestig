@@ -3,9 +3,7 @@
 
 set -e  # Exit on error
 
-# Suppress huggingface progress bars and warnings
-export TRANSFORMERS_VERBOSITY=error
-export HF_HUB_DISABLE_PROGRESS_BARS=1
+# Embedding provider is llm CLI (Ollama), not HuggingFace
 export PYTHONWARNINGS="ignore"
 
 echo "========================================="
@@ -20,8 +18,9 @@ TEST_DOC="$TEST_DIR/test_summary_doc.txt"
 CONFIG_TEMPLATE="$REPO_ROOT/config_test.yaml"
 CONFIG="$TEST_DIR/test_m4_summary.yaml"
 GRAPH_NAME="vestig_m4_summary_${RANDOM}_${RANDOM}"
-export FALKOR_HOST=localhost
-export FALKOR_PORT=6379
+# Use same env vars as conftest.py for consistency
+export FALKOR_HOST="${VESTIG_FALKORDB_HOST:-192.168.20.4}"
+export FALKOR_PORT="${VESTIG_FALKORDB_PORT:-6379}"
 trap 'redis-cli -h "$FALKOR_HOST" -p "$FALKOR_PORT" GRAPH.DELETE "$GRAPH_NAME" >/dev/null 2>&1 || true' EXIT
 
 # Clean up previous test
@@ -60,8 +59,6 @@ export PYTHONPATH="$REPO_ROOT/src:$PYTHONPATH"
 # Test 1: Ingest document (should create summary)
 echo "Test 1: Ingest document with summary generation"
 echo "-----------------------------------------------"
-export TRANSFORMERS_VERBOSITY=error
-export HF_HUB_DISABLE_PROGRESS_BARS=1
 python3 << EOF
 import sys
 from pathlib import Path

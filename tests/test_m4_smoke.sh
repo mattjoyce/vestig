@@ -21,11 +21,11 @@ sed "s|graph_name:.*|graph_name: $GRAPH_NAME|g" "$REPO_ROOT/config_test.yaml" > 
 echo "Using temp graph: $GRAPH_NAME"
 echo "Using config: $CONFIG"
 export CONFIG_PATH="$CONFIG"
-export FALKOR_HOST=localhost
-export FALKOR_PORT=6379
+# Use same env vars as conftest.py for consistency
+export FALKOR_HOST="${VESTIG_FALKORDB_HOST:-192.168.20.4}"
+export FALKOR_PORT="${VESTIG_FALKORDB_PORT:-6379}"
 export REPO_ROOT
-export HF_HUB_OFFLINE=1
-export TRANSFORMERS_OFFLINE=1
+# Embedding provider is llm CLI (Ollama), not HuggingFace
 trap 'rm -f "$CONFIG"; redis-cli -h "$FALKOR_HOST" -p "$FALKOR_PORT" GRAPH.DELETE "$GRAPH_NAME" >/dev/null 2>&1 || true' EXIT
 
 # Activate virtual environment

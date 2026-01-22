@@ -5,8 +5,7 @@ import os
 import sys
 
 # Ensure tests run offline if the model is already cached
-os.environ.setdefault("HF_HUB_OFFLINE", "1")
-os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+# Embedding provider is llm CLI (Ollama), not HuggingFace
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))

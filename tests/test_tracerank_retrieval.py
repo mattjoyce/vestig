@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 """Test TraceRank integration with retrieval system"""
 
-import os
 import sys
 from pathlib import Path
 
-os.environ.setdefault("HF_HUB_OFFLINE", "1")
-os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+# Embedding provider is llm CLI (Ollama), not HuggingFace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 

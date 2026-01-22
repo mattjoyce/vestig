@@ -1,17 +1,33 @@
-export TRANSFORMERS_NO_PROGRESS_BAR=1
-export TOKENIZERS_PARALLELISM=true
+#!/bin/bash
+# Full test suite - runs pytest tests + smoke tests
+# Exit on first failure to catch regressions early
+
+set -e
+
+# Embedding provider is llm CLI (Ollama), not HuggingFace
+
+# Require backend to prevent silent skips
+export VESTIG_REQUIRE_BACKEND=1
+
 source ~/Environments/vestig/bin/activate
+
+echo "======================================================================"
+echo "VESTIG FULL TEST SUITE"
+echo "======================================================================"
+echo ""
+
+# Phase 1: Pytest tests (unit + component + integration)
+echo "=== Phase 1: Pytest Tests ==="
+pytest tests/ -v --tb=short
+echo ""
+
+# Phase 2: Shell-based smoke tests (CLI integration)
+echo "=== Phase 2: Smoke Tests ==="
 bash tests/test_m2_smoke.sh
 bash tests/test_m3_smoke.sh
-python3 tests/test_phase1_m3.py
-python3 tests/test_phase2_m3.py
-python3 tests/test_tracerank.py
-python3 tests/test_tracerank_retrieval.py
-python3 tests/test_m4_item1.py
-python3 tests/test_m4_item2.py
-python3 tests/test_m4_item3.py
-python3 tests/test_m4_item4.py
-python3 tests/test_m4_item5.py
-python3 tests/test_m4_item6.py
-python3 tests/test_ingest.py
 bash tests/test_m4_smoke.sh
+echo ""
+
+echo "======================================================================"
+echo "✅ ALL TESTS PASSED"
+echo "======================================================================"

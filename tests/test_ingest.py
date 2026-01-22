@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 """Test ingestion with mocked LLM"""
 
-import os
 import sys
 from pathlib import Path
 from unittest.mock import patch
 
 # Ensure tests run offline if the model is already cached
-os.environ.setdefault("HF_HUB_OFFLINE", "1")
-os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+# Embedding provider is llm CLI (Ollama), not HuggingFace
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -72,10 +70,11 @@ def test_ingestion(storage: DatabaseInterface):
             }
         )
 
-        # Test with mocked LLM
+        # Test with mocked LLM - use fixture file in tests/fixtures/
+        fixture_path = Path(__file__).resolve().parent / "fixtures" / "test_session_sample.txt"
         with patch("vestig.core.ingestion.call_llm", return_value=mock_response):
             result = ingest_document(
-                document_path=str(Path(__file__).resolve().parents[1] / "test_session_sample.txt"),
+                document_path=str(fixture_path),
                 storage=storage,
                 embedding_engine=embedding_engine,
                 event_storage=event_storage,

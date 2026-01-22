@@ -42,12 +42,29 @@ def falkordb_available() -> bool:
 
 # Determine which backends to test
 def get_backends():
-    """Get list of backends to test based on availability."""
-    # FalkorDB only
+    """Get list of backends to test based on availability.
+
+    Returns list of available backends, or pytest.skip if none available
+    and VESTIG_REQUIRE_BACKEND is set.
+    """
     if falkordb_available():
         return ["falkordb"]
-    else:
-        return []
+
+    # No backend available - check if we should fail
+    if os.environ.get("VESTIG_REQUIRE_BACKEND", "").lower() in ("1", "true", "yes"):
+        pytest.fail("No storage backend available and VESTIG_REQUIRE_BACKEND=1")
+
+    return []
+
+
+def pytest_collection_modifyitems(config, items):
+    """Warn if no storage-dependent tests will run."""
+    if not falkordb_available():
+        # Count tests that need storage
+        storage_tests = [item for item in items if "storage" in item.fixturenames]
+        if storage_tests:
+            print(f"\n⚠ WARNING: FalkorDB not available - {len(storage_tests)} tests SKIPPED")
+            print("  Set VESTIG_REQUIRE_BACKEND=1 to fail instead of skip\n")
 
 
 @pytest.fixture(params=get_backends())

@@ -4,8 +4,7 @@ import json
 import os
 import subprocess
 
-# Suppress HuggingFace progress bars
-os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
+# Suppress tokenizers parallelism warning
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 

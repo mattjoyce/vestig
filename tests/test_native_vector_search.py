@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 """Test native vector search implementation (Issue #7)"""
 
-import os
 import sys
 import uuid
 from pathlib import Path
 
-os.environ.setdefault("HF_HUB_OFFLINE", "1")
-os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+# Embedding provider is llm CLI (Ollama), not HuggingFace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
