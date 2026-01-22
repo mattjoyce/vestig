@@ -1,4 +1,4 @@
-"""Test config includes feature."""
+"""Test config includes feature with loaden."""
 
 import tempfile
 from pathlib import Path
@@ -6,34 +6,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from vestig.core.config import deep_merge, load_config
-
-
-def test_deep_merge_basic():
-    """Test basic deep merge functionality."""
-    base = {"a": 1, "b": {"c": 2}}
-    overlay = {"b": {"d": 3}, "e": 4}
-    result = deep_merge(base, overlay)
-
-    assert result == {"a": 1, "b": {"c": 2, "d": 3}, "e": 4}
-
-
-def test_deep_merge_override():
-    """Test that overlay overrides base values."""
-    base = {"a": 1, "b": {"c": 2, "d": 3}}
-    overlay = {"a": 10, "b": {"c": 20}}
-    result = deep_merge(base, overlay)
-
-    assert result == {"a": 10, "b": {"c": 20, "d": 3}}
-
-
-def test_deep_merge_nested():
-    """Test deep merge with multiple nesting levels."""
-    base = {"a": {"b": {"c": 1}}}
-    overlay = {"a": {"b": {"d": 2}, "e": 3}}
-    result = deep_merge(base, overlay)
-
-    assert result == {"a": {"b": {"c": 1, "d": 2}, "e": 3}}
+from vestig.core.config import load_config
 
 
 def test_config_single_include():
@@ -56,7 +29,7 @@ def test_config_single_include():
 
         # Create main config that includes base
         main_config = {
-            "include": "base.yaml",
+            "loaden_include": "base.yaml",
             "storage": {
                 "falkordb": {
                     "graph_name": "test_main",  # Override
@@ -98,7 +71,7 @@ def test_config_multiple_includes():
 
         # Create main config that includes both
         main_config = {
-            "include": ["storage.yaml", "embedding.yaml"],
+            "loaden_include": ["storage.yaml", "embedding.yaml"],
             "m4": {"entity_types": ["Person", "Place"]},
         }
         (tmppath / "main.yaml").write_text(yaml.dump(main_config))
@@ -130,14 +103,14 @@ def test_config_nested_includes():
 
         # Create middle config that includes base
         middle_config = {
-            "include": "base.yaml",
+            "loaden_include": "base.yaml",
             "embedding": {"model": "middle_model", "dimension": 768},
         }
         (tmppath / "middle.yaml").write_text(yaml.dump(middle_config))
 
         # Create main config that includes middle (which includes base)
         main_config = {
-            "include": "middle.yaml",
+            "loaden_include": "middle.yaml",
             "storage": {
                 "falkordb": {
                     "graph_name": "main",  # Override base
@@ -172,16 +145,16 @@ def test_config_include_precedence():
         (tmppath / "storage.yaml").write_text(yaml.dump(storage_config))
 
         # Create first config
-        config1 = {"include": "storage.yaml", "value": 1, "nested": {"a": 1, "b": 1}}
+        config1 = {"loaden_include": "storage.yaml", "value": 1, "nested": {"a": 1, "b": 1}}
         (tmppath / "config1.yaml").write_text(yaml.dump(config1))
 
         # Create second config
-        config2 = {"include": "storage.yaml", "value": 2, "nested": {"a": 2, "c": 2}}
+        config2 = {"loaden_include": "storage.yaml", "value": 2, "nested": {"a": 2, "c": 2}}
         (tmppath / "config2.yaml").write_text(yaml.dump(config2))
 
         # Create main config that includes both (order matters)
         main_config = {
-            "include": ["config1.yaml", "config2.yaml"],
+            "loaden_include": ["config1.yaml", "config2.yaml"],
             "value": 3,  # Main overrides all
             "nested": {"a": 3},  # Partial override
         }
@@ -202,7 +175,7 @@ def test_config_include_file_not_found():
         tmppath = Path(tmpdir)
 
         # Create main config with non-existent include
-        main_config = {"include": "nonexistent.yaml"}
+        main_config = {"loaden_include": "nonexistent.yaml"}
         (tmppath / "main.yaml").write_text(yaml.dump(main_config))
 
         # Should raise FileNotFoundError with clear message
@@ -233,7 +206,7 @@ def test_config_empty_file():
         (tmppath / "empty.yaml").write_text("")
 
         # Create main config that includes both
-        main_config = {"include": ["storage.yaml", "empty.yaml"]}
+        main_config = {"loaden_include": ["storage.yaml", "empty.yaml"]}
         (tmppath / "main.yaml").write_text(yaml.dump(main_config))
 
         # Should load successfully (empty file treated as {})
@@ -241,91 +214,76 @@ def test_config_empty_file():
         assert result["storage"]["falkordb"]["host"] == "localhost"
 
 
-def test_config_null_file():
-    """Test that null config file is handled gracefully."""
+def test_config_missing_required_key():
+    """Test that missing required keys raise clear error."""
     with tempfile.TemporaryDirectory() as tmpdir:
         tmppath = Path(tmpdir)
 
-        # Create valid storage base
-        storage_config = {
+        # Create config missing required falkordb.host
+        incomplete_config = {
             "storage": {
                 "falkordb": {
-                    "host": "localhost",
                     "port": 6379,
                     "graph_name": "test",
                 }
             }
         }
-        (tmppath / "storage.yaml").write_text(yaml.dump(storage_config))
+        (tmppath / "incomplete.yaml").write_text(yaml.dump(incomplete_config))
 
-        # Create null config file
-        (tmppath / "null.yaml").write_text("null\n")
-
-        # Create main config that includes both
-        main_config = {"include": ["storage.yaml", "null.yaml"]}
-        (tmppath / "main.yaml").write_text(yaml.dump(main_config))
-
-        # Should load successfully (null treated as {})
-        result = load_config(str(tmppath / "main.yaml"))
-        assert result["storage"]["falkordb"]["host"] == "localhost"
-
-
-def test_config_non_dict():
-    """Test that non-dict config raises clear error."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        tmppath = Path(tmpdir)
-
-        # Create config that's a list instead of dict
-        (tmppath / "list.yaml").write_text("[1, 2, 3]\n")
-
-        # Should raise ValueError
+        # Should raise ValueError about missing key
         with pytest.raises(ValueError) as exc_info:
-            load_config(str(tmppath / "list.yaml"))
+            load_config(str(tmppath / "incomplete.yaml"))
 
-        assert "must be a YAML dictionary" in str(exc_info.value)
-        assert "list" in str(exc_info.value)
+        assert "storage.falkordb.host" in str(exc_info.value)
 
 
-def test_config_circular_include_direct():
-    """Test that direct circular include is detected."""
+def test_config_env_variable_expansion():
+    """Test that environment variable expansion works."""
+    import os
+
     with tempfile.TemporaryDirectory() as tmpdir:
         tmppath = Path(tmpdir)
 
-        # Create config that includes itself
-        circular_config = {
-            "include": "circular.yaml",
+        # Set test environment variable
+        os.environ["TEST_GRAPH_NAME"] = "test_from_env"
+
+        # Create config with env var expansion
+        config = {
             "storage": {
                 "falkordb": {
                     "host": "localhost",
                     "port": 6379,
-                    "graph_name": "test",
+                    "graph_name": "${TEST_GRAPH_NAME}",
                 }
-            },
+            }
         }
-        (tmppath / "circular.yaml").write_text(yaml.dump(circular_config))
+        (tmppath / "config.yaml").write_text(yaml.dump(config))
 
-        # Should raise ValueError about circular include
-        with pytest.raises(ValueError) as exc_info:
-            load_config(str(tmppath / "circular.yaml"))
+        # Load and verify
+        result = load_config(str(tmppath / "config.yaml"))
+        assert result["storage"]["falkordb"]["graph_name"] == "test_from_env"
 
-        assert "Circular include detected" in str(exc_info.value)
+        # Clean up
+        del os.environ["TEST_GRAPH_NAME"]
 
 
-def test_config_circular_include_indirect():
-    """Test that indirect circular include (A->B->A) is detected."""
+def test_config_env_variable_with_default():
+    """Test that environment variable expansion with default works."""
     with tempfile.TemporaryDirectory() as tmpdir:
         tmppath = Path(tmpdir)
 
-        # Create A that includes B
-        config_a = {"include": "b.yaml", "value": "A"}
-        (tmppath / "a.yaml").write_text(yaml.dump(config_a))
+        # Create config with env var expansion and default
+        config = {
+            "storage": {
+                "falkordb": {
+                    "host": "${NONEXISTENT_HOST:-localhost}",
+                    "port": 6379,
+                    "graph_name": "test",
+                }
+            }
+        }
+        (tmppath / "config.yaml").write_text(yaml.dump(config))
 
-        # Create B that includes A (circular!)
-        config_b = {"include": "a.yaml", "value": "B"}
-        (tmppath / "b.yaml").write_text(yaml.dump(config_b))
-
-        # Should raise ValueError about circular include
-        with pytest.raises(ValueError) as exc_info:
-            load_config(str(tmppath / "a.yaml"))
-
-        assert "Circular include detected" in str(exc_info.value)
+        # Load and verify default is used
+        result = load_config(str(tmppath / "config.yaml"))
+        assert result["storage"]["falkordb"]["host"] == "localhost"

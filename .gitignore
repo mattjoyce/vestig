@@ -45,6 +45,9 @@ AGENTS.md
 CLAUDE.md
 .claude/
 
+# Environment variables
+.env
+
 # OS
 .DS_Store
 Thumbs.db

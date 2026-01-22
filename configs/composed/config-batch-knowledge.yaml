@@ -1,7 +1,7 @@
 # Batch ingestion config (overnight, local Ollama)
 # Usage: vestig --config configs/composed/config-batch-knowledge.yaml memory ingest ...
 
-include:
+loaden_include:
   - ../base/storage-falkordb.yaml
   - ../base/embedding-gemma.yaml
   - ../ontologies/ontology-knowledge.yaml

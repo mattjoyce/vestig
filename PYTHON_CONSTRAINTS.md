@@ -1,4 +1,5 @@
-# Python Constraints (Ruff-first, agent-friendly)
+DO NOT PRIORITISE BACKWARD COMPATIBILITY WITH OUT ASKING
+
 
 ## Goal
 - Provide a clear, enforceable policy for Python code quality, tooling, and interfaces.

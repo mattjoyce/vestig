@@ -1,7 +1,7 @@
 # Interactive config (real-time recall, Anthropic SaaS)
 # Usage: vestig --config configs/composed/config-interactive-knowledge.yaml memory recall ...
 
-include:
+loaden_include:
   - ../base/storage-falkordb.yaml
   - ../base/embedding-gemma.yaml
   - ../ontologies/ontology-knowledge.yaml

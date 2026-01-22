@@ -51,14 +51,14 @@ vestig --config configs/composed/config-interactive-knowledge.yaml memory recall
 
 ## Include Syntax
 
-Configs support the `include` key for composition:
+Configs support the `loaden_include` key for composition (using the [loaden](https://pypi.org/project/loaden/) package):
 
 ```yaml
 # Single include
-include: base/storage-falkordb.yaml
+loaden_include: base/storage-falkordb.yaml
 
 # Multiple includes (merged in order)
-include:
+loaden_include:
   - base/storage-falkordb.yaml
   - base/embedding-gemma.yaml
   - models/models-ollama-local.yaml
@@ -76,6 +76,43 @@ storage:
 3. **Deep merge**: Nested dictionaries are merged recursively
 4. **Relative paths**: Include paths are relative to the config file containing them
 5. **Recursive**: Included files can themselves include other files
+
+## Environment Variables
+
+### .env File Support
+
+Create a `.env` file in the project root for environment-specific settings:
+
+```bash
+# .env
+OLLAMA_HOST=192.168.20.8
+FALKOR_HOST=192.168.20.4
+```
+
+The `.env` file is loaded automatically by loaden when loading any config.
+
+### Variable Expansion in Configs
+
+Use `${VAR}` syntax for environment variable expansion in YAML configs:
+
+```yaml
+# With environment variable
+storage:
+  falkordb:
+    host: ${FALKOR_HOST}
+    port: 6379
+
+# With default value if variable not set
+storage:
+  falkordb:
+    host: ${FALKOR_HOST:-localhost}
+    port: ${FALKOR_PORT:-6379}
+```
+
+This allows you to:
+- Keep secrets out of version control
+- Switch between environments easily (dev/prod/test)
+- Override config values without editing YAML files
 
 ## Configuration Schema
 
@@ -140,7 +177,7 @@ Both can be set in model config files (e.g., `configs/models/models-ollama-local
 
 ```yaml
 # configs/composed/config-dev.yaml
-include:
+loaden_include:
   - ../base/storage-falkordb.yaml
   - ../base/embedding-gemma.yaml
   - ../ontologies/ontology-minimal.yaml
@@ -172,7 +209,7 @@ Then create composed config:
 
 ```yaml
 # configs/composed/config-research-v2-test.yaml
-include:
+loaden_include:
   - ../base/storage-falkordb.yaml
   - ../base/embedding-gemma.yaml
   - ../ontologies/ontology-research-v2.yaml  # Test new ontology
@@ -220,7 +257,7 @@ New modular equivalent:
 
 ```yaml
 # configs/composed/my-config.yaml
-include:
+loaden_include:
   - ../base/storage-falkordb.yaml
   - ../base/embedding-gemma.yaml
   - ../models/models-ollama-local.yaml
