@@ -243,7 +243,7 @@ class TestEdgeOperations:
     """Tests for edge CRUD operations."""
 
     def test_store_edge_weight_default(self, storage: DatabaseInterface):
-        """weight=None defaults to 1.0."""
+        """weight=1.0 (default) is preserved."""
         # Create memory and entity
         memory = MemoryNode.create(
             memory_id="mem_test_edge_weight",
@@ -273,6 +273,80 @@ class TestEdgeOperations:
         retrieved = storage.get_edge(edge.edge_id)
         assert retrieved is not None
         assert retrieved.weight == 1.0
+
+    def test_store_edge_weight_zero_preserved(self, storage: DatabaseInterface):
+        """weight=0.0 is preserved, not converted to 1.0.
+
+        Regression test for Issue #5: weight field null handling.
+        The bug was using `row[4] or 1.0` which converts 0.0 to 1.0.
+        Fix: use `row[4] if row[4] is not None else 1.0`.
+        """
+        # Create memory and entity
+        memory = MemoryNode.create(
+            memory_id="mem_test_edge_weight_zero",
+            content="Test memory for zero weight",
+            embedding=make_test_embedding(seed=100),
+            source="test",
+        )
+        storage.store_memory(memory, kind="MEMORY")
+
+        entity = EntityNode.create(
+            entity_type="SYSTEM",
+            canonical_name="Test System Zero",
+            entity_id="ent_test_edge_weight_zero",
+        )
+        storage.store_entity(entity)
+
+        # Create edge with weight=0.0 (e.g., similarity score of 0)
+        edge = EdgeNode.create(
+            from_node="mem_test_edge_weight_zero",
+            to_node="ent_test_edge_weight_zero",
+            edge_type="MENTIONS",
+            weight=0.0,
+        )
+        storage.store_edge(edge)
+
+        # Retrieve via get_edge
+        retrieved = storage.get_edge(edge.edge_id)
+        assert retrieved is not None
+        assert retrieved.weight == 0.0, "weight=0.0 should be preserved, not converted to 1.0"
+
+        # Also test via get_edges_from_memory (uses _row_to_edge helper)
+        edges = storage.get_edges_from_memory("mem_test_edge_weight_zero")
+        assert len(edges) == 1
+        assert edges[0].weight == 0.0, "weight=0.0 should be preserved in _row_to_edge"
+
+    def test_store_edge_weight_fractional(self, storage: DatabaseInterface):
+        """weight=0.5 (fractional) is preserved."""
+        # Create memory and entity
+        memory = MemoryNode.create(
+            memory_id="mem_test_edge_weight_frac",
+            content="Test memory for fractional weight",
+            embedding=make_test_embedding(seed=101),
+            source="test",
+        )
+        storage.store_memory(memory, kind="MEMORY")
+
+        entity = EntityNode.create(
+            entity_type="TOOL",
+            canonical_name="Test Tool Frac",
+            entity_id="ent_test_edge_weight_frac",
+        )
+        storage.store_entity(entity)
+
+        # Create edge with fractional weight
+        edge = EdgeNode.create(
+            from_node="mem_test_edge_weight_frac",
+            to_node="ent_test_edge_weight_frac",
+            edge_type="MENTIONS",
+            weight=0.5,
+        )
+        storage.store_edge(edge)
+
+        # Retrieve and check weight
+        retrieved = storage.get_edge(edge.edge_id)
+        assert retrieved is not None
+        assert retrieved.weight == 0.5
 
     def test_store_edge_deduplication(self, storage: DatabaseInterface):
         """Same edge twice returns existing ID."""
