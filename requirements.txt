@@ -1,39 +1,19 @@
-# Graph storage
+# Core runtime dependencies
 falkordb>=1.0.0
+llm>=0.13.0
+loaden>=0.1.0
+numpy>=1.24.0
+pydantic>=2.0.0
+pyyaml>=6.0
 
-# LLM and embeddings
-llm>=0.13.0                 # Simon Willison's LLM CLI tool
-sentence-transformers>=2.3.0  # For BGE-m3 embeddings
-transformers>=4.36.0        # Hugging Face transformers
+# Optional: local embedding provider (Hugging Face)
+# sentence-transformers>=2.2.0
 
-# Embeddings model (BGE-m3)
-# Will be downloaded on first use via sentence-transformers
-# Model: BAAI/bge-m3 (1024-dim)
+# Dev/test tooling
+pytest>=7.4.0
+ruff>=0.1.0
+mypy>=1.0.0
+types-PyYAML>=6.0.0
 
-# Graph and data processing
-networkx>=3.0               # For PageRank and graph algorithms
-numpy>=1.24.0              # Numerical operations
-scipy>=1.10.0              # For mutual information calculations
-
-# NLP utilities
-scikit-learn>=1.3.0        # For k-means clustering, Jaccard similarity
-nltk>=3.8.0                # For keyword extraction (optional)
-
-# CLI and configuration
-click>=8.1.0               # CLI framework
-pyyaml>=6.0                # YAML config parsing
-python-dotenv>=1.0.0       # Environment variables
-
-# Date/time handling
-python-dateutil>=2.8.2     # For relative date parsing
-pytz>=2023.3               # Timezone support
-
-# Optional: GPU acceleration
-# torch>=2.0.0             # PyTorch for GPU (uncomment if using GPU)
-
-# Development tools
-pytest>=7.4.0              # Testing framework
-ruff>=0.1.0                # Fast linting and formatting
-mypy>=1.0.0                # Type checking
-types-PyYAML>=6.0.0        # Type stubs for PyYAML
-anthropic>=0.39.0
+# Optional: integration tests
+# ollama>=0.3.0
