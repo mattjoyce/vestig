@@ -135,11 +135,11 @@ Entities can be extracted at different levels with varying trust:
 |-----------------|-------------|-------|
 | Source → Memory → Entity | Medium | 1 LLM processing hop |
 | Source → Summary → Entity | Medium | Same trust as Memory (1 LLM hop) |
-| Source → Chunk → Entity | High (future) | Direct from raw text if implemented |
+| Source → Chunk → Entity | High (planned) | Direct from raw text, 0 LLM hops |
 
 **Current implementation:** Entities are extracted from Memory nodes. Chunk-level `LINKED` edges reuse the same extraction evidence for provenance.
 
-**Open question:** Should Chunk remain a first-class node, or become edge/node metadata?
+**Decision (Issue #6):** Chunk remains a first-class node. Direct Chunk → Entity extraction will be implemented for higher trust.
 
 ### Entity-based Discovery
 Memories connect to Entities via MENTIONS edges. This provides an alternative retrieval pathway independent of the provenance chain.
@@ -148,26 +148,23 @@ Memories connect to Entities via MENTIONS edges. This provides an alternative re
 
 ## Technical Debt
 
-- [ ] Conditional validation for backend-specific config (done: falkordb)
-- [ ] FalkorDB adapter edge cases (weight field nulls)
-- [ ] Test coverage for dual-backend scenarios
-- [ ] Embedding timeout configurability (done: `embedding.timeout`)
+- [x] Conditional validation for backend-specific config (done: falkordb)
+- [x] FalkorDB adapter edge cases (weight field nulls) - Fixed in Issue #5
+- [x] Embedding timeout configurability (done: `embedding.timeout`)
+- N/A: Dual-backend test coverage (only FalkorDB backend exists)
 
 ---
 
 ## Open Questions
 
-### Phase 2 (Source Abstraction)
-1. Should Chunk remain a first-class node, or become metadata on Memory/edges?
-   - Pro keeping: Enables entity linking to document position
-   - Pro flattening: Simpler model, chunk info as edge properties on PRODUCED
-2. Should we implement direct Source → Chunk → Entity extraction (high trust)?
-   - Would require entity extraction from raw chunks before memory extraction
-3. Edge type naming: PRODUCED vs CREATED vs FROM for Source → Memory?
-4. Should all three source types (file, agentic, legacy) support chunking?
+### Phase 2 (Source Abstraction) - ✅ Resolved (Issue #6)
+1. ✅ **Chunk remains a first-class node** - Enables entity→chunk linking and position tracking
+2. ✅ **Yes, implement direct Chunk → Entity extraction** - Future work for higher trust (0 LLM hops)
+3. ✅ **Edge naming: PRODUCED** - Consistent with "agent/system produced this memory"
+4. ✅ **Only file sources support chunking** - Agentic/legacy are atomic; long conversations = separate Sources
 
 ### General
-1. Should `memory add` require explicit entity specification to avoid orphans? ✓ Resolved: will create Source{type='agentic'}
-2. How aggressive should orphan cleanup be? ✓ Partial: housekeeping can backfill entities
-3. What's the right granularity for session-based Sources?
-4. Should SUMMARY generation be optional/configurable per source type?
+1. ✅ Should `memory add` require explicit entity specification? Resolved: creates Source{type='agentic'}
+2. ✅ Orphan cleanup: housekeeping can backfill entities
+3. Session granularity: Each session = separate Source (not chunked)
+4. ✅ **SUMMARY generation per source type:** file=yes, agentic=no, legacy=no

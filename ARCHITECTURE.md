@@ -94,6 +94,21 @@ Examples:
 - Agentic add: `Source(agentic)` → `Memory` (no chunk)
 - Orphan backfill: `Source(legacy)` → `Memory`
 
+### Design Decisions (Issue #6)
+
+1. **Chunk remains a first-class node** - Enables entity→chunk linking and clean separation of provenance (Source) from position (Chunk).
+
+2. **Only file sources support chunking** - Agentic and legacy sources are atomic; long conversations should be separate Sources rather than chunked.
+
+3. **Edge naming: PRODUCED** - Source → Memory edges use `PRODUCED` (agent/system produced this memory).
+
+4. **Summary generation is per-source-type:**
+   - `file`: Yes (summarize document chunks)
+   - `agentic`: No (agent messages are already atomic)
+   - `legacy`: No (orphans are usually atomic)
+
+5. **Future: Direct entity extraction from Chunks** - Extract entities from raw Chunk text (0 LLM hops) for higher trust. Currently entities are extracted from Memory nodes (1 LLM hop).
+
 ---
 
 ## Ingestion Pipeline

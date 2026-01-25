@@ -804,8 +804,9 @@ def ingest_document(
     )
     t0 = time.perf_counter()
     source_id = storage.store_source(source_node)
+    source_type = source_node.source_type  # Track for per-source-type behavior (Issue #12)
     timings["3_store_source"] = time.perf_counter() - t0
-    print(f"Created source record: {source_id} (type: file)")
+    print(f"Created source record: {source_id} (type: {source_type})")
 
     # Chunk text
     t0 = time.perf_counter()
@@ -1096,8 +1097,9 @@ def ingest_document(
                     print(f"    Warning: Entity extraction failed for chunk: {e}", flush=True)
 
             # M5: Generate per-chunk summary (if chunk has ≥2 committed memories)
+            # Issue #12: Only generate summaries for file sources (not agentic/legacy)
             chunk_memory_count = len(committed_memories)
-            if chunk_memory_count >= 2 and extraction_model:
+            if chunk_memory_count >= 2 and extraction_model and source_type == "file":
                 try:
                     print(
                         f"    Generating chunk summary ({chunk_memory_count} memories)...",
