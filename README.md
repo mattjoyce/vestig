@@ -241,3 +241,6 @@ If you're new: start by running the demo and exploring the M2 quality firewall f
 ## License
 
 TBD (add once decided).
+
+## Changelog
+See [CHANGELOG.md](CHANGELOG.md).
